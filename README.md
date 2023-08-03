@@ -220,7 +220,7 @@ Conventional openHAB wisdom is to fork the complete add-on repository and work f
 - Pull the openhab-addons repository from openHAB
 - Pull this repository using 'git submodule' into the 'bundles' directory of the openhab-addons directory, keeping the org.openhab.binding.mqtt.frigatesvr directory name (I guess you could use 'git subtree' if you wished?).
 - Open the openhab-addons/bundles/pom.xml file in an editor:
-  - Firstly check the version number at the top of the file in the <parent> hierarchy - do not change this but copy it somwehere.
+  - Firstly check the version number at the top of the file in the `<parent>` hierarchy - do not change this but copy it somwehere.
   - In the `<modules>` section, add `<module>org.openhab.binding.mqtt.frigatesvr</module>`
 - Open the bundles/org.openhab.binding.mqtt.frigatesvr/pom.xml
   - Check the version in the `<parent>` hierarchy. If it is not the same as that noted earlier from the bundles/pom.xml file, then change it so that it is (it most likely will not be as openHAB develops). If the numbers are not the same you will get a build error. Save file if changed
@@ -228,13 +228,13 @@ Conventional openHAB wisdom is to fork the complete add-on repository and work f
 
 In Linux, the steps are:
 
-- git pull https://github.com/openhab/openhab-addons.git
-- cd openhab-addons/bundles
-- git submodule add https://github.com/jgow/org.openhab.binding.mqtt.frigatesvr.git
-- cd ..
-- vi bundles/pom.xml   (note the build version, add the `<module>org.openhab.binding.mqtt.frigatesvr</module>` to the module section and save.
-- vi bundles/org.openhab.binding.mqtt.frigatesvr/pom.xml (check that the version matches above, change to ensure that it is)
-- mvn clean install -pl :org.openhab.binding.mqtt.frigatesvr
+- `git pull https://github.com/openhab/openhab-addons.git`
+- `cd openhab-addons/bundles`
+- `git submodule add https://github.com/jgow/org.openhab.binding.mqtt.frigatesvr.git`
+- `cd ..`
+- `vi bundles/pom.xml`   (note the build version, add the `<module>org.openhab.binding.mqtt.frigatesvr</module>` to the module section and save.
+- `vi bundles/org.openhab.binding.mqtt.frigatesvr/pom.xml` (check that the version matches above, change to ensure that it is)
+- `mvn clean install -pl :org.openhab.binding.mqtt.frigatesvr`
 
 Once the build is complete, the .jar will be found in bundles/org.openhab.binding.mqtt.frigatesvr/target. Copy this .jar to the add-ons directory on your running openHAB environment. Enjoy.
 
