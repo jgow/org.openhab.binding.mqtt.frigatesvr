@@ -16,7 +16,7 @@ The binding supports:
 - (coming soon):
     - server memory state (allowing OpenHAB to trigger rules/notifications if the Frigate server starts to run out of resources)
 
-##Philosophy
+## Philosophy
 
 The design philosophy behind this binding is to allow OpenHAB access to the useful and considerable status and event information from the cameras attached to the Frigate server, to allow rules to be triggered based upon changes to the streams as detected by Frigate.
 
