@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config-description:config-descriptions
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:config-description="https://openhab.org/schemas/config-description/v1.0.0"
+	xsi:schemaLocation="https://openhab.org/schemas/config-description/v1.0.0 https://openhab.org/schemas/config-description-1.0.0.xsd">
+
+	<config-description uri="thing-type:mqtt:Camera">
+		<parameter name="serverID" type="text" required="true">
+			<context>ThingID</context>
+			<label>@text/param.camera.thingID.label</label>
+			<description>@text/param.camera.thingID.description</description>
+		</parameter>
+		<parameter name="cameraName" type="text" required="true">
+			<context>name</context>
+			<label>@text/param.camera.cameraName.label</label>
+			<description>@text/param.camera.cameraName.description</description>
+		</parameter>
+	</config-description>
+
+	<config-description uri="thing-type:mqtt:Server">
+		<parameter name="serverURL" type="text" required="true">
+			<context>network-address</context>
+			<label>@text/param.server.serverURL.label</label>
+			<description>@text/param.server.serverURL.description</description>
+		</parameter>
+		<parameter name="serverClientID" type="text" required="false">
+			<context>client-id</context>
+			<label>@text/param.server.serverClientID.label</label>
+			<description>@text/param.server.serverClientID.description</description>
+			<default/>
+		</parameter>
+		<parameter name="serverKeepAlive" type="integer" required="false" min="5" max="60" unit="s">
+			<context>keep-alive</context>
+			<label>@text/param.server.serverKeepAlive.label</label>
+			<description>@text/param.server.serverKeepAlive.description</description>
+			<default>5</default>
+		</parameter>
+	</config-description>
+</config-description:config-descriptions>

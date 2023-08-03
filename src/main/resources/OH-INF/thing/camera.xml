@@ -1,0 +1,376 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<thing:thing-descriptions bindingId="mqtt"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:thing="https://openhab.org/schemas/thing-description/v1.0.0"
+	xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description-1.0.0.xsd">
+
+	<!-- Sample Thing Type -->
+	<thing-type id="frigateCamera">
+
+		<supported-bridge-type-refs>
+			<bridge-type-ref id="broker"/>
+		</supported-bridge-type-refs>
+
+		<label>@text/thing.label.camera</label>
+		<description>@text/thing.description.camera</description>
+
+		<channels>
+			<channel id="fgCameraFPS" typeId="fgCameraFPS"/>
+			<channel id="fgCameraProcessFPS" typeId="fgCameraProcessFPS"/>
+			<channel id="fgCameraSkippedFPS" typeId="fgCameraSkippedFPS"/>
+			<channel id="fgCameraDetectionFPS" typeId="fgCameraDetectionFPS"/>
+			<channel id="fgDetectionState" typeId="fgDetectionState"/>
+			<channel id="fgRecordingState" typeId="fgRecordingState"/>
+			<channel id="fgSnapshotState" typeId="fgSnapshotState"/>
+			<channel id="fgMotionState" typeId="fgMotionState"/>
+			<channel id="fgContrastState" typeId="fgContrastState"/>
+			<channel id="fgMotionThreshold" typeId="fgMotionThreshold"/>
+			<channel id="fgMotionContourArea" typeId="fgMotionContourArea"/>
+			<channel id="fgMotionDetected" typeId="fgMotionDetected"/>
+			<channel id="fgLastSnapshotObject" typeId="fgLastSnapshotObject"/>
+			<channel id="fgLastSnapshot" typeId="fgLastSnapshot"/>
+			<channel id="fgEventType" typeId="fgEventType"/>
+			<channel id="fgEventID" typeId="fgEventID"/>
+			<channel id="fgEventClipURL" typeId="fgEventClipURL"/>
+			<channel id="fgPrevFrameTime" typeId="fgPrevFrameTime"/>
+			<channel id="fgPrevSnapshotTime" typeId="fgPrevSnapshotTime"/>
+			<channel id="fgPrevLabel" typeId="fgPrevLabel"/>
+			<channel id="fgPrevSubLabel" typeId="fgPrevSubLabel"/>
+			<channel id="fgPrevTopScore" typeId="fgPrevTopScore"/>
+			<channel id="fgPrevFalsePositive" typeId="fgPrevFalsePositive"/>
+			<channel id="fgPrevStartTime" typeId="fgPrevStartTime"/>
+			<channel id="fgPrevEndTime" typeId="fgPrevEndTime"/>
+			<channel id="fgPrevScore" typeId="fgPrevScore"/>
+			<channel id="fgPrevBox" typeId="fgPrevBox"/>
+			<channel id="fgPrevArea" typeId="fgPrevArea"/>
+			<channel id="fgPrevRatio" typeId="fgPrevRatio"/>
+			<channel id="fgPrevRegion" typeId="fgPrevRegion"/>
+			<channel id="fgPrevCurrentzone" typeId="fgPrevCurrentZone"/>
+			<channel id="fgPrevEnteredZone" typeId="fgPrevEnteredZone"/>
+			<channel id="fgPrevHasSnapshot" typeId="fgPrevHasSnapshot"/>
+			<channel id="fgPrevHasClip" typeId="fgPrevHasClip"/>
+			<channel id="fgPrevStationary" typeId="fgPrevStationary"/>
+			<channel id="fgPrevMotionlessCount" typeId="fgPrevMotionlessCount"/>
+			<channel id="fgPrevPositionChanges" typeId="fgPrevPositionChanges"/>
+			<channel id="fgCurFrameTime" typeId="fgCurFrameTime"/>
+			<channel id="fgCurSnapshotTime" typeId="fgCurSnapshotTime"/>
+			<channel id="fgCurLabel" typeId="fgCurLabel"/>
+			<channel id="fgCurSubLabel" typeId="fgCurSubLabel"/>
+			<channel id="fgCurTopScore" typeId="fgCurTopScore"/>
+			<channel id="fgCurFalsePositive" typeId="fgCurFalsePositive"/>
+			<channel id="fgCurStartTime" typeId="fgCurStartTime"/>
+			<channel id="fgCurEndTime" typeId="fgCurEndTime"/>
+			<channel id="fgCurScore" typeId="fgCurScore"/>
+			<channel id="fgCurBox" typeId="fgCurBox"/>
+			<channel id="fgCurArea" typeId="fgCurArea"/>
+			<channel id="fgCurRatio" typeId="fgCurRatio"/>
+			<channel id="fgCurRegion" typeId="fgCurRegion"/>
+			<channel id="fgCurCurrentZone" typeId="fgCurCurrentZone"/>
+			<channel id="fgCurEnteredZone" typeId="fgCurEnteredZone"/>
+			<channel id="fgCurHasSnapshot" typeId="fgCurHasSnapshot"/>
+			<channel id="fgCurHasClip" typeId="fgCurHasClip"/>
+			<channel id="fgCurStationary" typeId="fgCurStationary"/>
+			<channel id="fgCurMotionlessCount" typeId="fgCurMotionlessCount"/>
+			<channel id="fgCurPositionChanges" typeId="fgCurPositionChanges"/>
+		</channels>
+		<config-description-ref uri="thing-type:mqtt:Camera"/>
+	</thing-type>
+
+	<!-- Channels -->
+	<!-- Camera stats -->
+
+	<channel-type id="fgCameraFPS">
+		<item-type>Number</item-type>
+		<label>@text/channel.cameraFPS</label>
+		<description>@text/channel.cameraFPS.description</description>
+	</channel-type>
+	<channel-type id="fgCameraProcessFPS">
+		<item-type>Number</item-type>
+		<label>@text/channel.cameraProcessFPS</label>
+		<description>@text/channel.cameraProcessFPS.description</description>
+	</channel-type>
+	<channel-type id="fgCameraSkippedFPS">
+		<item-type>Number</item-type>
+		<label>@text/channel.cameraSkippedFPS</label>
+		<description>@text/channel.cameraSkippedFPS.description</description>
+	</channel-type>
+	<channel-type id="fgCameraDetectionFPS">
+		<item-type>Number</item-type>
+		<label>@text/channel.cameraDetectionFPS</label>
+		<description>@text/channel.cameraDetectionFPS.description</description>
+	</channel-type>
+
+	<!-- Camera config -->
+
+	<channel-type id="fgDetectionState">
+		<item-type>Switch</item-type>
+		<label>@text/channel.objectDetection</label>
+		<description>@text/channel.objectDetection.description</description>
+	</channel-type>
+	<channel-type id="fgRecordingState">
+		<item-type>Switch</item-type>
+		<label>@text/channel.recordingEnabled</label>
+		<description>@text/channel.recordingEnabled.description</description>
+	</channel-type>
+	<channel-type id="fgSnapshotState">
+		<item-type>Switch</item-type>
+		<label>@text/channel.snapshotsEnabled</label>
+		<description>@text/channel.snapshotsEnabled.description</description>
+	</channel-type>
+	<channel-type id="fgMotionState">
+		<item-type>Switch</item-type>
+		<label>@text/channel.motionDetection</label>
+		<description>@text/channel.motionDetection.description</description>
+	</channel-type>
+	<channel-type id="fgContrastState">
+		<item-type>Switch</item-type>
+		<label>@text/channel.improveContrast</label>
+		<description>@text/channel.improveContrast.description</description>
+	</channel-type>
+	<channel-type id="fgMotionThreshold">
+		<item-type>Number</item-type>
+		<label>@text/channel.motionThresholdLevel</label>
+		<description>@text/channel.motionThresholdLevel.description</description>
+	</channel-type>
+	<channel-type id="fgMotionContourArea">
+		<item-type>Number</item-type>
+		<label>@text/channel.motionContourArea</label>
+		<description>@text/channel.motionContourArea.description</description>
+	</channel-type>
+	<channel-type id="fgMotionDetected">
+		<item-type>Contact</item-type>
+		<label>@text/channel.motionDetected</label>
+		<description>@text/channel.motionDetected.description</description>
+	</channel-type>
+	<channel-type id="fgLastSnapshotObject">
+		<item-type>String</item-type>
+		<label>@text/channel.lastSnapshotObject</label>
+		<description>@text/channel.lastSnapshotObject.description</description>
+	</channel-type>
+	<channel-type id="fgLastSnapshot">
+		<item-type>Image</item-type>
+		<label>@text/channel.lastSnapshot</label>
+		<description>@text/channel.lastSnapshot.description</description>
+	</channel-type>
+	<channel-type id="fgEventType">
+		<item-type>String</item-type>
+		<label>@text/channel.currentEventType</label>
+		<description>@text/channel.currentEventType.description</description>
+	</channel-type>
+	<channel-type id="fgEventID">
+		<item-type>String</item-type>
+		<label>@text/channel.eventID</label>
+		<description>@text/channel.eventID.description</description>
+	</channel-type>
+	<channel-type id="fgEventClipURL">
+		<item-type>String</item-type>
+		<label>@text/channel.eventClipURL</label>
+		<description>@text/channel.eventClipURL.description</description>
+	</channel-type>
+
+	<!-- Event: channels relating to the previous state -->
+
+	<channel-type id="fgPrevFrameTime">
+		<item-type>DateTime</item-type>
+		<label>@text/channel.previousFrameTime</label>
+		<description>@text/channel.previousFrameTime.description</description>
+	</channel-type>
+	<channel-type id="fgPrevSnapshotTime">
+		<item-type>DateTime</item-type>
+		<label>@text/channel.previousSnapshotTime</label>
+		<description>@text/channel.previousSnapshotTime.description</description>
+	</channel-type>
+	<channel-type id="fgPrevLabel">
+		<item-type>String</item-type>
+		<label>@text/channel.previousDetectedEntity</label>
+		<description>@text/channel.previousDetectedEntity.description</description>
+	</channel-type>
+	<channel-type id="fgPrevSubLabel">
+		<item-type>String</item-type>
+		<label>@text/channel.previousDetectedSublabel</label>
+		<description>@text/channel.previousDetectedSublabel.description</description>
+	</channel-type>
+	<channel-type id="fgPrevTopScore">
+		<item-type>Number</item-type>
+		<label>@text/channel.previousTopScore</label>
+		<description>@text/channel.previousTopScore.description</description>
+	</channel-type>
+	<channel-type id="fgPrevFalsePositive">
+		<item-type>Contact</item-type>
+		<label>@text/channel.previousFalsePositive</label>
+		<description>@text/channel.previousFalsePositive.description</description>
+	</channel-type>
+	<channel-type id="fgPrevStartTime">
+		<item-type>DateTime</item-type>
+		<label>@text/channel.previousStartTime</label>
+		<description>@text/channel.previousStartTime.description</description>
+	</channel-type>
+	<channel-type id="fgPrevEndTime">
+		<item-type>DateTime</item-type>
+		<label>@text/channel.previousEndTime</label>
+		<description>@text/channel.previousEndTime.description</description>
+	</channel-type>
+	<channel-type id="fgPrevScore">
+		<item-type>Number</item-type>
+		<label>@text/channel.previousScore</label>
+		<description>@text/channel.previousScore.description</description>
+	</channel-type>
+	<channel-type id="fgPrevBox">
+		<item-type>String</item-type>
+		<label>@text/channel.previousBoxCoordinates</label>
+		<description>@text/channel.previousBoxCoordinates.description</description>
+	</channel-type>
+	<channel-type id="fgPrevArea">
+		<item-type>Number</item-type>
+		<label>@text/channel.previousDetectedArea</label>
+		<description>@text/channel.previousDetectedArea.description</description>
+	</channel-type>
+	<channel-type id="fgPrevRatio">
+		<item-type>Number</item-type>
+		<label>@text/channel.previousDetectedRatio</label>
+		<description>@text/channel.previousDetectedRatio.description</description>
+	</channel-type>
+	<channel-type id="fgPrevRegion">
+		<item-type>String</item-type>
+		<label>@text/channel.previousDetectedRegions</label>
+		<description>@text/channel.previousDetectedRegions.description</description>
+	</channel-type>
+	<channel-type id="fgPrevCurrentZone">
+		<item-type>String</item-type>
+		<label>@text/channel.previousCurrentZones</label>
+		<description>@text/channel.previousCurrentZones.description</description>
+	</channel-type>
+	<channel-type id="fgPrevEnteredZone">
+		<item-type>String</item-type>
+		<label>@text/channel.previousEnteredZones</label>
+		<description>@text/channel.previousEnteredZones.description</description>
+	</channel-type>
+	<channel-type id="fgPrevHasSnapshot">
+		<item-type>Contact</item-type>
+		<label>@text/channel.previousSnapshotAvailable</label>
+		<description>@text/channel.previousSnapshotAvailable.description</description>
+	</channel-type>
+	<channel-type id="fgPrevHasClip">
+		<item-type>Contact</item-type>
+		<label>@text/channel.previousClipAvailable</label>
+		<description>@text/channel.previousClipAvailable.description</description>
+	</channel-type>
+	<channel-type id="fgPrevStationary">
+		<item-type>Contact</item-type>
+		<label>@text/channel.previousObjectStationary</label>
+		<description>@text/channel.previousObjectStationary.description</description>
+	</channel-type>
+	<channel-type id="fgPrevMotionlessCount">
+		<item-type>Number</item-type>
+		<label>@text/channel.previousFramesMotionless</label>
+		<description>@text/channel.previousFramesMotionless.description</description>
+	</channel-type>
+	<channel-type id="fgPrevPositionChanges">
+		<item-type>Number</item-type>
+		<label>@text/channel.previousPositionChanges</label>
+		<description>@text/channel.previousPositionChanges.description</description>
+	</channel-type>
+
+	<!-- Event: channels relating to the current state -->
+
+	<channel-type id="fgCurFrameTime">
+		<item-type>DateTime</item-type>
+		<label>@text/channel.currentFrameTime</label>
+		<description>@text/channel.currentFrameTime.description</description>
+	</channel-type>
+	<channel-type id="fgCurSnapshotTime">
+		<item-type>DateTime</item-type>
+		<label>@text/channel.currentSnapshotTime</label>
+		<description>@text/channel.currentSnapshotTime.description</description>
+	</channel-type>
+	<channel-type id="fgCurLabel">
+		<item-type>String</item-type>
+		<label>@text/channel.currentDetectedEntity</label>
+		<description>@text/channel.currentDetectedEntity.description</description>
+	</channel-type>
+	<channel-type id="fgCurSubLabel">
+		<item-type>String</item-type>
+		<label>@text/channel.currentDetectedSublabel</label>
+		<description>@text/channel.currentDetectedSublabel.description</description>
+	</channel-type>
+	<channel-type id="fgCurTopScore">
+		<item-type>Number</item-type>
+		<label>@text/channel.currentTopScore</label>
+		<description>@text/channel.currentTopScore.description</description>
+	</channel-type>
+	<channel-type id="fgCurFalsePositive">
+		<item-type>Contact</item-type>
+		<label>@text/channel.currentFalsePositive</label>
+		<description>@text/channel.currentFalsePositive.description</description>
+	</channel-type>
+	<channel-type id="fgCurStartTime">
+		<item-type>DateTime</item-type>
+		<label>@text/channel.currentStartTime</label>
+		<description>@text/channel.currentStartTime.description</description>
+	</channel-type>
+	<channel-type id="fgCurEndTime">
+		<item-type>DateTime</item-type>
+		<label>@text/channel.currentEndTime</label>
+		<description>@text/channel.currentEndTime.description</description>
+	</channel-type>
+	<channel-type id="fgCurScore">
+		<item-type>Number</item-type>
+		<label>@text/channel.currentScore</label>
+		<description>@text/channel.currentScore.description</description>
+	</channel-type>
+	<channel-type id="fgCurBox">
+		<item-type>String</item-type>
+		<label>@text/channel.currentBoxCoordinates</label>
+		<description>@text/channel.currentBoxCoordinates.description</description>
+	</channel-type>
+	<channel-type id="fgCurArea">
+		<item-type>Number</item-type>
+		<label>@text/channel.currentDetectedArea</label>
+		<description>@text/channel.currentDetectedArea.description</description>
+	</channel-type>
+	<channel-type id="fgCurRatio">
+		<item-type>Number</item-type>
+		<label>@text/channel.currentDetectedRatio</label>
+		<description>@text/channel.currentDetectedRatio.description</description>
+	</channel-type>
+	<channel-type id="fgCurRegion">
+		<item-type>String</item-type>
+		<label>@text/channel.currentDetectedRegions</label>
+		<description>@text/channel.currentDetectedRegions.description</description>
+	</channel-type>
+	<channel-type id="fgCurCurrentZone">
+		<item-type>String</item-type>
+		<label>@text/channel.currentCurrentZones</label>
+		<description>@text/channel.currentCurrentZones.description</description>
+	</channel-type>
+	<channel-type id="fgCurEnteredZone">
+		<item-type>String</item-type>
+		<label>@text/channel.currentEnteredZones</label>
+		<description>@text/channel.currentEnteredZones.description</description>
+	</channel-type>
+	<channel-type id="fgCurHasSnapshot">
+		<item-type>Contact</item-type>
+		<label>@text/channel.currentSnapshotAvailable</label>
+		<description>@text/channel.currentSnapshotAvailable.description</description>
+	</channel-type>
+	<channel-type id="fgCurHasClip">
+		<item-type>Contact</item-type>
+		<label>@text/channel.currentClipAvailable</label>
+		<description>@text/channel.currentClipAvailable.description</description>
+	</channel-type>
+	<channel-type id="fgCurStationary">
+		<item-type>Contact</item-type>
+		<label>@text/channel.currentObjectStationary</label>
+		<description>@text/channel.currentObjectStationary.description</description>
+	</channel-type>
+	<channel-type id="fgCurMotionlessCount">
+		<item-type>Number</item-type>
+		<label>@text/channel.currentFramesMotionless</label>
+		<description>@text/channel.currentFramesMotionless.description</description>
+	</channel-type>
+	<channel-type id="fgCurPositionChanges">
+		<item-type>Number</item-type>
+		<label>@text/channel.currentPositionChanges</label>
+		<description>@text/channel.currentPositionChanges.description</description>
+	</channel-type>
+</thing:thing-descriptions>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<thing:thing-descriptions bindingId="mqtt"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:thing="https://openhab.org/schemas/thing-description/v1.0.0"
+	xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description-1.0.0.xsd">
+
+	<!-- Frigate server 'thing' -->
+	<thing-type id="frigateServer">
+
+		<supported-bridge-type-refs>
+			<bridge-type-ref id="broker"/>
+		</supported-bridge-type-refs>
+
+		<label>@text/thing.label.server</label>
+		<description>@text/thing.description.server</description>
+
+		<channels>
+			<channel id="fgAPIVersion" typeId="fgAPIVersion"/>
+			<channel id="fgUI" typeId="fgUI"/>
+		</channels>
+		<config-description-ref uri="thing-type:mqtt:Server"/>
+	</thing-type>
+
+	<channel-type id="fgAPIVersion">
+		<item-type>String</item-type>
+		<label>@text/channel.APIVersion</label>
+		<description>@text/channel.APIVersion.description</description>
+	</channel-type>
+	<channel-type id="fgUI">
+		<item-type>String</item-type>
+		<label>@text/channel.UIURL</label>
+		<description>@text/channel.UIURL.description</description>
+	</channel-type>
+
+</thing:thing-descriptions>
