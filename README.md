@@ -4,6 +4,8 @@ This is a comprehensive binding for the Frigate SVR system (https://docs.frigate
 cameras, and realtime event information from the cameras can be used in rules. It tracks Frigate server status and can alert
 if the Frigate server goes offline.
 
+_For build instructions see the 'Building' section below_
+
 The binding supports:
 
 - multiple Frigate server instances
@@ -209,4 +211,34 @@ actions:
         items.getItem("PersonCount").postUpdate(this.map.size);
     type: script.ScriptAction
 ```
+
+# Building
+
+Conventional openHAB wisdom is to fork the complete add-on repository and work from there - but Java is noisy and busy enough without duplicating yet more 'stuff' that I am not planning to work on. There are also issues then in making it clear on initial visit to this repository exactly what this repository contains. So I am managing here only the part I am actually developing. Thus: the build process is as follows:
+
+- Change to an empty directory in which you want to build.
+- Pull the openhab-addons repository from openHAB
+- Pull this repository using 'git submodule' into the 'bundles' directory of the openhab-addons directory, keeping the org.openhab.binding.mqtt.frigatesvr directory name (I guess you could use 'git subtree' if you wished?).
+- Open the openhab-addons/bundles/pom.xml file in an editor:
+  - Firstly check the version number at the top of the file in the <parent> hierarchy - do not change this but copy it somwehere.
+  - In the <modules> section, add <module>org.openhab.binding.mqtt.frigatesvr</module>
+- Open the bundles/org.openhab.binding.mqtt.frigatesvr/pom.xml
+  - Check the version in the <parent> hierarchy. If it is not the same as that noted earlier from the bundles/pom.xml file, then change it so that it is (it most likely will not be as openHAB develops). If the numbers are not the same you will get a build error. Save file if changed
+- In the openhab-addons directory, start the build.
+
+In Linux, the steps are:
+
+- git pull https://github.com/openhab/openhab-addons.git
+- cd openhab-addons/bundles
+- git submodule add https://github.com/jgow/org.openhab.binding.mqtt.frigatesvr.git
+- cd ..
+- vi bundles/pom.xml   (note the build version, add the <module>org.openhab.binding.mqtt.frigatesvr</module> to the module section and save.
+- vi bundles/org.openhab.binding.mqtt.frigatesvr/pom.xml (check that the version matches above, change to ensure that it is)
+- mvn clean install -pl :org.openhab.binding.mqtt.frigatesvr
+
+Once the build is complete, the .jar will be found in bundles/org.openhab.binding.mqtt.frigatesvr/target. Copy this .jar to the add-ons directory on your running openHAB environment. Enjoy.
+
+# Releases
+
+If you do not want to build it yourself, I do provide occasional snapshot releases as .jar builds. See 'Releases' for more details
 
