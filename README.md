@@ -1,4 +1,4 @@
-# frigateSVR Binding
+# OpenHAB Frigate SVR Binding
 
 This is a comprehensive binding for the Frigate SVR system (https://docs.frigate.video/). It allows access to all configured
 cameras, and realtime event information from the cameras can be used in rules. It tracks Frigate server status and can alert
