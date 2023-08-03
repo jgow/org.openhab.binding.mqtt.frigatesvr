@@ -159,17 +159,17 @@ public class frigateSVRChannelState {
 
     public State toState(@Nullable String s) {
         if (s != null) {
-            logger.info("Channel - updating state to :{}", s);
+            logger.debug("Channel - updating state to :{}", s);
             this.state = ConvertToState.fromString(s);
         } else {
-            logger.info("Channel - updating state to NULL");
+            logger.debug("Channel - updating state to NULL");
             this.state = UnDefType.NULL;
         }
         return this.state;
     }
 
     public State toStateFromRaw(byte[] b, String mimetype) {
-        logger.info("Channel - updating raw type");
+        logger.debug("Channel - updating raw type");
         this.state = new RawType(b, mimetype);
         return this.state;
     }
