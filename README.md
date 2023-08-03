@@ -190,7 +190,6 @@ actions:
         if(this.map == undefined) {
           this.map=new Map();
         }
-git pull https://github.com/openhab/openhab-addons.git
         var entity=items.getItem("Camera__Main_Current_Detected_Entity").state;
         var type=items.getItem("Camera__Main_Current_Event_Type").state;
         var id=items.getItem("Camera__Main_Current_Event_ID").state;
