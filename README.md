@@ -99,8 +99,8 @@ Note that for the camera Thing, both configuration fields are completed automati
 
 | Channel        | Type   | Read/Write  | Description                                                           |
 |----------------|--------|-------------|-----------------------------------------------------------------------|
-| API version    | String | R/O         | Version of the Frigate API being used                                 |
-| Frigate UI URL | String | R/O         | URL to the Frigate UI for this server (useful for openHAB UI widgets) |
+| fgAPIVersion   | String | R/O         | Version of the Frigate API being used                                 |
+| fgUI           | String | R/O         | URL to the Frigate UI for this server (useful for openHAB UI widgets) |
 
 
 ### `frigateSVR Camera` 'Thing' Channels
@@ -216,10 +216,10 @@ actions:
 Conventional openHAB wisdom is to fork the complete add-on repository and work from there - but Java is noisy and busy enough without duplicating yet more 'stuff' that I am not planning to work on. There are also issues then in making it clear on initial visit to this repository exactly what this repository contains. So I am managing here only the part I am actually developing. Thus: the build process is as follows:
 
 - Change to an empty directory in which you want to build.
-- Pull the openhab-addons repository from openHAB
-- Pull this repository using 'git submodule' into the 'bundles' directory of the openhab-addons directory, keeping the org.openhab.binding.mqtt.frigatesvr directory name (I guess you could use 'git subtree' if you wished?).
+- Clone the openhab-addons repository from openHAB
+- Using 'git submodule', import the FrigateSVR repository into the 'bundles' subdirectory of the openhab-addons directory, keeping the org.openhab.binding.mqtt.frigatesvr directory name (I guess you could use 'git subtree' if you wished?).
 - Open the openhab-addons/bundles/pom.xml file in an editor:
-  - Firstly check the version number at the top of the file in the `<parent>` hierarchy - do not change this but copy it somwehere.
+  - Firstly check the version number at the top of the file in the `<parent>` hierarchy - do not change this but copy it somewhere.
   - In the `<modules>` section, add `<module>org.openhab.binding.mqtt.frigatesvr</module>`
 - Open the bundles/org.openhab.binding.mqtt.frigatesvr/pom.xml
   - Check the version in the `<parent>` hierarchy. If it is not the same as that noted earlier from the bundles/pom.xml file, then change it so that it is (it most likely will not be as openHAB develops). If the numbers are not the same you will get a build error. Save file if changed
