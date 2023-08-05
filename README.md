@@ -26,7 +26,10 @@ Frigate detection events fall into three types: 'new', 'update', and 'end'. When
 
 Frigate sends events as a delta - the event packet contains information pertaining to both the previous state (before the event occurred - denoted 'previous' in the camera channel descriptions) and information relating to the current state (denoted 'current' in the camera channel descriptions). This allows openHAB rules to make an intelligent decision based upon changes to the 'picture' seen by the cameras, with Frigate itself responsible for all the detection and image processing. 
 
-The binding does not process or proxy video streams in and of itself; Frigate does all of the 'heavy lifting', including the object detection. Similarly, the management, viewing and downloading of actual video clips is more appropriately carried out by a UI - either Frigate's own UI or a UI widget integrated into OpenHAB - Frigate provides a rich REST API with which to facilitate such a design and this should be leveraged directly by a UI designer should an OpenHAB UI element wish to incorporate these features. It is clearly necessary for the openHAB instance to be able to communicate with the Frigate instance, however for UI purposes and depending on the topology of your network it may be desirable to pass part of the Frigate API through a reverse proxy so that it is accessible remotely. This binding does *not* provide these features either, as there is much more appropriate open-source software available to provide this if needed (e.g. one of the Apache web servers).
+The binding does not process or proxy video streams in and of itself; Frigate does all of the 'heavy lifting', including the object detection. Similarly, the management, viewing and downloading of actual video clips is more appropriately carried out by a UI - either Frigate's own UI or a UI widget integrated into OpenHAB - Frigate provides a rich REST API with which to facilitate such a design and this should be leveraged directly by a UI designer should an OpenHAB UI element wish to incorporate these features. You can find an example of how to display Frigate camera streams on the OpenHAB UI towards the end of this document, [here](#displaying-Frigate-camera-video-streams-on-openHAB-ui---an-example).
+
+
+It is clearly necessary for the openHAB instance to be able to communicate with the Frigate instance, however for UI purposes and depending on the topology of your network it may be desirable to pass part of the Frigate API through a reverse proxy so that it is accessible remotely. This binding does *not* provide these features either, as there is much more appropriate open-source software available to provide this if needed (e.g. one of the Apache web servers).
 
 That having been said, the frigateSVR binding provides a *lot* of openHAB channels that can be used in a multitude of ways. Further information can be obtained through perusal of the Frigate documentation - the channel mapping is logical and follows the Frigate specifications - there should be no surprises. However, the architecture of this binding is slightly different from usual and the following section provides an overview.
 
@@ -210,6 +213,19 @@ actions:
         items.getItem("PersonCount").postUpdate(this.map.size);
     type: script.ScriptAction
 ```
+## Displaying Frigate camera video streams on OpenHAB UI - an example
+
+As stated earlier in this document - with the exception of the snapshots overlaid with the detected entity information, this binding does not process video streams. There are already mechanisms available that allow for the display of the clean video coming from the camera. Frigate exports RTSP streams from each camera - here's how these may be displayed in the OpenHAB UI:
+
+- Install the 'ipcamera' binding, available from openHAB.
+- Ensure you have a version of ffmpeg installed on your OpenHAB box that has access to the appropriate codecs (e.g. h264) - for example I use openSuSE, so had to install the 'Packman' version of ffmpeg in order to get the necessary codecs. There should be a similar source of codecs for your distribution of choice.
+- Instantiate one 'ipcamera' 'thing' for each Frigate camera you would like to display the stream for.
+- Frigate exports RTSP streams for each camera on `http://<frigate-server>:8554/<camera-name>` . In the configuration of the 'ipcamera' 'thing', insert this RTSP URL in the 'FFmpeg Input' field under the 'FFmpeg settings' header.
+- Insert the IP address of the Frigate server into the  'IP Address' field under the 'Main Settings'. This is not strictly needed, but the 'ipcamera' binding will not allow the configuration to proceed without it.
+- Once the ipcamera 'thing' is created, it exposes a channel called 'MJPEG URL'. If this is attached to an 'Item'; the state of this String 'Item' is a URL to an MJPEG stream of the video
+- Create your chosen widget on the UI, for example 'Web Frame Card', and point it at the above MJPEG URL, preferably by using an expression to access the item state as per OpenHAB documentation.
+
+You should then see the video stream in the UI widget. This will be a 'clean' video stream from the camera - there will be no overlays on object detection etc. The snapshots exposed by the frigateSVR binding _will_ show the overlays on detection of objects.
 
 # Building
 
@@ -225,7 +241,7 @@ Conventional openHAB wisdom is to fork the complete add-on repository and work f
   - Check the version in the `<parent>` hierarchy. If it is not the same as that noted earlier from the bundles/pom.xml file, then change it so that it is (it most likely will not be as openHAB develops). If the numbers are not the same you will get a build error. Save file if changed
 - In the openhab-addons directory, start the build.
 
-In Linux, the steps are:
+On Linux, the steps are:
 
 - `git clone https://github.com/openhab/openhab-addons.git`
 - `cd openhab-addons/bundles`
