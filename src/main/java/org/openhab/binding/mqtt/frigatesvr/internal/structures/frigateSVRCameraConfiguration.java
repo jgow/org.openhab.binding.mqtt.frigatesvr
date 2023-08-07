@@ -27,4 +27,7 @@ public class frigateSVRCameraConfiguration {
      */
     public String serverID = "";
     public String cameraName = "";
+    public boolean enableStream = true;
+    public String ffmpegLocation = "";
+    public String ffmpegCommands = "";
 }

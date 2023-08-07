@@ -85,6 +85,7 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
         this.svrState.status = "offline";
         this.svrState.topicPrefix = "frigate";
         this.svrState.url = this.httpHelper.getBaseURL();
+        this.svrState.rtspbase = this.httpHelper.getHost() + ":8554";
         this.svrState.Cameras = new ArrayList<>();
 
         super.initialize();
@@ -354,8 +355,8 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
                     updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
                             "@text/error.serveroffline");
                     this.svrState.status = "offline";
-                    MQTTConnection.publish(this.svrTopicPrefix + "/status", this.svrState.GetJsonString().getBytes(), 1,
-                            false);
+                    ((@NonNull MqttBrokerConnection) this.MQTTConnection).publish(this.svrTopicPrefix + "/status",
+                            this.svrState.GetJsonString().getBytes(), 1, false);
                 }
             }
         }

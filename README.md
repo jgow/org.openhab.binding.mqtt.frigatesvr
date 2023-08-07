@@ -213,6 +213,7 @@ actions:
         items.getItem("PersonCount").postUpdate(this.map.size);
     type: script.ScriptAction
 ```
+
 ## Displaying Frigate camera video streams on OpenHAB UI - an example
 
 As stated earlier in this document - with the exception of the snapshots overlaid with the detected entity information, this binding does not process video streams. There are already mechanisms available that allow for the display of the clean video coming from the camera. Frigate exports RTSP streams from each camera - here's how these may be displayed in the OpenHAB UI:

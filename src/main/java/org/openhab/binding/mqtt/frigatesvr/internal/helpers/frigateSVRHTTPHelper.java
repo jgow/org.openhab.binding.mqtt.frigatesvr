@@ -72,6 +72,15 @@ public class frigateSVRHTTPHelper {
         }
     }
 
+    public String getHost() {
+        try {
+            URL url = new URL(baseurl);
+            return url.getHost();
+        } catch (Exception e) {
+            return new String("");
+        }
+    }
+
     private String buildURL(String request) {
         StringBuilder sb = new StringBuilder();
         return sb.append(baseurl).append(request).toString();

@@ -57,6 +57,8 @@ public class frigateSVRBindingConstants {
     public static final String CHANNEL_EVENT_TYPE = "fgEventType";
     public static final String CHANNEL_EVENT_ID = "fgEventID";
     public static final String CHANNEL_EVENT_CLIP_URL = "fgEventClipURL";
+    public static final String CHANNEL_MJPEG_URL = "fgMJPEGURL";
+
     public static final String CHANNEL_LAST_SNAPSHOT_OBJECT = "fgLastSnapshotObject";
     public static final String CHANNEL_LAST_SNAPSHOT = "fgLastSnapshot";
 
@@ -127,4 +129,7 @@ public class frigateSVRBindingConstants {
     public static final String CONF_ID_CAMNAME = "cameraName";
     public static final String CONF_ID_SERVERURL = "serverURL";
     public static final String CONF_ID_SERVERID = "serverID";
+    public static final String CONF_ID_ENABLESTREAM = "enableStream";
+    public static final String CONF_ID_FFMPEGLOCATION = "ffmpegLocation";
+    public static final String CONF_ID_FFMPEGCOMMANDS = "ffmpegCommands";
 }

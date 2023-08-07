@@ -21,6 +21,7 @@ import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.client.HttpClient;
+import org.openhab.binding.mqtt.frigatesvr.internal.helpers.frigateSVRFFmpegHelper;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRCameraConfiguration;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRChannelState;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRServerState;
@@ -51,6 +52,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     private frigateSVRServerState svrState = new frigateSVRServerState();
     private @Nullable String svrTopicPrefix;
     private String cameraTopicPrefix = new String();
+    private frigateSVRFFmpegHelper ffmpegHelper = new frigateSVRFFmpegHelper();
 
     // makes for easy change if Frigate ever extend the API
     //
@@ -297,8 +299,11 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
                 Map.entry(CHANNEL_LAST_SNAPSHOT_OBJECT,
                         new frigateSVRChannelState("", frigateSVRChannelState::fromStringMQTT,
                                 frigateSVRChannelState::toStringMQTT, false)),
-                Map.entry(CHANNEL_LAST_SNAPSHOT, new frigateSVRChannelState("",
-                        frigateSVRChannelState::fromNoConversion, frigateSVRChannelState::toNoConversion, false)));
+                Map.entry(CHANNEL_LAST_SNAPSHOT,
+                        new frigateSVRChannelState("", frigateSVRChannelState::fromNoConversion,
+                                frigateSVRChannelState::toNoConversion, false)),
+                Map.entry(CHANNEL_MJPEG_URL, new frigateSVRChannelState("", frigateSVRChannelState::fromStringMQTT,
+                        frigateSVRChannelState::toStringMQTT, false)));
     }
 
     @Override
@@ -365,6 +370,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
 
             if ((this.svrState.status.equals("online")) && (newState.status.equals("offline"))) {
 
+                this.ffmpegHelper.StopStream();
                 UnsubscribeMQTTTopics(this.svrState.topicPrefix);
                 this.svrState.status = "offline";
                 logger.debug("offlining device");
@@ -387,6 +393,25 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
                     this.svrState = newState;
                     this.cameraTopicPrefix = this.svrState.topicPrefix + "/" + config.cameraName + "/";
                     SubscribeMQTTTopics(this.svrState.topicPrefix);
+                    if (this.config.enableStream) {
+                        String ffmpegSource = this.svrState.rtspbase + "/" + this.config.cameraName;
+                        String ffmpegDest = "http://127.0.0.1:8080/frigateSVR/" + this.config.cameraName;
+                        this.ffmpegHelper.BuildFFMPEGCommand(this.config.ffmpegLocation, ffmpegSource, ffmpegDest,
+                                this.config.ffmpegCommands);
+                        this.ffmpegHelper.StartStream();
+                        if (this.ffmpegHelper.isRunning()) {
+                            updateState(CHANNEL_MJPEG_URL,
+                                    ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_MJPEG_URL))
+                                            .toState(ffmpegDest));
+                        } else {
+                            updateState(CHANNEL_MJPEG_URL,
+                                    ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_MJPEG_URL))
+                                            .toState(null));
+                        }
+                    } else {
+                        updateState(CHANNEL_MJPEG_URL,
+                                ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_MJPEG_URL)).toState(null));
+                    }
                     updateStatus(ThingStatus.ONLINE);
                 } else {
                     logger.info("Camera {} not found in list", this.config.cameraName);

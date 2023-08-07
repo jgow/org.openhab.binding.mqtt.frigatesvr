@@ -18,8 +18,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.mqtt.frigatesvr.internal.handlers.frigateSVRServerHandler;
 import org.openhab.core.config.discovery.AbstractDiscoveryService;
 import org.openhab.core.config.discovery.DiscoveryResult;
@@ -64,7 +64,7 @@ public class frigateSVRCameraDiscoveryService extends AbstractDiscoveryService {
                     // build a new ThingID for the discovered cameras
 
                     String camUIDstring = cam + "-" + serverHandler.GetHostAndPort();
-                    ThingUID newThing = new ThingUID(THING_TYPE_CAMERA, (@NonNull ThingUID) bridgeID, camUIDstring);
+                    ThingUID newThing = new ThingUID(THING_TYPE_CAMERA, (@Nullable ThingUID) bridgeID, camUIDstring);
 
                     // build the config block
 

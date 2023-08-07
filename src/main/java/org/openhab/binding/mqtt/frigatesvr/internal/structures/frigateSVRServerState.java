@@ -32,6 +32,8 @@ public class frigateSVRServerState {
     public String status = "offline"; // event id
     @SerializedName("url")
     public String url = ""; // camera name
+    @SerializedName("rtspbase")
+    public String rtspbase = "";
     @SerializedName("topicPrefix")
     public String topicPrefix = "";
     @SerializedName("Cameras")
