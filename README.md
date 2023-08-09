@@ -26,7 +26,9 @@ Frigate detection events fall into three types: 'new', 'update', and 'end'. When
 
 Frigate sends events as a delta - the event packet contains information pertaining to both the previous state (before the event occurred - denoted 'previous' in the camera channel descriptions) and information relating to the current state (denoted 'current' in the camera channel descriptions). This allows openHAB rules to make an intelligent decision based upon changes to the 'picture' seen by the cameras, with Frigate itself responsible for all the detection and image processing. 
 
-The binding does not process or proxy video streams in and of itself; Frigate does all of the 'heavy lifting', including the object detection. Similarly, the management, viewing and downloading of actual video clips is more appropriately carried out by a UI - either Frigate's own UI or a UI widget integrated into OpenHAB - Frigate provides a rich REST API with which to facilitate such a design and this should be leveraged directly by a UI designer should an OpenHAB UI element wish to incorporate these features. You can find an example of how to display Frigate camera streams on the OpenHAB UI towards the end of this document, [here](#displaying-Frigate-camera-video-streams-on-openHAB-ui---an-example).
+Prior to binding version 1.5, the binding did not handle video in any way. However, starting with binding version 1.5 - video streams are now available directly from a servlet on the openHAB instance. This makes use of the Frigate rtsp stream exports, and internally the binding uses a very similar mechanism to the 'ipcamera' binding to allow them to be rendered locally. That having been said, it is recommended that this facility be used only for low resolution streams as otherwise network and CPU loads may become intolerable.
+
+Frigate does all of the 'heavy lifting', including the object detection. Similarly, the management, viewing and downloading of actual video clips is more appropriately carried out by a UI - either Frigate's own UI or a UI widget integrated into OpenHAB - Frigate provides a rich REST API with which to facilitate such a design and this should be leveraged directly by a UI designer should an OpenHAB UI element wish to incorporate these features. You can find an example of how to display Frigate camera streams on the OpenHAB UI towards the end of this document, [here](#displaying-Frigate-camera-video-streams-on-openHAB-ui---an-example).
 
 
 It is clearly necessary for the openHAB instance to be able to communicate with the Frigate instance, however for UI purposes and depending on the topology of your network it may be desirable to pass part of the Frigate API through a reverse proxy so that it is accessible remotely. This binding does *not* provide these features either, as there is much more appropriate open-source software available to provide this if needed (e.g. one of the Apache web servers).
@@ -79,22 +81,42 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 
 ### `frigateSVR Server` 'Thing' Configuration
 
-| Name                      | Type    | Description                           | Default | Required | Advanced |
-|---------------------------|---------|---------------------------------------|---------|----------|----------|
-| Frigate server URL        | text    | URL to the running Frigate server     | N/A     | yes      | no       |
-| Frigate server client ID  | text    | 'clientID' parameter in Frigate       | N/A     | no       | no       |
-| Server keepalive interval | integer | Interval the device is polled in sec. | 5       | yes      | yes      |
+| Name             | Type    | Description                            | Default               | Required | Advanced |
+|------------------|---------|----------------------------------------|-----------------------|----------|----------|
+| serverURL        | text    | URL to the running Frigate server      | N/A                   | yes      | no       |
+| serverClientID   | text    | 'clientID' parameter in Frigate config | N/A                   | no       | no       |
+| serverKeepAlive  | integer | Interval the device is polled in sec.  | 5                     | yes      | no       |
+| enableStream     | boolean | Enable the internal stream server      | true                  | yes      | no       |
+| streamWhitelist  | text    | List of IPs allowed to connect         | DISABLE               | no       | yes      |    
+| ffmpegLocation   | text    | Location of ffmpeg binary              | /usr/bin/ffmpeg       | yes      | yes      |
+| ffmpegCommands   | text    | Additional ffmpeg commands             | -q:v 5 -r 2 -update 1 | no       | yes      |
 
-In most instances, only the 'Frigate server URL' needs to be added manually. This should be the base URL to the Frigate server.
+#### Notes:
+
+- In most instances, only the 'Frigate server URL' needs to be added manually. This should be the base URL to the Frigate server.
+- The 'serverClientID' should be set to the same client ID as is set in your Frigate configuration.
+- if there are no UI streams requested, there is virtually no additional CPU or network load increase by setting 'enableStream' to true
+- the 'streamWhiteList' is a space-separated string of IP addresses that will be accepted by the stream server. Set to 'DISABLE' to disable completely, allowing connections from anywhere.
+- the 'ffmpeglocation' refers to the location of ffmpeg on the device running the openHAB instance.
+- 'ffmpegCommands' is configured not to scale the birdseye view as this is not a high resolution stream usually. It can be modified: see the section below where the individual cameras have a similar property.
 
 ### `frigateSVR Camera` 'Thing' Configuration
 
-| Name                           | Type    | Description                       | Default | Required | Advanced |
-|--------------------------------|---------|-----------------------------------|---------|----------|----------|
-| Frigate camera server Thing ID | text    | Thing ID of bound Server 'Thing'  | N/A     | yes      | no       |
-| Camera name                    | text    | Camera name of Frigate camera     | N/A     | yes      | no       |
+| Name                     | Type    | Description                                   | Default | Required | Advanced |
+|--------------------------|---------|-----------------------------------------------|---------|----------|----------|
+| serverID                 | text    | Thing ID of bound Server 'Thing'              | N/A     | yes      | no       |
+| cameraName               | text    | Camera name of Frigate camera                 | N/A     | yes      | no       |
+| enableStream             | boolean | Enable the internal stream server             | true    | yes      | no       |
+| ffmpegCommands           | text    | Additional ffmpeg commands                    | -q:v 5 -r 2 -vf scale=640:-2 -update 1        | no       | yes      |
+| ffmpegCameraNameOverride | text    | Name of an alternate RTSP stream from Frigate | empty   | no       | yes      |
 
-Note that for the camera Thing, both configuration fields are completed automatically if autodiscovery is used. If not, then the 'Frigate camera server Thing ID' should be the ID of the instantiated and running frigateSVRServer 'thing' supporting the camera. The 'Camera name' is the name of the camera as it appears in the Frigate config, or the Frigate UI.
+#### Notes:
+
+- for the camera 'thing', both 'serverID' and 'cameraName' configuration fields are completed automatically if autodiscovery is used. If not, then the 'serverID' should be the ID of the instantiated and running frigateSVRServer 'thing' supporting the camera. The 'Camera name' is the name of the camera as it appears in the Frigate config, or the Frigate UI.
+- the camera streams 'whitelist' is passed in from the server 'thing' to which the camera 'thing' is bound.
+- the ffmpeg binary location is passed in from the server 'thing'.
+- the 'ffmpegCameraNameOverride' parameter is useful. If you have configured Frigate's cameras with multiple streams - say a high resolution stream for recording on Frigate and a lower resolution for detection, these streams may have a different name to the camera name. For example, using this field, you could pull in a substream running at a lower frame rate for display in openHAB to reduce network resources and CPU load. If you pass in the detection stream rather than the high resolution stream, the CPU and network load will be **much** lower than if you use the high resolution stream.
+- Similarly, if your restream from Frigate has a different name to your camera, the 'ffmpegCameraNameOverride' field is where you can specify it.
 
 ## Channels
 
@@ -104,6 +126,13 @@ Note that for the camera Thing, both configuration fields are completed automati
 |----------------|--------|-------------|-----------------------------------------------------------------------|
 | fgAPIVersion   | String | R/O         | Version of the Frigate API being used                                 |
 | fgUI           | String | R/O         | URL to the Frigate UI for this server (useful for openHAB UI widgets) |
+| fgBirdseyeURL  | String | R/O         | URL to the openHAB stream for the Frigate 'birdseye' view (if enabled)|
+
+#### Notes
+
+- the 'fgAPIVersion' is the version returned by the Frigate API
+- 'fgUI' is the base URL of the Frigate server being used
+- 'fgBirdseyeURL': if the Frigate server is set up to restream the 'birdseye' view (if in the Frigate config, 'restream: true' is set in the 'birdseye' section), and if the 'enableStream' configuration parameter on the frigateSVR server 'thing' is set true, then a stream of the 'birdseye' view can be had at this URL. If Frigate is not configured to provide this, or the 'enableStream' parameter is set to off, then this URL will be blank.
 
 
 ### `frigateSVR Camera` 'Thing' Channels
@@ -122,6 +151,7 @@ Note that for the camera Thing, both configuration fields are completed automati
 | fgMotionThreshold     | Number   | R/W         | Read/set motion detection threshold                           |
 | fgMotionContourArea   | Number   | R/W         | Read/set motion contour area                                  |
 | fgMotionDetected      | Contact  | R/O         | Motion detected                                               |
+| fgMJPEGURL            | String   | R/O         | URL to local camera stream for UIs (if enabled)               |
 | fgLastSnapshotObject  | String   | R/O         | Type of object detected in last snapshot                      |
 | fgLastSnapshot        | Image    | R/O         | Snapshot of last detected object                              |
 | fgCurrentEventType    | String   | R/O         | Current event type ('new', 'update' or 'end')                 |
@@ -167,7 +197,11 @@ Note that for the camera Thing, both configuration fields are completed automati
 | fgCurMotionlessCount  | Number   | R/O         | Current event: Number of motionless frames                    |
 | fgCurPositionChanges  | Number   | R/O         | Current event: Number of position changes                     |
 
-**Note:** 'Current event' and 'Prior to event' channels are updated with fgCurrentEventType. This ensures consistency of information passed to event handlers - there should be no 'stale' information left in any of the 'Cur' or 'Prev' channels. Note also that some of these values may change to NULL if the value on the Frigate server side is NULL. Thus, rules that wish to interrogate multiple 'cur' or 'prev' channels should trigger on changes to 'fgCurrentEventType' as this channel is updated once all other event channels have been updated. 
+#### Notes
+
+- 'Current event' and 'Prior to event' channels are updated with fgCurrentEventType. This ensures consistency of information passed to event handlers - there should be no 'stale' information left in any of the 'Cur' or 'Prev' channels. Note also that some of these values may change to NULL if the value on the Frigate server side is NULL. Thus, rules that wish to interrogate multiple 'cur' or 'prev' channels should trigger on changes to 'fgCurrentEventType' as this channel is updated once all other event channels have been updated.
+- the event and control channels follow the Frigate documentation and there should be no surprises here.
+- 'fgMJPEGURL': if the configuration parameter 'enableStream' is set true, if Frigate is configured to restream cameras and if the stream is on either 'cameraName' or 'ffmpegCameraNameOverride', then 'fgMJPEGURL' will provide a URL to a locally restreamed feed of MJPEG. Note that if you select a high resolution stream from Frigate, this could significantly increase CPU and network load as the local instance will have to transcode the stream. Consider using the detection substreams at lower frame rates - these are often sufficient and will result in much lower CPU loads.
 
 ## Writing rules for FrigateSVR cameras
 
@@ -216,17 +250,21 @@ actions:
 
 ## Displaying Frigate camera video streams on OpenHAB UI - an example
 
-As stated earlier in this document - with the exception of the snapshots overlaid with the detected entity information, this binding does not process video streams. There are already mechanisms available that allow for the display of the clean video coming from the camera. Frigate exports RTSP streams from each camera - here's how these may be displayed in the OpenHAB UI:
+Versions of this binding prior to 1.5 do not handle video - but these older versions can be used with the 'ipcamera' binding to transcode restreamed video from Frigate. This was not satisfactory as it required installation of a lot of additional 'stuff' just to get the video proxy.
+If you are reading this, then the version in this tree **does** support native video and should do so with the minimum of configuration:
 
-- Install the 'ipcamera' binding, available from openHAB.
-- Ensure you have a version of ffmpeg installed on your OpenHAB box that has access to the appropriate codecs (e.g. h264) - for example I use openSuSE, so had to install the 'Packman' version of ffmpeg in order to get the necessary codecs. There should be a similar source of codecs for your distribution of choice.
-- Instantiate one 'ipcamera' 'thing' for each Frigate camera you would like to display the stream for.
-- Frigate exports RTSP streams for each camera on `http://<frigate-server>:8554/<camera-name>` . In the configuration of the 'ipcamera' 'thing', insert this RTSP URL in the 'FFmpeg Input' field under the 'FFmpeg settings' header.
-- Insert the IP address of the Frigate server into the  'IP Address' field under the 'Main Settings'. This is not strictly needed, but the 'ipcamera' binding will not allow the configuration to proceed without it.
-- Once the ipcamera 'thing' is created, it exposes a channel called 'MJPEG URL'. If this is attached to an 'Item'; the state of this String 'Item' is a URL to an MJPEG stream of the video
-- Create your chosen widget on the UI, for example 'Web Frame Card', and point it at the above MJPEG URL, preferably by using an expression to access the item state as per OpenHAB documentation.
-
-You should then see the video stream in the UI widget. This will be a 'clean' video stream from the camera - there will be no overlays on object detection etc. The snapshots exposed by the frigateSVR binding _will_ show the overlays on detection of objects.
+- Ensure you have a version of ffmpeg installed on your OpenHAB box that has access to the appropriate codecs (e.g. h264) - for example I use openSuSE, so had to install the 'Packman' version of ffmpeg in order to get the necessary codecs. There should be a similar source of codecs for your distribution of choice. Note the path of ffmpeg (usually /usr/bin/ffmpeg under Linux).
+- For cameras:
+    - Frigate exports RTSP streams for each camera on `http://<frigate-server>:8554/<stream-name>` The binding will by default look for a stream where <stream-NAME> is equal to the cameraName. If the Frigate configuration differs, ensure the desired Frigate <stream-name> is inserted in the 'ffmpegCameraNameOverride' parameter on the camera 'thing'.
+    - Ensure that the streaming is turned on using the 'enableStream' parameter on the camera 'thing'.
+    - On the frigateSVR server 'thing' check the 'ffmpegLocation' parameter points to the ffmpeg binary.
+    - If the camera is online, the 'fgMJPEGURL' channel on the camera 'thing' should contain a URL to which you can point your UI widget. You should then see the video stream in the UI widget. This will be a 'clean' video stream from the camera - there will be no overlays on object detection etc.
+    - The **snapshots** exposed by the frigateSVR binding  _will_  show the overlays on detection of objects.
+- For the 'birdseye' view:
+    - Ensure this is turned on in Frigate by having 'restream: true' in the 'birdseye' section of the Frigate config.
+    - On the server 'thing', ensure 'enableStream' is on and that the ffmpeg binary path is correct in 'ffmpegLocation'.
+    - If the stream is available, the channel 'fgBirdseyeURL' should contain a URL to point a UI widget at to display the Frigate birdseye view.
+    - The birdseye view is quite a good mechanism to look at all cameras in openHAB while minimizing CPU and network load.
 
 # Building
 

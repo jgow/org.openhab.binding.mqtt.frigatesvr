@@ -38,6 +38,10 @@ public class frigateSVRServerState {
     public String topicPrefix = "";
     @SerializedName("Cameras")
     public ArrayList<String> Cameras = new ArrayList<String>();
+    @SerializedName("whitelist")
+    public String whitelist = "DISABLED";
+    @SerializedName("ffmpegPath")
+    public String ffmpegPath = "/usr/bin/ffmpeg";
 
     public String GetJsonString() {
         return new GsonBuilder().create().toJson(this);

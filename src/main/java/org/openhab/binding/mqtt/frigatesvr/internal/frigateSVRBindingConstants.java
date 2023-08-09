@@ -40,6 +40,7 @@ public class frigateSVRBindingConstants {
     // List of all Channel ids
     public static final String CHANNEL_API_VERSION = "fgAPIVersion";
     public static final String CHANNEL_UI_URL = "fgUI";
+    public static final String CHANNEL_BIRDSEYE_URL = "fgBirdseyeURL";
 
     public static final String CHANNEL_CAM_CAMFPS = "fgCameraFPS";
     public static final String CHANNEL_CAM_PROCESSFPS = "fgCameraProcessFPS";
@@ -107,6 +108,7 @@ public class frigateSVRBindingConstants {
     // MQTT topic suffixes
     public static final String MQTT_EVENTS_SUFFIX = "events";
     public static final String MQTT_STATS_SUFFIX = "stats";
+    public static final String MQTT_KEEPALIVE_SUFFIX = "keepalive";
     public static final String MQTT_AVAILABILITY_SUFFIX = "available";
     public static final String MQTT_DETECTION_SET = "detect/set";
     public static final String MQTT_DETECTION_GET = "detect/state";

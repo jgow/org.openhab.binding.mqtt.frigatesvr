@@ -21,12 +21,13 @@
 			<description>@text/param.camera.enableStream.description</description>
 			<default>true</default>
 		</parameter>
-		<parameter name="ffmpegLocation" type="text" required="true">
-			<label>@text/param.camera.ffmpegLocation.label</label>
-			<description>@text/param.camera.ffmpegLocation.description</description>
-			<default>/usr/bin/ffmpeg</default>
+		<parameter name="ffmpegCameraNameOverride" type="text" required="false">
+			<label>@text/param.camera.ffmpegCameraNameOverride.label</label>
+			<description>@text/param.camera.ffmpegCameraNameOverride.description</description>
+			<default/>
+			<advanced>true</advanced>
 		</parameter>
-		<parameter name="ffmpegCommands" type="text" required="true">
+		<parameter name="ffmpegCommands" type="text" required="false">
 			<label>@text/param.camera.ffmpegCommands.label</label>
 			<description>@text/param.camera.ffmpegCommands.description</description>
 			<default>-q:v 5 -r 2 -vf scale=640:-2 -update 1</default>
@@ -52,5 +53,30 @@
 			<description>@text/param.server.serverKeepAlive.description</description>
 			<default>5</default>
 		</parameter>
+		<parameter name="enableStream" type="boolean" required="false">
+			<context>name</context>
+			<label>@text/param.server.enableStream.label</label>
+			<description>@text/param.server.enableStream.description</description>
+			<default>true</default>
+		</parameter>
+		<parameter name="streamWhitelist" type="text" required="false">
+			<label>@text/param.server.streamWhitelist.label</label>
+			<description>@text/param.server.streamWhitelist.description</description>
+			<default>DISABLE</default>
+			<advanced>true</advanced>
+		</parameter>
+		<parameter name="ffmpegLocation" type="text" required="true">
+			<label>@text/param.server.ffmpegLocation.label</label>
+			<description>@text/param.server.ffmpegLocation.description</description>
+			<default>/usr/bin/ffmpeg</default>
+			<advanced>true</advanced>
+		</parameter>
+		<parameter name="ffmpegCommands" type="text" required="false">
+			<label>@text/param.server.ffmpegCommands.label</label>
+			<description>@text/param.server.ffmpegCommands.description</description>
+			<default>-q:v 5 -r 2 -update 1</default>
+			<advanced>true</advanced>
+		</parameter>
+
 	</config-description>
 </config-description:config-descriptions>

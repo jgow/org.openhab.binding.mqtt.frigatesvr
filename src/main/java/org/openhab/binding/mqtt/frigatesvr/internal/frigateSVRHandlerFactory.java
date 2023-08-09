@@ -34,6 +34,7 @@ import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.http.HttpService;
 
 /**
  * The {@link mqtt.frigateSVRHandlerFactory} is responsible for creating things and thing
@@ -48,13 +49,16 @@ public class frigateSVRHandlerFactory extends BaseThingHandlerFactory {
 
     private static HttpClient httpClient = new HttpClient(); // common HTTP client
     private @Nullable ServiceRegistration<?> CameraDiscoveryServiceRegistration;
+    private final HttpService httpService;
 
     //
     // Standard stuff...
 
     @Activate
-    public frigateSVRHandlerFactory(final @Reference HttpClientFactory httpClientFactory) {
+    public frigateSVRHandlerFactory(final @Reference HttpClientFactory httpClientFactory,
+            final @Reference HttpService httpService) {
         frigateSVRHandlerFactory.httpClient = httpClientFactory.getCommonHttpClient();
+        this.httpService = httpService;
     }
 
     @Override
@@ -76,12 +80,13 @@ public class frigateSVRHandlerFactory extends BaseThingHandlerFactory {
     protected @Nullable ThingHandler createHandler(Thing thing) {
         ThingTypeUID thingTypeUID = thing.getThingTypeUID();
         if (thingTypeUID.equals(THING_TYPE_SERVER)) {
-            frigateSVRServerHandler handler = new frigateSVRServerHandler(thing, frigateSVRHandlerFactory.httpClient);
+            frigateSVRServerHandler handler = new frigateSVRServerHandler(thing, frigateSVRHandlerFactory.httpClient,
+                    httpService);
             registerCameraDiscoveryService(handler);
             return handler;
         }
         if (thingTypeUID.equals(THING_TYPE_CAMERA)) {
-            return new frigateSVRCameraHandler(thing, frigateSVRHandlerFactory.httpClient);
+            return new frigateSVRCameraHandler(thing, frigateSVRHandlerFactory.httpClient, httpService);
         }
         return null;
     }

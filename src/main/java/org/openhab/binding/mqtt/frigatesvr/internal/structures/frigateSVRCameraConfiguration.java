@@ -21,13 +21,9 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
  */
 @NonNullByDefault
 public class frigateSVRCameraConfiguration {
-
-    /**
-     * Sample configuration parameters. Replace with your own.
-     */
     public String serverID = "";
     public String cameraName = "";
     public boolean enableStream = true;
-    public String ffmpegLocation = "";
+    public String ffmpegCameraNameOverride = "";
     public String ffmpegCommands = "";
 }

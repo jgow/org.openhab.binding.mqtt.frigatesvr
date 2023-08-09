@@ -10,22 +10,23 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.mqtt.frigatesvr.internal.structures;
+package org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRServerConfig;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
+
 /**
- * The {@link mqtt.frigateSVRConfiguration} class contains fields mapping thing configuration parameters.
+ * The {@link mqtt.frigateSVRServerBirdseyeBlock} class contains fields mapping Frigate
+ * configuration parameters from the Birdseye block.
  *
  * @author J Gow - Initial contribution
  */
 @NonNullByDefault
-public class frigateSVRServerConfiguration {
-    public String serverURL = "";
-    public String serverClientID = "";
-    public int serverKeepAlive = 5;
-    public boolean enableStream = true;
-    public String streamWhitelist = "";
-    public String ffmpegLocation = "";
-    public String ffmpegCommands = "";
+public class frigateSVRServerBirdseyeBlock {
+
+    @Expose
+    @SerializedName("restream")
+    public boolean clientID = false;
 }

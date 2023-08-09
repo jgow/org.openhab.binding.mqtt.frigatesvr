@@ -24,6 +24,8 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.client.HttpClient;
 import org.openhab.binding.mqtt.frigatesvr.internal.helpers.frigateSVRHTTPHelper;
+import org.openhab.binding.mqtt.frigatesvr.internal.helpers.frigateSVRNetworkHelper;
+import org.openhab.binding.mqtt.frigatesvr.internal.servlet.frigateSVRServlet;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRChannelState;
 import org.openhab.binding.mqtt.handler.AbstractBrokerHandler;
 import org.openhab.core.io.transport.mqtt.MqttBrokerConnection;
@@ -43,10 +45,9 @@ import org.openhab.core.thing.binding.ThingHandler;
 import org.openhab.core.types.Command;
 import org.openhab.core.types.RefreshType;
 import org.openhab.core.types.State;
+import org.osgi.service.http.HttpService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.gson.JsonObject;
 
 /**
  * The {@link mqtt.frigateSVRHandlerBase} is a base class providing functionality common to the
@@ -59,15 +60,17 @@ public class frigateSVRHandlerBase extends BaseThingHandler implements MqttMessa
 
     private final Logger logger = LoggerFactory.getLogger(frigateSVRHandlerBase.class);
 
-    protected JsonObject frigateConfig = new JsonObject();
+    protected frigateSVRNetworkHelper networkHelper = new frigateSVRNetworkHelper();
     protected HttpClient httpClient;
     protected @Nullable MqttBrokerConnection MQTTConnection = null;
     protected frigateSVRHTTPHelper httpHelper = new frigateSVRHTTPHelper();
     protected Map<String, frigateSVRChannelState> Channels = new HashMap<String, frigateSVRChannelState>();
+    protected frigateSVRServlet httpServlet;
 
-    public frigateSVRHandlerBase(Thing thing, HttpClient httpClient) {
+    public frigateSVRHandlerBase(Thing thing, HttpClient httpClient, HttpService httpService) {
         super(thing);
         this.httpClient = httpClient;
+        this.httpServlet = new frigateSVRServlet(httpService);
     }
 
     @Override
@@ -75,18 +78,21 @@ public class frigateSVRHandlerBase extends BaseThingHandler implements MqttMessa
 
         // the descendant should have set the 'config' before calling this function
 
-        // set the thing status to UNKNOWN temporarily and let the background task decide for the real status.
-        // the framework is then able to reuse the resources from the thing handler initialization.
-        // we set this upfront to reliably check status updates in unit tests.
-
-        updateStatus(ThingStatus.UNKNOWN);
-
         // check we have a valid MQTT and HTTP connection
 
         this.bridgeStatusChanged(GetMQTTConnectionStatus());
     }
 
     //
+    // Cleanup.
+
+    @Override
+    public void dispose() {
+        this.httpServlet.StopServer();
+        super.dispose();
+    }
+
+    /////////////////////////////////////////////////////////////////////////
     // GetMQTTConnectionStatus
     //
     // Helper to return the status of the MQTT bridge below us.
@@ -100,7 +106,7 @@ public class frigateSVRHandlerBase extends BaseThingHandler implements MqttMessa
         }
     }
 
-    //
+    /////////////////////////////////////////////////////////////////////////
     // bridgeStatusChanged
     //
     // If the MQTT handler changes status, we check that we have both a valid
@@ -149,14 +155,7 @@ public class frigateSVRHandlerBase extends BaseThingHandler implements MqttMessa
     }
 
     //
-    // Cleanup.
-
-    @Override
-    public void dispose() {
-    }
-
-    //
-    // These next three functions are overloaded by descendants to inform
+    // These next three functions are overloaded by descendants
     //
 
     ///////////////////////////////////////////////////////////////////

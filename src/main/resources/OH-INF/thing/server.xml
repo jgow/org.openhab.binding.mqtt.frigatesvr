@@ -17,6 +17,7 @@
 		<channels>
 			<channel id="fgAPIVersion" typeId="fgAPIVersion"/>
 			<channel id="fgUI" typeId="fgUI"/>
+			<channel id="fgBirdseyeURL" typeId="fgBirdseyeURL"/>
 		</channels>
 		<config-description-ref uri="thing-type:mqtt:Server"/>
 	</thing-type>
@@ -30,6 +31,11 @@
 		<item-type>String</item-type>
 		<label>@text/channel.UIURL</label>
 		<description>@text/channel.UIURL.description</description>
+	</channel-type>
+	<channel-type id="fgBirdseyeURL">
+		<item-type>String</item-type>
+		<label>@text/channel.BirdseyeURL</label>
+		<description>@text/channel.BirdseyeURL.description</description>
 	</channel-type>
 
 </thing:thing-descriptions>

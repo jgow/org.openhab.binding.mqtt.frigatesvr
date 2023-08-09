@@ -19,9 +19,7 @@ import java.util.Map;
 
 import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.NonNullByDefault;
-import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.client.HttpClient;
-import org.openhab.binding.mqtt.frigatesvr.internal.helpers.frigateSVRFFmpegHelper;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRCameraConfiguration;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRChannelState;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRServerState;
@@ -30,6 +28,7 @@ import org.openhab.core.io.transport.mqtt.MqttMessageSubscriber;
 import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingStatus;
 import org.openhab.core.thing.ThingStatusDetail;
+import org.osgi.service.http.HttpService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,9 +49,8 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     private final Logger logger = LoggerFactory.getLogger(frigateSVRCameraHandler.class);
     private frigateSVRCameraConfiguration config = new frigateSVRCameraConfiguration();
     private frigateSVRServerState svrState = new frigateSVRServerState();
-    private @Nullable String svrTopicPrefix;
+    private String svrTopicPrefix = "frigate/";
     private String cameraTopicPrefix = new String();
-    private frigateSVRFFmpegHelper ffmpegHelper = new frigateSVRFFmpegHelper();
 
     // makes for easy change if Frigate ever extend the API
     //
@@ -127,9 +125,9 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     //
     // We build the channel map in the constructor
 
-    public frigateSVRCameraHandler(Thing thing, HttpClient httpClient) {
+    public frigateSVRCameraHandler(Thing thing, HttpClient httpClient, HttpService httpService) {
 
-        super(thing, httpClient);
+        super(thing, httpClient, httpService);
         this.Channels = Map.ofEntries(
                 Map.entry(CHANNEL_CAM_CAMFPS,
                         new frigateSVRChannelState("camera_fps", frigateSVRChannelState::fromNumberMQTT,
@@ -310,6 +308,8 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     public void initialize() {
         config = getConfigAs(frigateSVRCameraConfiguration.class);
         this.svrTopicPrefix = "frigateSVR/" + config.serverID;
+        logger.info("marking camera config pending");
+        this.SetOffline();
         updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING);
         super.initialize();
     }
@@ -327,26 +327,31 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     }
 
     ///////////////////////////////////////////////////////////////////
-    // BridgeGoingOnline
-    //
-    // A callback when the MQTT bridge is going online
-
-    protected void BridgeGoingOnline(MqttBrokerConnection connection) {
-        ((@NonNull MqttBrokerConnection) this.MQTTConnection).subscribe(this.svrTopicPrefix + "/status", this);
-        logger.debug("publishing req. for status: {}/camOnLine", this.svrTopicPrefix);
-        ((@NonNull MqttBrokerConnection) this.MQTTConnection).publish(this.svrTopicPrefix + "/camOnLine",
-                this.config.cameraName.getBytes(), 1, false);
-        updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING);
-    }
-
-    ///////////////////////////////////////////////////////////////////
     // BridgeGoingOffline
     //
     // A callback when the MQTT bridge is going offline. We just need
     // to update the state here
 
     protected void BridgeGoingOffline() {
+        this.httpServlet.StopServer();
         this.svrState.status = "offline";
+    }
+
+    ///////////////////////////////////////////////////////////////////
+    // BridgeGoingOnline
+    //
+    // A callback when the MQTT bridge is going online
+
+    protected void BridgeGoingOnline(MqttBrokerConnection connection) {
+
+        ((@NonNull MqttBrokerConnection) this.MQTTConnection).subscribe(this.svrTopicPrefix + "/status", this);
+        logger.info("publishing req. for status: {}/camOnLine", this.svrTopicPrefix);
+
+        // tell the server we are going online
+
+        ((@NonNull MqttBrokerConnection) this.MQTTConnection).publish(this.svrTopicPrefix + "/camOnLine",
+                this.config.cameraName.getBytes(), 1, false);
+        updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING);
     }
 
     ///////////////////////////////////////////////////////////////////
@@ -370,10 +375,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
 
             if ((this.svrState.status.equals("online")) && (newState.status.equals("offline"))) {
 
-                this.ffmpegHelper.StopStream();
-                UnsubscribeMQTTTopics(this.svrState.topicPrefix);
-                this.svrState.status = "offline";
-                logger.debug("offlining device");
+                SetOffline();
                 updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, "Frigate server went offline");
 
             }
@@ -382,41 +384,62 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
 
             if ((this.svrState.status.equals("offline")) && (newState.status.equals("online"))) {
 
-                logger.debug("server going online: Number of cams: {}", newState.Cameras.size());
+                logger.info("server going online: Number of cams: {}", newState.Cameras.size());
 
                 for (String cam : newState.Cameras) {
                     logger.debug("have camera {}", cam);
                 }
+
                 // check that the camera is indeed one of ours:
                 if (newState.Cameras.contains(this.config.cameraName)) {
                     // we are ok.
+
                     this.svrState = newState;
                     this.cameraTopicPrefix = this.svrState.topicPrefix + "/" + config.cameraName + "/";
+
+                    // subscribe to MQTT, start the camera stream, and flag us online
+
                     SubscribeMQTTTopics(this.svrState.topicPrefix);
-                    if (this.config.enableStream) {
-                        String ffmpegSource = this.svrState.rtspbase + "/" + this.config.cameraName;
-                        String ffmpegDest = "http://127.0.0.1:8080/frigateSVR/" + this.config.cameraName;
-                        this.ffmpegHelper.BuildFFMPEGCommand(this.config.ffmpegLocation, ffmpegSource, ffmpegDest,
-                                this.config.ffmpegCommands);
-                        this.ffmpegHelper.StartStream();
-                        if (this.ffmpegHelper.isRunning()) {
-                            updateState(CHANNEL_MJPEG_URL,
-                                    ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_MJPEG_URL))
-                                            .toState(ffmpegDest));
-                        } else {
-                            updateState(CHANNEL_MJPEG_URL,
-                                    ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_MJPEG_URL))
-                                            .toState(null));
-                        }
-                    } else {
-                        updateState(CHANNEL_MJPEG_URL,
-                                ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_MJPEG_URL)).toState(null));
-                    }
+                    StartCameraStream();
                     updateStatus(ThingStatus.ONLINE);
                 } else {
                     logger.info("Camera {} not found in list", this.config.cameraName);
                 }
             }
+        }
+    }
+
+    ///////////////////////////////////////////////////////////////////
+    // StartCameraStream
+    //
+    // If camera local stream is enabled, then start it.
+
+    private void StartCameraStream() {
+        if (this.config.enableStream == true) {
+
+            String ffmpegSource = this.svrState.rtspbase + "/";
+
+            if (this.config.ffmpegCameraNameOverride.equals("")) {
+                ffmpegSource += this.config.cameraName;
+            } else {
+                ffmpegSource += this.config.ffmpegCameraNameOverride;
+            }
+
+            String serverBase = new String("/frigateSVR/") + this.getThing().getUID().getId();
+            String transcodedPath = new String("http://127.0.0.1:8080") + serverBase + "/frigate-in.jpg";
+            String viewURL = this.networkHelper.GetHostBaseURL() + serverBase + "/camera";
+
+            this.httpServlet.SetWhitelist(this.svrState.whitelist);
+            this.httpServlet.StartServer(serverBase, "/camera", this.svrState.ffmpegPath, ffmpegSource, transcodedPath,
+                    config.ffmpegCommands);
+
+            logger.info("MJPEG streaming process running");
+            updateState(CHANNEL_MJPEG_URL,
+                    ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_MJPEG_URL)).toState(viewURL));
+        } else {
+            logger.info("MJPEG streaming disabled in configuration");
+            updateState(CHANNEL_MJPEG_URL,
+                    ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_MJPEG_URL)).toState(""));
         }
     }
 
@@ -446,6 +469,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
             // - and then all snapshots intended for this cam.
             conn.subscribe(this.cameraTopicPrefix + "+/snapshot", this);
             conn.subscribe(prefix + "/" + MQTT_STATS_SUFFIX, this);
+            conn.subscribe(prefix + "/" + MQTT_KEEPALIVE_SUFFIX, this);
             this.MQTTGettersToChannels.forEach((m, ch) -> conn.subscribe(this.cameraTopicPrefix + m, this));
         }
     }
@@ -461,10 +485,26 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
         if (conn != null) {
             // snapshot state
             this.MQTTGettersToChannels.forEach((m, ch) -> conn.unsubscribe(this.cameraTopicPrefix + m, this));
+            conn.unsubscribe(prefix + "/" + MQTT_KEEPALIVE_SUFFIX, this);
             conn.unsubscribe(prefix + "/" + MQTT_STATS_SUFFIX, this);
             conn.unsubscribe(this.cameraTopicPrefix + "+/snapshot", this);
             conn.unsubscribe(prefix + "/events", this);
         }
+    }
+
+    //////////////////////////////////////////////////////////////////
+    // SetOffline
+    //
+    // Mechanics of setting ourselves offline. When a config change
+    // comes in, it seems that 'initialize' is called again. This
+    // function ensures we are in a known offline state before
+    // resetting ourselves
+
+    private void SetOffline() {
+        this.httpServlet.StopServer();
+        UnsubscribeMQTTTopics(this.svrState.topicPrefix);
+        this.svrState.status = "offline";
+        logger.debug("offlining device");
     }
 
     /////////////////////////////////////////////////////
@@ -494,6 +534,14 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
             this.HandleServerStateChange((@NonNull frigateSVRServerState) newState);
         }
 
+        // Keepalives
+        //
+        // We take our keepalive cue from the server keepalive thread.
+
+        if (topic.equals(this.svrTopicPrefix + "/" + MQTT_KEEPALIVE_SUFFIX)) {
+            this.httpServlet.PokeMe();
+        }
+
         // if we are marked offline, do not handle these.
 
         if (this.getThing().getStatus().equals(ThingStatus.ONLINE)) {
@@ -519,7 +567,6 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
                                 ((@NonNull frigateSVRChannelState) this.Channels.get(ch.getValue())).toState(null));
                     }
                 }
-
             }
 
             // Events
