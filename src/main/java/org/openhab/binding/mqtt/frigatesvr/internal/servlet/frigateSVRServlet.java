@@ -12,21 +12,23 @@
  */
 package org.openhab.binding.mqtt.frigatesvr.internal.servlet;
 
-//import static org.openhab.binding.ipcamera.internal.IpCameraBindingConstants.HLS_STARTUP_DELAY_MS;
-
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.Map;
 
-import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
-import org.openhab.binding.mqtt.frigatesvr.internal.helpers.frigateSVRFFmpegHelper;
+import org.openhab.binding.mqtt.frigatesvr.internal.helpers.frigateSVRMiscHelper;
+import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.HLSStream;
+import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.MJPEGStream;
+import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.StreamTypeBase;
 import org.osgi.service.http.HttpService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,13 +52,17 @@ public class frigateSVRServlet extends HttpServlet {
     private static final long serialVersionUID = -134658667574L;
     private static final Dictionary<Object, Object> initParameters = new Hashtable<>(Map.of("async-supported", "true"));
     private String pathServletBase = "";
-    private String pathReaderSuffix = "";
     protected final HttpService httpService;
-    private frigateSVRFFmpegHelper ffmpegHelper = new frigateSVRFFmpegHelper();
     private String whiteList = "DISABLE";
     private boolean isStarted = false;
 
-    public OpenStreams openStreams = new OpenStreams();
+    // we maintain an array of these. They are configured once at the start.
+
+    private ArrayList<StreamTypeBase> streamTypes = new ArrayList<StreamTypeBase>();
+
+    ///////////////////////////////////////////////////////////////////////////
+    // constructor does not start the servlet, just notes the location of our
+    // http service
 
     public frigateSVRServlet(HttpService httpService) {
         this.httpService = httpService;
@@ -78,12 +84,22 @@ public class frigateSVRServlet extends HttpServlet {
     // Initialize the server. We only do this once we have an onlined 'thing',
     // whether server or camera.
 
-    public void StartServer(String pathServletBase, String pathReaderSuffix, String ffmpegPath, String sourceURL,
-            String ffmpegDestinationURL, String ffmpegCommands) {
+    public void StartServer(String pathServletBase, String pathReaderSuffix, String ffPath, String sourceURL,
+            String ffCommands) {
         this.pathServletBase = pathServletBase;
-        this.pathReaderSuffix = pathReaderSuffix;
+        // this.pathReaderSuffix = pathReaderSuffix;
         logger.info("Starting server at {} for {}", pathServletBase, pathReaderSuffix);
-        this.ffmpegHelper.BuildFFMPEGCommand(ffmpegPath, sourceURL, ffmpegDestinationURL, ffmpegCommands);
+
+        streamTypes.add(new MJPEGStream(pathServletBase, ffPath, sourceURL, ffCommands, pathReaderSuffix));
+        streamTypes.add(new HLSStream(pathServletBase, ffPath, sourceURL,
+                "-acodec copy -vcodec copy -f hls -hls_flags delete_segments -hls_time 2 -hls_list_size 6",
+                pathReaderSuffix));
+        // streamTypes.add(new HLSStream(pathServletBase, ffPath, sourceURL,
+        // "-acodec copy -vcodec copy -movflags frag_keyframe+empty_moov -f mp4", "video/mp4",
+        // pathReaderSuffix + ".mp4"));
+        // streamTypes.add(new StreamType(pathServletBase, ffPath, sourceURL, "/frigate-in.mp4",
+        // "-acodec copy -vcodec copy -f ismv", "video/mp4", pathReaderSuffix + ".mp4"));
+
         try {
             initParameters.put("servlet-name", pathServletBase);
             httpService.registerServlet(pathServletBase, this, initParameters, httpService.createDefaultHttpContext());
@@ -101,8 +117,9 @@ public class frigateSVRServlet extends HttpServlet {
     // if the Frigate server is shut down, or if we reconfigure the 'thing'
 
     public void StopServer() {
-        openStreams.closeAllStreams();
-        ffmpegHelper.StopStream();
+        streamTypes.forEach(strm -> {
+            strm.StopStreams();
+        });
         if (isStarted) {
             try {
                 httpService.unregister(pathServletBase);
@@ -128,11 +145,16 @@ public class frigateSVRServlet extends HttpServlet {
         if (pathInfo == null) {
             return;
         }
-        if (pathInfo.equals("/frigate-in.jpg")) {
-            ServletInputStream snapshotData = req.getInputStream();
-            openStreams.queueFrame(snapshotData.readAllBytes());
-            snapshotData.close();
-        }
+        String relPath = (@NonNull String) (frigateSVRMiscHelper.StripLeadingSlash(pathInfo));
+        streamTypes.forEach(strm -> {
+            if (strm.canPost(relPath)) {
+                try {
+                    strm.Poster(req, resp, relPath);
+                } catch (IOException e) {
+                    logger.warn("POST from ffmpeg failed: stream path: {}", strm.pathfromFF);
+                }
+            }
+        });
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -160,40 +182,17 @@ public class frigateSVRServlet extends HttpServlet {
         }
         logger.debug("whitelist checks complete: {}", req.getRemoteHost());
 
-        // From Frigate, we only export mjpeg. If you want anything different, this can come directly
-        // from the Frigate backend. This is only for convenience
-
-        if (pathInfo.equals(pathReaderSuffix)) {
-            StreamOutput output = new StreamOutput(resp);
-            if (openStreams.isEmpty()) {
-                logger.info("Starting ffmpeg stream");
-                ffmpegHelper.StartStream();
-            } else {
-                // make sure we are still running
-                ffmpegHelper.PokeMe();
-            }
-            openStreams.addStream(output);
-            do {
+        String relPath = (@NonNull String) (frigateSVRMiscHelper.StripLeadingSlash(pathInfo));
+        streamTypes.forEach(strm -> {
+            logger.info("getter: request: {} checking stream {}", relPath, strm.readerPath);
+            if (strm.canAccept(relPath)) {
                 try {
-                    output.sendFrame();
-                } catch (InterruptedException | IOException e) {
-
-                    // Browser closed the stream:
-                    openStreams.removeStream(output);
-
-                    // we must shut down the ffmpeg processes here if there are no more streams
-
-                    logger.debug("{} frigateSVR mjpeg reader streams remain open.", openStreams.getNumberOfStreams());
-
-                    if (openStreams.isEmpty()) {
-                        ffmpegHelper.StopStream();
-                        logger.info("all mjpeg reader streams have stopped.");
-                    }
-
-                    return;
+                    strm.Getter(req, resp, relPath);
+                } catch (IOException e) {
+                    logger.warn("getter failed for stream at path: {}", strm.pathfromFF);
                 }
-            } while (!openStreams.isEmpty());
-        }
+            }
+        });
     }
 
     /////////////////////////////////////////////////////////////////
@@ -203,9 +202,8 @@ public class frigateSVRServlet extends HttpServlet {
     // check our ffmpeg processes if we have open streams
 
     public void PokeMe() {
-
-        if (!openStreams.isEmpty()) {
-            ffmpegHelper.PokeMe();
-        }
+        streamTypes.forEach(strm -> {
+            strm.PokeMe();
+        });
     }
 }

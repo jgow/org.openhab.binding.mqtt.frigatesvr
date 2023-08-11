@@ -426,11 +426,10 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
             }
 
             String serverBase = new String("/frigateSVR/") + this.getThing().getUID().getId();
-            String transcodedPath = new String("http://127.0.0.1:8080") + serverBase + "/frigate-in.jpg";
             String viewURL = this.networkHelper.GetHostBaseURL() + serverBase + "/camera";
 
             this.httpServlet.SetWhitelist(this.svrState.whitelist);
-            this.httpServlet.StartServer(serverBase, "/camera", this.svrState.ffmpegPath, ffmpegSource, transcodedPath,
+            this.httpServlet.StartServer(serverBase, "camera", this.svrState.ffmpegPath, ffmpegSource,
                     config.ffmpegCommands);
 
             logger.info("MJPEG streaming process running");

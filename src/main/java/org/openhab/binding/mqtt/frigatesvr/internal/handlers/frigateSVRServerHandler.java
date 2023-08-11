@@ -298,12 +298,11 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
 
             String serverBase = new String("/") + this.svrTopicPrefix;
             String birdseyeFrigateStreamPath = this.svrState.rtspbase + "/birdseye";
-            String transcodedPath = new String("http://127.0.0.1:8080") + serverBase + "/frigate-in.jpg";
             String viewURL = this.networkHelper.GetHostBaseURL() + serverBase + "/birdseye";
 
             this.httpServlet.SetWhitelist(this.svrState.whitelist);
-            this.httpServlet.StartServer(serverBase, "/birdseye", this.svrState.ffmpegPath, birdseyeFrigateStreamPath,
-                    transcodedPath, config.ffmpegCommands);
+            this.httpServlet.StartServer(serverBase, "birdseye", this.svrState.ffmpegPath, birdseyeFrigateStreamPath,
+                    config.ffmpegCommands);
 
             updateState(CHANNEL_BIRDSEYE_URL,
                     ((@NonNull frigateSVRChannelState) (this.Channels.get(CHANNEL_BIRDSEYE_URL))).toState(viewURL));

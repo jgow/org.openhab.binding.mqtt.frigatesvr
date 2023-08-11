@@ -34,27 +34,22 @@ import org.slf4j.LoggerFactory;
 public class StreamOutput {
     public final Logger logger = LoggerFactory.getLogger(getClass());
     private final HttpServletResponse response;
-    private final String boundary;
-    private String contentType;
+    private String boundary = new String();
+    private String contentType = new String();
     private final ServletOutputStream output;
     private BlockingQueue<byte[]> fifo = new ArrayBlockingQueue<byte[]>(50);
     private boolean connected = false;
     public boolean isSnapshotBased = false;
 
-    public StreamOutput(HttpServletResponse response) throws IOException {
-        boundary = "thisMjpegStream";
-        contentType = "multipart/x-mixed-replace; boundary=" + boundary;
-        this.response = response;
-        output = response.getOutputStream();
-        isSnapshotBased = true;
-    }
-
     public StreamOutput(HttpServletResponse response, String contentType) throws IOException {
-        boundary = "";
-        this.contentType = contentType;
         this.response = response;
         output = response.getOutputStream();
-        if (!contentType.isEmpty()) {
+        if (contentType.equals("video/x-motion-jpeg") || contentType.isEmpty()) {
+            boundary = "thisMjpegStream";
+            this.contentType = "multipart/x-mixed-replace; boundary=" + boundary;
+            isSnapshotBased = true;
+        } else {
+            this.contentType = contentType;
             sendInitialHeaders();
             connected = true;
         }
@@ -87,8 +82,8 @@ public class StreamOutput {
     }
 
     public void updateContentType(String contentType) {
-        this.contentType = contentType;
         if (!connected) {
+            this.contentType = contentType;
             sendInitialHeaders();
             connected = true;
         }
@@ -103,7 +98,7 @@ public class StreamOutput {
     }
 
     private void sendInitialHeaders() {
-        response.setContentType(contentType);
+        response.setContentType(this.contentType);
         response.setHeader("Access-Control-Allow-Origin", "*");
         response.setHeader("Access-Control-Expose-Headers", "*");
     }

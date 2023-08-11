@@ -12,10 +12,15 @@
  */
 package org.openhab.binding.mqtt.frigatesvr.internal.helpers;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.NonNullByDefault;
@@ -37,9 +42,38 @@ public class frigateSVRFFmpegHelper {
     private @Nullable Process process = null;
     private List<String> ffmpegargs = new ArrayList<String>();
     private boolean isStarted = false;
+    private ExecutorService es = Executors.newSingleThreadExecutor();
 
     public frigateSVRFFmpegHelper() {
     }
+
+    ////////////////////////////////////////////////////////////////////////
+    // LogEater
+    //
+    // The LogEater is a process that pulls the stderr from ffmpeg for
+    // debugging purposes, and also because ffmpeg seems to block if it
+    // can't write stderr. If the ffmpeg process is not running, it wil
+    // simply exit, and it will exit automatically if the ffmpeg process
+    // exits (or is killed).
+
+    private Runnable LogEater = () -> {
+        if (process != null) {
+            if (((@NonNull Process) process).isAlive()) {
+                InputStream errorStream = ((@NonNull Process) process).getErrorStream();
+                InputStreamReader errorStreamReader = new InputStreamReader(errorStream);
+                BufferedReader bufferedReader = new BufferedReader(errorStreamReader);
+                String line = null;
+                try {
+                    while ((line = bufferedReader.readLine()) != null) {
+                        logger.debug("ffmpeg: {}", line);
+                    }
+                } catch (IOException e) {
+                    logger.warn("exception in log eater: {}", e.getMessage());
+                }
+            }
+        }
+        logger.info("log-eater process exiting");
+    };
 
     ////////////////////////////////////////////////////////////
     // BuildFFMPEGCommand
@@ -51,12 +85,13 @@ public class frigateSVRFFmpegHelper {
 
         ffmpegargs.clear();
         ffmpegargs.add(ffmpegLocation);
-        String arglist = new String(" -rtsp_transport tcp -hide_banner -i ");
+        String arglist = new String("-rtsp_transport tcp -hide_banner -i ");
         arglist += sourceURL + " " + ffmpegCommands;
         Collections.addAll(ffmpegargs, arglist.trim().split("\\s+"));
         ffmpegargs.add(destinationURL);
+        logger.debug("FFMPEG command :{}", ffmpegargs.toString());
         ffmpegargs.forEach(n -> {
-            logger.info("FFMPEG command: {}", n);
+            logger.debug("FFMPEG command: {}", n);
         });
     }
 
@@ -65,19 +100,26 @@ public class frigateSVRFFmpegHelper {
     //
     // Start the ffmpeg process.
 
-    public void StartStream() {
+    public boolean StartStream() {
         if (process == null) {
             try {
                 logger.info("ffmpeg stream starting");
                 process = Runtime.getRuntime().exec(ffmpegargs.toArray(new String[ffmpegargs.size()]));
+                // FFmpeg will block if we don't keep the stdout flushed - so we
+                // have a little thread that brings ffmpeg output to the logs -
+                // that way we can debug any issues in ffmpeg.
+                //
+                // now start the log-eater. The log-eater process will exit
+                // automatically if the ffmpeg process quits and ceases to be active
+                es.execute(LogEater);
                 isStarted = true;
             } catch (IOException e) {
                 logger.error("Unable to start ffmpeg:");
                 process = null;
                 isStarted = false;
-                return;
             }
         }
+        return isStarted;
     }
 
     /////////////////////////////////////////////////////////////
@@ -88,8 +130,8 @@ public class frigateSVRFFmpegHelper {
     public void StopStream() {
         if (process != null) {
             ((@NonNull Process) process).destroyForcibly();
-            isStarted = false;
             process = null;
+            isStarted = false;
         }
     }
 
@@ -98,7 +140,7 @@ public class frigateSVRFFmpegHelper {
     //
     // Used by the keepalive mechanism - if we are meant to have
     // a running ffmpeg process and it has crashed/been killed,
-    // then attempt to restart us
+    // (but not intentionally stopped) then attempt to restart us
 
     public void PokeMe() {
         do {
@@ -111,6 +153,7 @@ public class frigateSVRFFmpegHelper {
                 }
             }
             // we must restart
+            logger.info("keepalive: forcing restart");
             process = null;
             StartStream();
         } while (false);
