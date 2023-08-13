@@ -14,7 +14,7 @@ package org.openhab.binding.mqtt.frigatesvr.internal.structures;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
-import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRServerConfig.frigateSVRServerConfigBlock;
+import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRFrigateConfig.frigateSVRFrigateConfigBlock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +32,7 @@ import com.google.gson.GsonBuilder;
 public class frigateSVRFrigateConfiguration {
 
     private final Logger logger = LoggerFactory.getLogger(frigateSVRFrigateConfiguration.class);
-    public frigateSVRServerConfigBlock block = new frigateSVRServerConfigBlock();
+    public frigateSVRFrigateConfigBlock block = new frigateSVRFrigateConfigBlock();
 
     public frigateSVRFrigateConfiguration() {
     }
@@ -49,7 +49,7 @@ public class frigateSVRFrigateConfiguration {
 
         // Parse into the block. If it isn't valid JSON, we choke.
         @Nullable
-        frigateSVRServerConfigBlock blk = gson.fromJson(cfg, frigateSVRServerConfigBlock.class);
+        frigateSVRFrigateConfigBlock blk = gson.fromJson(cfg, frigateSVRFrigateConfigBlock.class);
         if (blk == null) {
             logger.info("NULL returned from deserializer");
             throw (new NoSuchFieldException());

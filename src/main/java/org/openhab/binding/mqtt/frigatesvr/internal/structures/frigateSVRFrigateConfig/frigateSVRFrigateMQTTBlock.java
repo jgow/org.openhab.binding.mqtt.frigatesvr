@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRServerConfig;
+package org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRFrigateConfig;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 
@@ -18,15 +18,18 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
 /**
- * The {@link mqtt.frigateSVRServerBirdseyeBlock} class contains fields mapping Frigate
- * configuration parameters from the Birdseye block.
+ * The {@link mqtt.frigateSVRServerMQTTBlock} class contains fields mapping Frigate
+ * configuration parameters from the MQTT block.
  *
  * @author J Gow - Initial contribution
  */
 @NonNullByDefault
-public class frigateSVRServerBirdseyeBlock {
+public class frigateSVRFrigateMQTTBlock {
 
     @Expose
-    @SerializedName("restream")
-    public boolean clientID = false;
+    @SerializedName("client_id")
+    public String clientID = "frigate";
+    @Expose
+    @SerializedName("topic_prefix")
+    public String topicPrefix = "frigate";
 }

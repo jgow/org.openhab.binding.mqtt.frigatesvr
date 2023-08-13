@@ -20,10 +20,12 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
  * @author J Gow - Initial contribution
  */
 @NonNullByDefault
-public class frigateSVRCameraConfiguration extends frigateSVRCommonConfiguration {
-    public String serverID = "";
-    public String cameraName = "";
+public class frigateSVRCommonConfiguration {
     public boolean enableStream = true;
-    public String ffmpegCameraNameOverride = "";
-    public String ffmpegCommands = "";
+    public boolean ffMJPEGStartProducerOnLoad = false;
+    public String ffMJPEGTranscodeCommands = "";
+    public boolean ffHLSStartProducerOnLoad = false;
+    public String ffHLSTranscodeCommands = "";
+    public boolean ffDASHStartProducerOnLoad = false;
+    public String ffDASHTranscodeCommands = "";
 }

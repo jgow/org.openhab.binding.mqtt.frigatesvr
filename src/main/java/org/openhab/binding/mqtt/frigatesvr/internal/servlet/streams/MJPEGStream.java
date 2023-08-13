@@ -23,6 +23,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.OpenStreams;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.StreamOutput;
+import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRCommonConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,12 +37,25 @@ public class MJPEGStream extends StreamTypeBase {
 
     private final Logger logger = LoggerFactory.getLogger(MJPEGStream.class);
     protected OpenStreams streamList = new OpenStreams();
+    private boolean postFlag = false;
 
-    public MJPEGStream(String baseURL, String ffBinary, String URLtoFF, String ffcmds, String readerPath) {
-        super(baseURL, ffBinary, URLtoFF, ffcmds, readerPath);
-        this.pathfromFF = "/frigate-in.jpg";
-        String ffDestURL = new String("http://127.0.0.1:8080") + baseURL + pathfromFF;
-        this.ffHelper.BuildFFMPEGCommand(ffBinary, URLtoFF, ffDestURL, ffcmds);
+    public MJPEGStream(String baseURL, String ffBinary, String URLtoFF, String readerPath,
+            frigateSVRCommonConfiguration config) {
+        super(baseURL, ffBinary, URLtoFF, readerPath, config);
+        this.pathfromFF = "frigate-in.jpg";
+        String ffDestURL = new String("http://127.0.0.1:8080") + baseURL + "/" + pathfromFF;
+        // no WD prefix here
+        this.ffHelper.BuildFFMPEGCommand(ffBinary, URLtoFF, ffDestURL, config.ffMJPEGTranscodeCommands, null);
+    }
+
+    /////////////////////////////////////////////////////////////////////////
+    // CheckStarted
+    //
+    // This member function is overloaded per stream type to return true
+    // as soon as output has been generated.
+
+    public boolean CheckStarted() {
+        return postFlag;
     }
 
     /////////////////////////////////////////////////////////////////////////
@@ -76,12 +90,16 @@ public class MJPEGStream extends StreamTypeBase {
     // Poster
     //
     // MJPEG streams are chunked into images - which ffmpeg will send us one
-    // at a time. We pull these into a queue here.
+    // at a time. We pull these into a queue here. If we have no output
+    // streams to send to, the images simply get binned. This way even for
+    // these stream types, we can leave the ffmpeg process running in the
+    // background.
 
     public void Poster(HttpServletRequest req, HttpServletResponse resp, String pathInfo) throws IOException {
         ServletInputStream snapshotData = req.getInputStream();
         this.streamList.queueFrame(snapshotData.readAllBytes());
         snapshotData.close();
+        postFlag = true;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -94,15 +112,27 @@ public class MJPEGStream extends StreamTypeBase {
         logger.info("getter processing request");
 
         StreamOutput output = new StreamOutput(resp, "video/x-motion-jpeg");
-        if (this.streamList.isEmpty()) {
-            logger.info("Starting ffmpeg stream");
-            this.ffHelper.StartStream();
-        } else {
-            // make sure we are still running
-            this.ffHelper.PokeMe();
+        synchronized (this) {
+            if (!this.isStreamRunning) {
+                this.postFlag = false;
+                logger.info("Starting ffmpeg stream");
+                // If we fail to start the stream, just return 'not found'
+                this.StartStreams();
+                if (!this.isStreamRunning) {
+                    logger.warn("failed to start ffmpeg stream");
+                    resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+                    return;
+                }
+            }
         }
+
+        // otherwise we have frames being posted
+        // The synchronized fifo and StreamOutput objects come from ipcamera - they
+        // work well.
+
         this.streamList.addStream(output);
         do {
+            hitCount++;
             try {
                 output.sendFrame();
             } catch (InterruptedException | IOException e) {
@@ -115,7 +145,7 @@ public class MJPEGStream extends StreamTypeBase {
                 logger.debug("{} frigateSVR mjpeg reader streams remain open.", this.streamList.getNumberOfStreams());
 
                 if (this.streamList.isEmpty()) {
-                    this.ffHelper.StopStream();
+                    this.StopStreams();
                     logger.info("all mjpeg reader streams have stopped.");
                 }
 

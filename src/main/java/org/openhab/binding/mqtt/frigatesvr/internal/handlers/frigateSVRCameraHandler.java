@@ -51,6 +51,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     private frigateSVRServerState svrState = new frigateSVRServerState();
     private String svrTopicPrefix = "frigate/";
     private String cameraTopicPrefix = new String();
+    private boolean firstInit = true;
 
     // makes for easy change if Frigate ever extend the API
     //
@@ -312,6 +313,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
         this.SetOffline();
         updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING);
         super.initialize();
+        firstInit = false;
     }
 
     //
@@ -330,7 +332,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     // BridgeGoingOffline
     //
     // A callback when the MQTT bridge is going offline. We just need
-    // to update the state here
+    // to update the state here and stop the streaming server
 
     protected void BridgeGoingOffline() {
         this.httpServlet.StopServer();
@@ -429,14 +431,13 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
             String viewURL = this.networkHelper.GetHostBaseURL() + serverBase + "/camera";
 
             this.httpServlet.SetWhitelist(this.svrState.whitelist);
-            this.httpServlet.StartServer(serverBase, "camera", this.svrState.ffmpegPath, ffmpegSource,
-                    config.ffmpegCommands);
+            this.httpServlet.StartServer(serverBase, "camera", ffmpegSource, this.svrState.ffmpegPath, config);
 
-            logger.info("MJPEG streaming process running");
+            logger.info("Multistream server process running");
             updateState(CHANNEL_MJPEG_URL,
                     ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_MJPEG_URL)).toState(viewURL));
         } else {
-            logger.info("MJPEG streaming disabled in configuration");
+            logger.info("Multistream server process disabled in configuration");
             updateState(CHANNEL_MJPEG_URL,
                     ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_MJPEG_URL)).toState(""));
         }
@@ -463,12 +464,12 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     private void SubscribeMQTTTopics(String prefix) {
         MqttBrokerConnection conn = this.MQTTConnection;
         if (conn != null) {
-            // - initially the events
-            conn.subscribe(prefix + "/events", this);
+            // - initially the keepalives
+            conn.subscribe(this.svrTopicPrefix + "/" + MQTT_KEEPALIVE_SUFFIX, this);
+            conn.subscribe(this.svrState.topicPrefix + "/events", this);
             // - and then all snapshots intended for this cam.
+            conn.subscribe(this.svrState.topicPrefix + "/" + MQTT_STATS_SUFFIX, this);
             conn.subscribe(this.cameraTopicPrefix + "+/snapshot", this);
-            conn.subscribe(prefix + "/" + MQTT_STATS_SUFFIX, this);
-            conn.subscribe(prefix + "/" + MQTT_KEEPALIVE_SUFFIX, this);
             this.MQTTGettersToChannels.forEach((m, ch) -> conn.subscribe(this.cameraTopicPrefix + m, this));
         }
     }
@@ -484,10 +485,10 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
         if (conn != null) {
             // snapshot state
             this.MQTTGettersToChannels.forEach((m, ch) -> conn.unsubscribe(this.cameraTopicPrefix + m, this));
-            conn.unsubscribe(prefix + "/" + MQTT_KEEPALIVE_SUFFIX, this);
-            conn.unsubscribe(prefix + "/" + MQTT_STATS_SUFFIX, this);
             conn.unsubscribe(this.cameraTopicPrefix + "+/snapshot", this);
-            conn.unsubscribe(prefix + "/events", this);
+            conn.unsubscribe(this.svrState.topicPrefix + "/" + MQTT_STATS_SUFFIX, this);
+            conn.unsubscribe(this.svrState.topicPrefix + "/events", this);
+            conn.unsubscribe(this.svrTopicPrefix + "/" + MQTT_KEEPALIVE_SUFFIX, this);
         }
     }
 
@@ -501,7 +502,9 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
 
     private void SetOffline() {
         this.httpServlet.StopServer();
-        UnsubscribeMQTTTopics(this.svrState.topicPrefix);
+        if (!firstInit) {
+            UnsubscribeMQTTTopics(this.svrState.topicPrefix);
+        }
         this.svrState.status = "offline";
         logger.debug("offlining device");
     }

@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRServerConfig;
+package org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRFrigateConfig;
 
 import java.util.ArrayList;
 
@@ -29,16 +29,16 @@ import com.google.gson.annotations.SerializedName;
  * @author J Gow - Initial contribution
  */
 @NonNullByDefault
-public class frigateSVRServerConfigBlock {
+public class frigateSVRFrigateConfigBlock {
 
-    private final Logger logger = LoggerFactory.getLogger(frigateSVRServerConfigBlock.class);
+    private final Logger logger = LoggerFactory.getLogger(frigateSVRFrigateConfigBlock.class);
 
     @Expose
     @SerializedName("mqtt")
-    public frigateSVRServerMQTTBlock mqtt = new frigateSVRServerMQTTBlock();
+    public frigateSVRFrigateMQTTBlock mqtt = new frigateSVRFrigateMQTTBlock();
     @Expose
     @SerializedName("birdseye")
-    public frigateSVRServerBirdseyeBlock birdseye = new frigateSVRServerBirdseyeBlock();
+    public frigateSVRFrigateBirdseyeBlock birdseye = new frigateSVRFrigateBirdseyeBlock();
     @Expose
     @SerializedName("cameras")
     public JsonObject cameras = new JsonObject();

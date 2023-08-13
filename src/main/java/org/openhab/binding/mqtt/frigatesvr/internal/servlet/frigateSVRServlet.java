@@ -26,9 +26,11 @@ import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.mqtt.frigatesvr.internal.helpers.frigateSVRMiscHelper;
+import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.DASHStream;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.HLSStream;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.MJPEGStream;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.StreamTypeBase;
+import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRCommonConfiguration;
 import org.osgi.service.http.HttpService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,21 +86,20 @@ public class frigateSVRServlet extends HttpServlet {
     // Initialize the server. We only do this once we have an onlined 'thing',
     // whether server or camera.
 
-    public void StartServer(String pathServletBase, String pathReaderSuffix, String ffPath, String sourceURL,
-            String ffCommands) {
+    public void StartServer(String pathServletBase, String pathReaderSuffix, String sourceURL, String ffPath,
+            frigateSVRCommonConfiguration config) {
+
         this.pathServletBase = pathServletBase;
-        // this.pathReaderSuffix = pathReaderSuffix;
+
         logger.info("Starting server at {} for {}", pathServletBase, pathReaderSuffix);
 
-        streamTypes.add(new MJPEGStream(pathServletBase, ffPath, sourceURL, ffCommands, pathReaderSuffix));
-        streamTypes.add(new HLSStream(pathServletBase, ffPath, sourceURL,
-                "-acodec copy -vcodec copy -f hls -hls_flags delete_segments -hls_time 2 -hls_list_size 6",
-                pathReaderSuffix));
+        streamTypes.add(new MJPEGStream(pathServletBase, ffPath, sourceURL, pathReaderSuffix, config));
+        streamTypes.add(new HLSStream(pathServletBase, ffPath, sourceURL, pathReaderSuffix, config));
+        streamTypes.add(new DASHStream(pathServletBase, ffPath, sourceURL, pathReaderSuffix, config));
+
         // streamTypes.add(new HLSStream(pathServletBase, ffPath, sourceURL,
         // "-acodec copy -vcodec copy -movflags frag_keyframe+empty_moov -f mp4", "video/mp4",
         // pathReaderSuffix + ".mp4"));
-        // streamTypes.add(new StreamType(pathServletBase, ffPath, sourceURL, "/frigate-in.mp4",
-        // "-acodec copy -vcodec copy -f ismv", "video/mp4", pathReaderSuffix + ".mp4"));
 
         try {
             initParameters.put("servlet-name", pathServletBase);
@@ -118,10 +119,11 @@ public class frigateSVRServlet extends HttpServlet {
 
     public void StopServer() {
         streamTypes.forEach(strm -> {
-            strm.StopStreams();
+            strm.Cleanup();
         });
         if (isStarted) {
             try {
+                logger.info("Stopping and unregistering server");
                 httpService.unregister(pathServletBase);
                 this.destroy();
                 isStarted = false;
@@ -134,7 +136,8 @@ public class frigateSVRServlet extends HttpServlet {
     ///////////////////////////////////////////////////////////////////////////
     // doPost
     //
-    // ffmpeg sends us the transcoded rtsp stream here, as a sequence of .jpg.
+    // this is the input point for streams from ffmpeg that are not
+    // passed through files.
 
     @Override
     protected void doPost(@Nullable HttpServletRequest req, @Nullable HttpServletResponse resp) throws IOException {
@@ -172,11 +175,11 @@ public class frigateSVRServlet extends HttpServlet {
         if (pathInfo == null) {
             return;
         }
-        logger.info("GET: received from {}/{}", req.getRemoteHost(), pathInfo);
+        logger.info("GET received from {}/{}", req.getRemoteHost(), pathInfo);
         if (!whiteList.equals("DISABLE")) {
             String requestIP = "(" + req.getRemoteHost() + ")";
             if (!whiteList.contains(requestIP)) {
-                logger.warn("The request made from {} was not in the whiteList and will be ignored.", requestIP);
+                logger.warn("{} was not in the whiteList and will be ignored.", requestIP);
                 return;
             }
         }

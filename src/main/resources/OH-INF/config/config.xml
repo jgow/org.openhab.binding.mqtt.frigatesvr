@@ -27,10 +27,43 @@
 			<default/>
 			<advanced>true</advanced>
 		</parameter>
-		<parameter name="ffmpegCommands" type="text" required="false">
-			<label>@text/param.camera.ffmpegCommands.label</label>
-			<description>@text/param.camera.ffmpegCommands.description</description>
+		<parameter name="ffMJPEGStartProducerOnLoad" type="boolean" required="false">
+			<context>name</context>
+			<label>@text/param.common.ffMJPEGStartProducerOnLoad.label</label>
+			<description>@text/param.common.ffMJPEGStartProducerOnLoad.description</description>
+			<default>false</default>
+			<advanced>true</advanced>
+		</parameter>
+		<parameter name="ffMJPEGTranscodeCommands" type="text" required="false">
+			<label>@text/param.common.ffMJPEGTranscodeCommands.label</label>
+			<description>@text/param.common.ffMJPEGTranscodeCommands.description</description>
 			<default>-q:v 5 -r 2 -vf scale=640:-2 -update 1</default>
+			<advanced>true</advanced>
+		</parameter>
+		<parameter name="ffHLSStartProducerOnLoad" type="boolean" required="false">
+			<context>name</context>
+			<label>@text/param.common.ffHLSStartProducerOnLoad.label</label>
+			<description>@text/param.common.ffHLSStartProducerOnLoad.description</description>
+			<default>false</default>
+			<advanced>true</advanced>
+		</parameter>
+		<parameter name="ffHLSTranscodeCommands" type="text" required="false">
+			<label>@text/param.common.ffHLSTranscodeCommands.label</label>
+			<description>@text/param.common.ffHLSTranscodeCommands.description</description>
+			<default>-acodec copy -vcodec copy</default>
+			<advanced>true</advanced>
+		</parameter>
+		<parameter name="ffDASHStartProducerOnLoad" type="boolean" required="false">
+			<context>name</context>
+			<label>@text/param.common.ffDASHStartProducerOnLoad.label</label>
+			<description>@text/param.common.ffDASHStartProducerOnLoad.description</description>
+			<default>false</default>
+			<advanced>true</advanced>
+		</parameter>
+		<parameter name="ffDASHTranscodeCommands" type="text" required="false">
+			<label>@text/param.common.ffDASHTranscodeCommands.label</label>
+			<description>@text/param.common.ffDASHTranscodeCommands.description</description>
+			<default>-acodec copy -vcodec copy</default>
 			<advanced>true</advanced>
 		</parameter>
 	</config-description>
@@ -71,12 +104,44 @@
 			<default>/usr/bin/ffmpeg</default>
 			<advanced>true</advanced>
 		</parameter>
-		<parameter name="ffmpegCommands" type="text" required="false">
-			<label>@text/param.server.ffmpegCommands.label</label>
-			<description>@text/param.server.ffmpegCommands.description</description>
-			<default>-q:v 5 -r 2 -update 1</default>
+		<parameter name="ffMJPEGStartProducerOnLoad" type="boolean" required="false">
+			<context>name</context>
+			<label>@text/param.common.ffMJPEGStartProducerOnLoad.label</label>
+			<description>@text/param.common.ffMJPEGStartProducerOnLoad.description</description>
+			<default>false</default>
 			<advanced>true</advanced>
 		</parameter>
-
+		<parameter name="ffMJPEGTranscodeCommands" type="text" required="false">
+			<label>@text/param.common.ffMJPEGTranscodeCommands.label</label>
+			<description>@text/param.common.ffMJPEGTranscodeCommands.description</description>
+			<default>-q:v 5 -r 2 -vf scale=640:-2 -update 1</default>
+			<advanced>true</advanced>
+		</parameter>
+		<parameter name="ffHLSStartProducerOnLoad" type="boolean" required="false">
+			<context>name</context>
+			<label>@text/param.common.ffHLSStartProducerOnLoad.label</label>
+			<description>@text/param.common.ffHLSStartProducerOnLoad.description</description>
+			<default>false</default>
+			<advanced>true</advanced>
+		</parameter>
+		<parameter name="ffHLSTranscodeCommands" type="text" required="false">
+			<label>@text/param.common.ffHLSTranscodeCommands.label</label>
+			<description>@text/param.common.ffHLSTranscodeCommands.description</description>
+			<default>-acodec copy -vcodec copy</default>
+			<advanced>true</advanced>
+		</parameter>
+		<parameter name="ffDASHStartProducerOnLoad" type="boolean" required="false">
+			<context>name</context>
+			<label>@text/param.common.ffDASHStartProducerOnLoad.label</label>
+			<description>@text/param.common.ffDASHStartProducerOnLoad.description</description>
+			<default>false</default>
+			<advanced>true</advanced>
+		</parameter>
+		<parameter name="ffDASHTranscodeCommands" type="text" required="false">
+			<label>@text/param.common.ffDASHTranscodeCommands.label</label>
+			<description>@text/param.common.ffDASHTranscodeCommands.description</description>
+			<default>-acodec copy -vcodec copy</default>
+			<advanced>true</advanced>
+		</parameter>
 	</config-description>
 </config-description:config-descriptions>

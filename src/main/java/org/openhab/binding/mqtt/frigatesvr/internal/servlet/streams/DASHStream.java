@@ -24,26 +24,27 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The {@link HLSStream} encapsulates a served HLS stream
+ * The {@link DASHStream} encapsulates a served DASH-MPD stream
  *
  * @author Dr J Gow - initial contribution
  */
 @NonNullByDefault
-public class HLSStream extends StreamTypeBase {
+public class DASHStream extends StreamTypeBase {
 
-    private final Logger logger = LoggerFactory.getLogger(HLSStream.class);
+    private final Logger logger = LoggerFactory.getLogger(DASHStream.class);
 
-    public HLSStream(String baseURL, String ffBinary, String URLtoFF, String readerPath,
+    public DASHStream(String baseURL, String ffBinary, String URLtoFF, String readerPath,
             frigateSVRCommonConfiguration config) {
         super(baseURL, ffBinary, URLtoFF, readerPath, config);
 
-        String fmtCmds = " -f hls -hls_flags delete_segments -hls_time 2 -hls_list_size 6";
-        this.pathfromFF = readerPath + ".m3u8";
-        logger.info("stream entry point set to {}", this.pathfromFF);
+        // String fmtCmds = " -single_file 0 -use_template 1 -window_size 5 -f dash -index_correction 1 -streaming 1";
+        String fmtCmds = " -single_file 0 -f dash -window_size 4 -extra_window_size 0 -min_seg_duration 2000000 -remove_at_exit 1 -streaming 1";
+        this.pathfromFF = readerPath + ".mpd";
+        logger.info("sending stream to {}", this.pathfromFF);
 
         // use PWD as prefix for now
 
-        this.ffHelper.BuildFFMPEGCommand(ffBinary, URLtoFF, this.pathfromFF, config.ffHLSTranscodeCommands + fmtCmds,
+        this.ffHelper.BuildFFMPEGCommand(ffBinary, URLtoFF, this.pathfromFF, config.ffDASHTranscodeCommands + fmtCmds,
                 "./");
     }
 
@@ -55,6 +56,7 @@ public class HLSStream extends StreamTypeBase {
 
     public boolean CheckStarted() {
         File f = new File(this.ffHelper.GetDestinationPath() + "/" + this.pathfromFF);
+        logger.info("Checking stream started: path {}", this.ffHelper.GetDestinationPath() + "/" + this.pathfromFF);
         return (f.exists() && f.isFile());
     }
 
@@ -78,7 +80,8 @@ public class HLSStream extends StreamTypeBase {
     // been accessed at least once.
 
     public boolean canAccept(String pathInfo) {
-        String pattern = this.readerPath + "((\\d+\\.ts)|(\\.m3u8))";
+        String pattern = "(" + this.readerPath + "(\\.mpd))";
+        pattern += "|(chunk-stream\\S+)|(init-stream\\S+)";
         logger.debug("Pattern to match: |{}| against |{}|", pattern, pathInfo);
         return (pathInfo.matches(pattern)) ? true : false;
     }
@@ -89,7 +92,6 @@ public class HLSStream extends StreamTypeBase {
     // If we get here, we must be asking for an .m3u8 or a .ts, and on this
     // path. We don't just send any old file. The request path has already
     // been verified.
-    //
     // We need to start the ffmpeg helper if it is not already
     // started. It will not know if the stream is no longer required;
     // the keepalives will shut it down if hitCount is zero between two
@@ -114,7 +116,7 @@ public class HLSStream extends StreamTypeBase {
 
         logger.debug("processing HLS get request");
 
-        // a hit is either the playlist or a ts request
+        // a hit is a request for any of the components
 
         hitCount++;
 
@@ -123,13 +125,12 @@ public class HLSStream extends StreamTypeBase {
         // is for us (via the regex in canAccept we only allow requests
         // for an .m3u8 or a .ts (and the latter only if we are running)
 
-        if (pathInfo.equals(this.readerPath + ".m3u8")) {
+        if (pathInfo.equals(this.readerPath + ".mpd")) {
 
-            // someone wants the playlist..
+            // someone wants the master playlist..
 
             StartStreams();
         }
-
         // Then just serve the file. It will be either the m3u8 or a
         // numbered .ts. It will respond with error to the client
         // if the file not found. However, we send only if the stream

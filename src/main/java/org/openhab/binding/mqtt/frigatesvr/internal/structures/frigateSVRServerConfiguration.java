@@ -20,12 +20,10 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
  * @author J Gow - Initial contribution
  */
 @NonNullByDefault
-public class frigateSVRServerConfiguration {
+public class frigateSVRServerConfiguration extends frigateSVRCommonConfiguration {
     public String serverURL = "";
     public String serverClientID = "";
     public int serverKeepAlive = 5;
-    public boolean enableStream = true;
     public String streamWhitelist = "";
     public String ffmpegLocation = "";
-    public String ffmpegCommands = "";
 }

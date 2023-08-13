@@ -50,9 +50,9 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
     private final Logger logger = LoggerFactory.getLogger(frigateSVRServerHandler.class);
 
     private frigateSVRServerConfiguration config = new frigateSVRServerConfiguration();
+    private @Nullable ScheduledFuture<?> servercheck;
     private @Nullable String version = new String("");
     private String MQTTTopicPrefix = "";
-    private @Nullable ScheduledFuture<?> servercheck;
     private String svrTopicPrefix = "";
     private frigateSVRServerState svrState = new frigateSVRServerState();
     private frigateSVRFrigateConfiguration frigateConfig = new frigateSVRFrigateConfiguration();
@@ -301,8 +301,8 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
             String viewURL = this.networkHelper.GetHostBaseURL() + serverBase + "/birdseye";
 
             this.httpServlet.SetWhitelist(this.svrState.whitelist);
-            this.httpServlet.StartServer(serverBase, "birdseye", this.svrState.ffmpegPath, birdseyeFrigateStreamPath,
-                    config.ffmpegCommands);
+            this.httpServlet.StartServer(serverBase, "birdseye", birdseyeFrigateStreamPath, this.svrState.ffmpegPath,
+                    config);
 
             updateState(CHANNEL_BIRDSEYE_URL,
                     ((@NonNull frigateSVRChannelState) (this.Channels.get(CHANNEL_BIRDSEYE_URL))).toState(viewURL));
