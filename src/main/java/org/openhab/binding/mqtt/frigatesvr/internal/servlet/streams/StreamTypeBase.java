@@ -23,7 +23,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.NonNullByDefault;
-import org.openhab.binding.mqtt.frigatesvr.internal.helpers.frigateSVRFFmpegHelper;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRCommonConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +36,7 @@ import org.slf4j.LoggerFactory;
 public class StreamTypeBase {
 
     private final Logger logger = LoggerFactory.getLogger(StreamTypeBase.class);
-    protected frigateSVRFFmpegHelper ffHelper = new frigateSVRFFmpegHelper();
+    protected FFmpegManager ffHelper = new FFmpegManager();
     protected boolean isStreamRunning = false;
     protected int hitCount = 0;
     public String pathfromFF = "";

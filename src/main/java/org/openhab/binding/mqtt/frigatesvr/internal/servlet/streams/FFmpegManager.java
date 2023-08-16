@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.mqtt.frigatesvr.internal.helpers;
+package org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
  * @author J Gow - Initial contribution
  */
 @NonNullByDefault
-public class frigateSVRFFmpegHelper {
+public class FFmpegManager {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private @Nullable Process process = null;
@@ -50,7 +50,7 @@ public class frigateSVRFFmpegHelper {
     private ExecutorService es = Executors.newSingleThreadExecutor();
     private Path tmpDir;
 
-    public frigateSVRFFmpegHelper() {
+    public FFmpegManager() {
         this.tmpDir = Paths.get("");
     }
 

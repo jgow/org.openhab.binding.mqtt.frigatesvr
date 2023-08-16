@@ -102,7 +102,7 @@ public class frigateSVRServlet extends HttpServlet {
 
         // Once we are running, we should not change streamTypes dynamically.
         // Should we need to, wrap the code that does so, together with get(), in some
-        // form of semaphore/process control.
+        // form of semaphore/mutex. Otherwise getters and posters may choke.
 
         try {
             initParameters.put("servlet-name", pathServletBase);

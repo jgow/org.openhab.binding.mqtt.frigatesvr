@@ -59,6 +59,9 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
 
     public frigateSVRServerHandler(Thing thing, HttpClient httpClient, HttpService httpService) {
         super(thing, httpClient, httpService);
+
+        // the channel map
+
         this.Channels = Map.ofEntries(
                 Map.entry(CHANNEL_API_VERSION,
                         new frigateSVRChannelState(CHANNEL_API_VERSION, frigateSVRChannelState::fromStringMQTT,
@@ -68,7 +71,6 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
                                 frigateSVRChannelState::toStringMQTT, false)),
                 Map.entry(CHANNEL_BIRDSEYE_URL, new frigateSVRChannelState(CHANNEL_BIRDSEYE_URL,
                         frigateSVRChannelState::fromStringMQTT, frigateSVRChannelState::toStringMQTT, false)));
-        logger.info("new FrigateSVR server thing");
     }
 
     @Override
