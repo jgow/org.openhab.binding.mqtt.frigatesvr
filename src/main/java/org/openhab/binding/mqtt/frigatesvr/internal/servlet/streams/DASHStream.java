@@ -38,9 +38,11 @@ public class DASHStream extends StreamTypeBase {
         super(baseURL, ffBinary, URLtoFF, readerPath, config);
 
         // String fmtCmds = " -single_file 0 -use_template 1 -window_size 5 -f dash -index_correction 1 -streaming 1";
-        String fmtCmds = " -single_file 0 -f dash -window_size 4 -extra_window_size 0 -min_seg_duration 2000000 -remove_at_exit 1 -streaming 1";
+        String fmtCmds = " -single_file 0 -f dash -window_size 4 -extra_window_size 0 -seg_duration 2 -remove_at_exit 1 -streaming 1";
         this.pathfromFF = readerPath + ".mpd";
         logger.info("sending stream to {}", this.pathfromFF);
+
+        this.startOnLoad = config.ffDASHStartProducerOnLoad;
 
         // use PWD as prefix for now
 
@@ -82,7 +84,7 @@ public class DASHStream extends StreamTypeBase {
     public boolean canAccept(String pathInfo) {
         String pattern = "(" + this.readerPath + "(\\.mpd))";
         pattern += "|(chunk-stream\\S+)|(init-stream\\S+)";
-        logger.debug("Pattern to match: |{}| against |{}|", pattern, pathInfo);
+        logger.info("Pattern to match: |{}| against |{}|", pattern, pathInfo);
         return (pathInfo.matches(pattern)) ? true : false;
     }
 

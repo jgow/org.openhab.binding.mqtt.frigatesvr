@@ -43,9 +43,7 @@ import org.slf4j.LoggerFactory;
  * streams, as these have a lower framerate. It can also be used to stream the birdseye view
  * at the Frigate server level.
  *
- * @author Matthew Skinner - Initial contribution (to ipcamera binding)
- * @author Dr J Gow - imported from ipcamera to frigateSVR, substantially modified to suit
- *         requirements of Frigate.
+ * @author Dr J Gow - Written from ground-up to handle requirements of FrigateSVR
  */
 @NonNullByDefault
 public class frigateSVRServlet extends HttpServlet {
@@ -93,6 +91,7 @@ public class frigateSVRServlet extends HttpServlet {
 
         logger.info("Starting server at {} for {}", pathServletBase, pathReaderSuffix);
 
+        streamTypes.clear(); // start empty
         streamTypes.add(new MJPEGStream(pathServletBase, ffPath, sourceURL, pathReaderSuffix, config));
         streamTypes.add(new HLSStream(pathServletBase, ffPath, sourceURL, pathReaderSuffix, config));
         streamTypes.add(new DASHStream(pathServletBase, ffPath, sourceURL, pathReaderSuffix, config));
@@ -100,6 +99,10 @@ public class frigateSVRServlet extends HttpServlet {
         // streamTypes.add(new HLSStream(pathServletBase, ffPath, sourceURL,
         // "-acodec copy -vcodec copy -movflags frag_keyframe+empty_moov -f mp4", "video/mp4",
         // pathReaderSuffix + ".mp4"));
+
+        // Once we are running, we should not change streamTypes dynamically.
+        // Should we need to, wrap the code that does so, together with get(), in some
+        // form of semaphore/process control.
 
         try {
             initParameters.put("servlet-name", pathServletBase);
@@ -109,6 +112,12 @@ public class frigateSVRServlet extends HttpServlet {
             logger.warn("Registering servlet failed:{}", e.getMessage());
             this.isStarted = false;
         }
+
+        // tell our streams that we are serving
+
+        streamTypes.forEach(strm -> {
+            strm.ServerReady();
+        });
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -118,6 +127,7 @@ public class frigateSVRServlet extends HttpServlet {
     // if the Frigate server is shut down, or if we reconfigure the 'thing'
 
     public void StopServer() {
+        logger.info("StopServer called: stopping streaming server");
         streamTypes.forEach(strm -> {
             strm.Cleanup();
         });
@@ -131,6 +141,10 @@ public class frigateSVRServlet extends HttpServlet {
                 logger.warn("Unregistration of servlet failed:{}", e.getMessage());
             }
         }
+        // don't do this until the server has stopped, otherwise someone in
+        // the middle of get() could cause concurrent access issues.
+
+        streamTypes.clear();
     }
 
     ///////////////////////////////////////////////////////////////////////////

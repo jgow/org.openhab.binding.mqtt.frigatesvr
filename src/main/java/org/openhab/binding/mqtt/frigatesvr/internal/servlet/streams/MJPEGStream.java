@@ -42,6 +42,8 @@ public class MJPEGStream extends StreamTypeBase {
     public MJPEGStream(String baseURL, String ffBinary, String URLtoFF, String readerPath,
             frigateSVRCommonConfiguration config) {
         super(baseURL, ffBinary, URLtoFF, readerPath, config);
+        this.startOnLoad = config.ffMJPEGStartProducerOnLoad;
+
         this.pathfromFF = "frigate-in.jpg";
         String ffDestURL = new String("http://127.0.0.1:8080") + baseURL + "/" + pathfromFF;
         // no WD prefix here

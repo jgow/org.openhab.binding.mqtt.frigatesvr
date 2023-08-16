@@ -41,6 +41,8 @@ public class HLSStream extends StreamTypeBase {
         this.pathfromFF = readerPath + ".m3u8";
         logger.info("stream entry point set to {}", this.pathfromFF);
 
+        this.startOnLoad = config.ffHLSStartProducerOnLoad;
+
         // use PWD as prefix for now
 
         this.ffHelper.BuildFFMPEGCommand(ffBinary, URLtoFF, this.pathfromFF, config.ffHLSTranscodeCommands + fmtCmds,

@@ -68,6 +68,7 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
                                 frigateSVRChannelState::toStringMQTT, false)),
                 Map.entry(CHANNEL_BIRDSEYE_URL, new frigateSVRChannelState(CHANNEL_BIRDSEYE_URL,
                         frigateSVRChannelState::fromStringMQTT, frigateSVRChannelState::toStringMQTT, false)));
+        logger.info("new FrigateSVR server thing");
     }
 
     @Override
@@ -191,9 +192,15 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
 
                 // cocked, locked and ready to rock..
 
-                logger.debug("onlining server thing");
+                logger.info("onlining server thing");
 
                 updateStatus(ThingStatus.ONLINE);
+
+                // now we can start the streaming server - if enabled in config.
+                // This is for the birdseye view - we do this before we
+                // notify the cameras that we are online. Seems to avoid a conflict
+
+                this.StartStream();
 
                 logger.debug("publishing status message on {}/status", this.svrTopicPrefix);
                 ((@NonNull MqttBrokerConnection) MQTTConnection).publish(this.svrTopicPrefix + "/status",
@@ -204,11 +211,6 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
                                 .toState(GetVersionString()));
                 updateState(CHANNEL_UI_URL, ((@NonNull frigateSVRChannelState) (this.Channels.get(CHANNEL_UI_URL)))
                         .toState(this.httpHelper.getBaseURL()));
-
-                // now we can start the streaming server - if enabled in config.
-                // This is for the birdseye view
-
-                this.StartStream();
             }
 
             // if we are online, we need to ping to check. The config from Frigate does not change at
@@ -227,6 +229,7 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
                     // we need to offline ourselves, but leave the pinger working. At this stage
                     // stop the streaming servers but do not unsubscribe our MQTT transports.
 
+                    logger.info("server-thing: keepalive - stopping streaming server");
                     this.httpServlet.StopServer();
                     updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, "@text/error.servercomm");
                     this.svrState.status = "offline";
@@ -281,6 +284,7 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
     protected void BridgeGoingOffline() {
         if (servercheck != null) {
             ((@NonNull ScheduledFuture<?>) servercheck).cancel(true);
+            logger.info("server-thing: stopping streaming server (BridgeGoingOffline)");
             this.httpServlet.StopServer();
             servercheck = null;
         }
@@ -300,9 +304,11 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
             String birdseyeFrigateStreamPath = this.svrState.rtspbase + "/birdseye";
             String viewURL = this.networkHelper.GetHostBaseURL() + serverBase + "/birdseye";
 
+            logger.info("server-thing: starting streaming server");
             this.httpServlet.SetWhitelist(this.svrState.whitelist);
             this.httpServlet.StartServer(serverBase, "birdseye", birdseyeFrigateStreamPath, this.svrState.ffmpegPath,
                     config);
+            logger.info("server-thing: streaming server start complete");
 
             updateState(CHANNEL_BIRDSEYE_URL,
                     ((@NonNull frigateSVRChannelState) (this.Channels.get(CHANNEL_BIRDSEYE_URL))).toState(viewURL));

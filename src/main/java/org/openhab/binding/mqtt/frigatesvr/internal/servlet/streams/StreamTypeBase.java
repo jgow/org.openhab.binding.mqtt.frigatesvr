@@ -44,6 +44,7 @@ public class StreamTypeBase {
     public String readerPath = "";
     private int keepalive_delay = 2;
     protected frigateSVRCommonConfiguration config;
+    protected boolean startOnLoad = true;
 
     @SuppressWarnings("serial")
     private static final Map<String, String> mimeExt = new HashMap<String, String>() {
@@ -81,6 +82,18 @@ public class StreamTypeBase {
             }
         }
         return "application/octet-stream";
+    }
+
+    /////////////////////////////////////////////////////////////////////////
+    // ServerReady
+    //
+    // Called when the server is ready - we can use this to start streams
+    // if the stream producer start on demand is disabled.
+
+    public void ServerReady() {
+        if (this.startOnLoad) {
+            StartStreams();
+        }
     }
 
     /////////////////////////////////////////////////////////////////////////
@@ -179,7 +192,7 @@ public class StreamTypeBase {
 
     public synchronized void PokeMe() {
         this.ffHelper.PokeMe();
-        if (this.isStreamRunning == true) {
+        if ((this.isStreamRunning == true) && !startOnLoad) {
             if (--keepalive_delay == 0) {
                 logger.info("stream is running ({})", this.getClass().getSimpleName());
                 // no-one has requested the stream between now and the last

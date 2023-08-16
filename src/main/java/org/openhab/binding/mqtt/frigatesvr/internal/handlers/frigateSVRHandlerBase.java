@@ -88,6 +88,7 @@ public class frigateSVRHandlerBase extends BaseThingHandler implements MqttMessa
 
     @Override
     public void dispose() {
+        logger.info("dispose: handler being destroyed");
         this.httpServlet.StopServer();
         super.dispose();
     }

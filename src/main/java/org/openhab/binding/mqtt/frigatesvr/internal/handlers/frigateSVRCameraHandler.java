@@ -303,6 +303,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
                                 frigateSVRChannelState::toNoConversion, false)),
                 Map.entry(CHANNEL_MJPEG_URL, new frigateSVRChannelState("", frigateSVRChannelState::fromStringMQTT,
                         frigateSVRChannelState::toStringMQTT, false)));
+        logger.info("new FrigateSVR camera thing");
     }
 
     @Override
@@ -335,6 +336,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     // to update the state here and stop the streaming server
 
     protected void BridgeGoingOffline() {
+        logger.info("camera: Bridge going offline, stopping streamer");
         this.httpServlet.StopServer();
         this.svrState.status = "offline";
     }
@@ -430,8 +432,10 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
             String serverBase = new String("/frigateSVR/") + this.getThing().getUID().getId();
             String viewURL = this.networkHelper.GetHostBaseURL() + serverBase + "/camera";
 
+            logger.info("camera-thing: starting streaming server");
             this.httpServlet.SetWhitelist(this.svrState.whitelist);
             this.httpServlet.StartServer(serverBase, "camera", ffmpegSource, this.svrState.ffmpegPath, config);
+            logger.info("camera-thing: streaming server start complete");
 
             logger.info("Multistream server process running");
             updateState(CHANNEL_MJPEG_URL,
@@ -501,6 +505,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     // resetting ourselves
 
     private void SetOffline() {
+        logger.info("camera: SetOffline called, stopping streamer");
         this.httpServlet.StopServer();
         if (!firstInit) {
             UnsubscribeMQTTTopics(this.svrState.topicPrefix);
