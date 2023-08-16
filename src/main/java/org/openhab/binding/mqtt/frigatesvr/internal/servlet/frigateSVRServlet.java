@@ -43,7 +43,7 @@ import org.slf4j.LoggerFactory;
  * streams, as these have a lower framerate. It can also be used to stream the birdseye view
  * at the Frigate server level.
  *
- * @author Dr J Gow - Written from ground-up to handle requirements of FrigateSVR
+ * @author Dr J Gow - FrigateSVR streaming server.
  */
 @NonNullByDefault
 public class frigateSVRServlet extends HttpServlet {
@@ -113,6 +113,7 @@ public class frigateSVRServlet extends HttpServlet {
             this.isStarted = false;
         }
 
+        // after this point, streamTypes should not be changed.
         // tell our streams that we are serving
 
         streamTypes.forEach(strm -> {
@@ -193,7 +194,7 @@ public class frigateSVRServlet extends HttpServlet {
         if (!whiteList.equals("DISABLE")) {
             String requestIP = "(" + req.getRemoteHost() + ")";
             if (!whiteList.contains(requestIP)) {
-                logger.warn("{} was not in the whiteList and will be ignored.", requestIP);
+                logger.warn("{} was not in the whitelist and will be ignored.", requestIP);
                 return;
             }
         }

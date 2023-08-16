@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
  * The {@link StreamOutput} Streams mjpeg out to a client
  *
  * @author Matthew Skinner - Initial contribution (to ipcamera)
- * @author Dr J Gow - imported unchanged from ipcamera
+ * @author Dr J Gow - imported unchanged from ipcamera with some redundant functions removed
  */
 
 @NonNullByDefault

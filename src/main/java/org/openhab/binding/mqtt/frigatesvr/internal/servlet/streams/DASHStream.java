@@ -84,7 +84,7 @@ public class DASHStream extends StreamTypeBase {
     public boolean canAccept(String pathInfo) {
         String pattern = "(" + this.readerPath + "(\\.mpd))";
         pattern += "|(chunk-stream\\S+)|(init-stream\\S+)";
-        logger.info("Pattern to match: |{}| against |{}|", pattern, pathInfo);
+        logger.debug("Pattern to match: |{}| against |{}|", pattern, pathInfo);
         return (pathInfo.matches(pattern)) ? true : false;
     }
 

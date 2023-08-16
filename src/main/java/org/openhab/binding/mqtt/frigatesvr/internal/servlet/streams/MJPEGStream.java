@@ -114,6 +114,7 @@ public class MJPEGStream extends StreamTypeBase {
         logger.info("getter processing request");
 
         StreamOutput output = new StreamOutput(resp, "video/x-motion-jpeg");
+
         synchronized (this) {
             if (!this.isStreamRunning) {
                 this.postFlag = false;
@@ -148,7 +149,7 @@ public class MJPEGStream extends StreamTypeBase {
 
                 if (this.streamList.isEmpty()) {
                     this.StopStreams();
-                    logger.info("all mjpeg reader streams have stopped.");
+                    logger.info("all MJPEG reader streams have stopped.");
                 }
 
                 return;

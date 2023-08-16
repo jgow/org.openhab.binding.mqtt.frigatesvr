@@ -231,7 +231,7 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
                     // we need to offline ourselves, but leave the pinger working. At this stage
                     // stop the streaming servers but do not unsubscribe our MQTT transports.
 
-                    logger.info("server-thing: keepalive - stopping streaming server");
+                    logger.debug("server-thing: keepalive - stopping streaming server");
                     this.httpServlet.StopServer();
                     updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, "@text/error.servercomm");
                     this.svrState.status = "offline";
@@ -286,7 +286,7 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
     protected void BridgeGoingOffline() {
         if (servercheck != null) {
             ((@NonNull ScheduledFuture<?>) servercheck).cancel(true);
-            logger.info("server-thing: stopping streaming server (BridgeGoingOffline)");
+            logger.debug("server-thing: stopping streaming server (BridgeGoingOffline)");
             this.httpServlet.StopServer();
             servercheck = null;
         }
@@ -310,7 +310,6 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
             this.httpServlet.SetWhitelist(this.svrState.whitelist);
             this.httpServlet.StartServer(serverBase, "birdseye", birdseyeFrigateStreamPath, this.svrState.ffmpegPath,
                     config);
-            logger.info("server-thing: streaming server start complete");
 
             updateState(CHANNEL_BIRDSEYE_URL,
                     ((@NonNull frigateSVRChannelState) (this.Channels.get(CHANNEL_BIRDSEYE_URL))).toState(viewURL));

@@ -303,14 +303,13 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
                                 frigateSVRChannelState::toNoConversion, false)),
                 Map.entry(CHANNEL_MJPEG_URL, new frigateSVRChannelState("", frigateSVRChannelState::fromStringMQTT,
                         frigateSVRChannelState::toStringMQTT, false)));
-        logger.info("new FrigateSVR camera thing");
     }
 
     @Override
     public void initialize() {
         config = getConfigAs(frigateSVRCameraConfiguration.class);
         this.svrTopicPrefix = "frigateSVR/" + config.serverID;
-        logger.info("marking camera config pending");
+        logger.debug("marking camera config pending");
         this.SetOffline();
         updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING);
         super.initialize();
@@ -336,7 +335,6 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     // to update the state here and stop the streaming server
 
     protected void BridgeGoingOffline() {
-        logger.info("camera: Bridge going offline, stopping streamer");
         this.httpServlet.StopServer();
         this.svrState.status = "offline";
     }
@@ -349,7 +347,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     protected void BridgeGoingOnline(MqttBrokerConnection connection) {
 
         ((@NonNull MqttBrokerConnection) this.MQTTConnection).subscribe(this.svrTopicPrefix + "/status", this);
-        logger.info("publishing req. for status: {}/camOnLine", this.svrTopicPrefix);
+        logger.debug("publishing req. for status: {}/camOnLine", this.svrTopicPrefix);
 
         // tell the server we are going online
 
@@ -435,7 +433,6 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
             logger.info("camera-thing: starting streaming server");
             this.httpServlet.SetWhitelist(this.svrState.whitelist);
             this.httpServlet.StartServer(serverBase, "camera", ffmpegSource, this.svrState.ffmpegPath, config);
-            logger.info("camera-thing: streaming server start complete");
 
             logger.info("Multistream server process running");
             updateState(CHANNEL_MJPEG_URL,
