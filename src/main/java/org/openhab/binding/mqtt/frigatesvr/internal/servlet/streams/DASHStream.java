@@ -44,7 +44,7 @@ public class DASHStream extends StreamTypeBase {
         // + "-ldash 1 -use_template 1 -use_timeline 0 -write_prft 1 -avioflags direct -fflags +nobuffer+flush_packets "
         // + "-format_options movflags=+cmaf ";
 
-        String fmtCmds = " -f dash -seg_duration 1 -streaming 1 -window_size 30 -remove_at_exit 1 ";
+        String fmtCmds = " -f dash -window_size 30 -remove_at_exit 1 " + config.ffDASHPackagingCommands;
 
         this.pathfromFF = readerPath + ".mpd";
         logger.info("sending stream to {}", this.pathfromFF);
@@ -54,7 +54,7 @@ public class DASHStream extends StreamTypeBase {
         // use PWD as prefix for now
 
         this.ffHelper.BuildFFMPEGCommand(ffBinary, URLtoFF, this.pathfromFF, config.ffDASHTranscodeCommands + fmtCmds,
-                "./");
+                config.ffTempDir);
     }
 
     /////////////////////////////////////////////////////////////////////////

@@ -66,10 +66,22 @@
 			<default>-acodec copy -vcodec copy</default>
 			<advanced>true</advanced>
 		</parameter>
+		<parameter name="ffDASHPackageCommands" type="text" required="false">
+			<label>@text/param.common.ffDASHPackageCommands.label</label>
+			<description>@text/param.common.ffDASHPackageCommands.description</description>
+			<default>-seg_duration 1 -streaming 1</default>
+			<advanced>true</advanced>
+		</parameter>
 		<parameter name="ffKeepalivesBeforeExit" type="integer" required="true">
 			<label>@text/param.common.ffKeepalivesBeforeExit.label</label>
 			<description>@text/param.common.ffKeepalivesBeforeExit.description</description>
 			<default>2</default>
+			<advanced>true</advanced>
+		</parameter>
+		<parameter name="ffTempDir" type="text" required="false">
+			<label>@text/param.common.ffTempDir.label</label>
+			<description>@text/param.common.ffTempDir.description</description>
+			<default/>
 			<advanced>true</advanced>
 		</parameter>
 	</config-description>
@@ -149,10 +161,22 @@
 			<default>-acodec copy -vcodec copy</default>
 			<advanced>true</advanced>
 		</parameter>
+		<parameter name="ffDASHPackageCommands" type="text" required="false">
+			<label>@text/param.common.ffDASHPackageCommands.label</label>
+			<description>@text/param.common.ffDASHPackageCommands.description</description>
+			<default>-seg_duration 1 -streaming 1</default>
+			<advanced>true</advanced>
+		</parameter>
 		<parameter name="ffKeepalivesBeforeExit" type="integer" required="true">
 			<label>@text/param.common.ffKeepalivesBeforeExit.label</label>
 			<description>@text/param.common.ffKeepalivesBeforeExit.description</description>
 			<default>2</default>
+			<advanced>true</advanced>
+		</parameter>
+		<parameter name="ffTempDir" type="text" required="false">
+			<label>@text/param.common.ffTempDir.label</label>
+			<description>@text/param.common.ffTempDir.description</description>
+			<default/>
 			<advanced>true</advanced>
 		</parameter>
 

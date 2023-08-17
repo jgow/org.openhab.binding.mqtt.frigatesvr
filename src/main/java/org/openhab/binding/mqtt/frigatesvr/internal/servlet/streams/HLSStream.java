@@ -46,7 +46,7 @@ public class HLSStream extends StreamTypeBase {
         // use PWD as prefix for now
 
         this.ffHelper.BuildFFMPEGCommand(ffBinary, URLtoFF, this.pathfromFF, config.ffHLSTranscodeCommands + fmtCmds,
-                "./");
+                config.ffTempDir);
     }
 
     /////////////////////////////////////////////////////////////////////////

@@ -25,5 +25,4 @@ public class frigateSVRCameraConfiguration extends frigateSVRCommonConfiguration
     public String cameraName = "";
     public boolean enableStream = true;
     public String ffmpegCameraNameOverride = "";
-    public String ffmpegCommands = "";
 }
