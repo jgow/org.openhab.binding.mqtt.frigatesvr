@@ -96,10 +96,6 @@ public class frigateSVRServlet extends HttpServlet {
         streamTypes.add(new HLSStream(pathServletBase, ffPath, sourceURL, pathReaderSuffix, config));
         streamTypes.add(new DASHStream(pathServletBase, ffPath, sourceURL, pathReaderSuffix, config));
 
-        // streamTypes.add(new HLSStream(pathServletBase, ffPath, sourceURL,
-        // "-acodec copy -vcodec copy -movflags frag_keyframe+empty_moov -f mp4", "video/mp4",
-        // pathReaderSuffix + ".mp4"));
-
         // Once we are running, we should not change streamTypes dynamically.
         // Should we need to, wrap the code that does so, together with get(), in some
         // form of semaphore/mutex. Otherwise getters and posters may choke.
@@ -129,9 +125,7 @@ public class frigateSVRServlet extends HttpServlet {
 
     public void StopServer() {
         logger.info("StopServer called: stopping streaming server");
-        streamTypes.forEach(strm -> {
-            strm.Cleanup();
-        });
+
         if (isStarted) {
             try {
                 logger.info("Stopping and unregistering server");
@@ -142,9 +136,13 @@ public class frigateSVRServlet extends HttpServlet {
                 logger.warn("Unregistration of servlet failed:{}", e.getMessage());
             }
         }
+
         // don't do this until the server has stopped, otherwise someone in
         // the middle of get() could cause concurrent access issues.
 
+        streamTypes.forEach(strm -> {
+            strm.Cleanup();
+        });
         streamTypes.clear();
     }
 
@@ -190,7 +188,6 @@ public class frigateSVRServlet extends HttpServlet {
         if (pathInfo == null) {
             return;
         }
-        logger.info("GET received from {}/{}", req.getRemoteHost(), pathInfo);
         if (!whiteList.equals("DISABLE")) {
             String requestIP = "(" + req.getRemoteHost() + ")";
             if (!whiteList.contains(requestIP)) {
@@ -202,7 +199,6 @@ public class frigateSVRServlet extends HttpServlet {
 
         String relPath = (@NonNull String) (frigateSVRMiscHelper.StripLeadingSlash(pathInfo));
         streamTypes.forEach(strm -> {
-            logger.info("getter: request: {} checking stream {}", relPath, strm.readerPath);
             if (strm.canAccept(relPath)) {
                 try {
                     strm.Getter(req, resp, relPath);

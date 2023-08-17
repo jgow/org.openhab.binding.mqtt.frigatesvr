@@ -23,9 +23,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.NonNullByDefault;
@@ -38,7 +42,7 @@ import org.slf4j.LoggerFactory;
  * the H264 streams coming from Frigate to MJPEG, in order that they can be displayed on
  * openHAB UIs
  * 
- * @author J Gow - Initial contribution
+ * @author Dr J Gow - Initial contribution
  */
 @NonNullByDefault
 public class FFmpegManager {
@@ -50,8 +54,12 @@ public class FFmpegManager {
     private ExecutorService es = Executors.newSingleThreadExecutor();
     private Path tmpDir;
 
+    private Map<String, String> ffmpegStats = new HashMap<>();
+
     public FFmpegManager() {
         this.tmpDir = Paths.get("");
+        this.ffmpegStats.put("frame", "");
+        this.ffmpegStats.put("fps", "");
     }
 
     ////////////////////////////////////////////////////////////////////////
@@ -73,15 +81,48 @@ public class FFmpegManager {
                 try {
                     while ((line = bufferedReader.readLine()) != null) {
                         logger.debug("ffmpeg: {}", line);
+                        ParseLog(line);
                     }
                 } catch (IOException e) {
-                    logger.warn("exception in log eater: {}", e.getMessage());
+                    logger.warn("exception in log-eater: {}", e.getMessage());
                 }
                 logger.info("no further output from ffmpeg");
             }
         }
         logger.info("log-eater process exiting");
     };
+
+    ////////////////////////////////////////////////////////////
+    // ParseLog
+    //
+    // Extract key information from the ffmpeg log.
+
+    private void ParseLog(String str) {
+        if (str.startsWith("frame=")) {
+            Pattern rx = Pattern.compile("(\\S+)\\s*=\\s*(\\S+)");
+            Matcher m = rx.matcher(str);
+            while (m.find()) {
+                synchronized (this) {
+                    if (ffmpegStats.containsKey(m.group(1))) {
+                        ffmpegStats.put(m.group(1), m.group(2));
+                    }
+                }
+            }
+        }
+    }
+
+    ////////////////////////////////////////////////////////////
+    // GetStats
+    //
+    // Return FFMPEG stats from the log
+
+    public String GetStats(String item) {
+        if (this.ffmpegStats.containsKey(item)) {
+            return (@NonNull String) (this.ffmpegStats.get(item));
+        } else {
+            return "";
+        }
+    }
 
     ////////////////////////////////////////////////////////////
     // BuildFFMPEGCommand
@@ -96,9 +137,8 @@ public class FFmpegManager {
         CreateDestinationEnv(prefix);
         Path finalPath = this.tmpDir.resolve(destination);
 
-        logger.info("destination for stream {}", finalPath.toString());
-        logger.info("ffmpeg binary: {}", ffmpegLocation);
-        logger.info("MJPEG options : {}", ffmpegCommands);
+        logger.debug("destination for stream {}, ffmpeg binary: {}, transcode options {}", finalPath.toString(),
+                ffmpegLocation, ffmpegCommands);
 
         ffmpegargs.clear();
         ffmpegargs.add(ffmpegLocation);
@@ -120,7 +160,8 @@ public class FFmpegManager {
     public boolean StartStream() {
         if (process == null) {
             try {
-                logger.info("ffmpeg stream process starting");
+                this.ffmpegStats.put("frame", "");
+                this.ffmpegStats.put("fps", "");
                 process = Runtime.getRuntime().exec(ffmpegargs.toArray(new String[ffmpegargs.size()]));
                 // FFmpeg will block if we don't keep the stdout flushed - so we
                 // have a little thread that brings ffmpeg output to the logs -
@@ -130,7 +171,7 @@ public class FFmpegManager {
                 // automatically if the ffmpeg process quits and ceases to be active
                 es.execute(LogEater);
                 isStarted = true;
-                logger.info("ffmpeg stream process running");
+                logger.debug("ffmpeg stream process running");
             } catch (IOException e) {
                 logger.error("Unable to start ffmpeg:");
                 process = null;

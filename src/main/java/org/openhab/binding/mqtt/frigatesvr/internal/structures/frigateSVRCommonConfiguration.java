@@ -28,4 +28,5 @@ public class frigateSVRCommonConfiguration {
     public String ffHLSTranscodeCommands = "";
     public boolean ffDASHStartProducerOnLoad = false;
     public String ffDASHTranscodeCommands = "";
+    public int ffKeepalivesBeforeExit = 2;
 }

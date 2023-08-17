@@ -12,8 +12,6 @@
  */
 package org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams;
 
-//import static org.openhab.binding.ipcamera.internal.IpCameraBindingConstants.HLS_STARTUP_DELAY_MS;
-
 import java.io.IOException;
 
 import javax.servlet.ServletInputStream;
@@ -21,8 +19,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
-import org.openhab.binding.mqtt.frigatesvr.internal.servlet.OpenStreams;
-import org.openhab.binding.mqtt.frigatesvr.internal.servlet.StreamOutput;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRCommonConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +28,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Dr J Gow - initial contribution
  */
+
 @NonNullByDefault
 public class MJPEGStream extends StreamTypeBase {
 
@@ -118,7 +115,6 @@ public class MJPEGStream extends StreamTypeBase {
         synchronized (this) {
             if (!this.isStreamRunning) {
                 this.postFlag = false;
-                logger.info("Starting ffmpeg stream");
                 // If we fail to start the stream, just return 'not found'
                 this.StartStreams();
                 if (!this.isStreamRunning) {

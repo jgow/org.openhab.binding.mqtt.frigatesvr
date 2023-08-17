@@ -62,6 +62,7 @@ public class StreamTypeBase {
             frigateSVRCommonConfiguration config) {
         this.readerPath = readerPath;
         this.config = config;
+        this.keepalive_delay = config.ffKeepalivesBeforeExit;
     }
 
     /////////////////////////////////////////////////////////////////////////
@@ -70,13 +71,9 @@ public class StreamTypeBase {
     // Return the mime type for a file with a given extension, or unknown
 
     private static String GetMime(String fn) {
-        Logger logger = LoggerFactory.getLogger(StreamTypeBase.class);
-
         String ext = fn.substring(fn.lastIndexOf('.') + 1);
-        logger.info("extension {}", ext);
         if (!ext.equals("")) {
             if (mimeExt.containsKey(ext)) {
-                logger.info("mime type {}", mimeExt.get(ext));
                 return (@NonNull String) (mimeExt.get(ext));
             }
         }
@@ -118,6 +115,8 @@ public class StreamTypeBase {
             // This can take some time. While this code doesn't actually block,
             // it could sit in the loop up to 15 seconds in order to get
             // ffmpeg started.
+            // To check, we use stream-specific presence of output from ffmpeg,
+            // together with a valid frame count.
             // The check for actual output is stream type specific.
 
             int count = 0;
@@ -128,8 +127,10 @@ public class StreamTypeBase {
                 } catch (InterruptedException e) {
                     break;
                 }
-                if (this.CheckStarted()) {
-                    logger.info("ffmpeg stream confirmed started");
+                String s = this.ffHelper.GetStats("frame");
+                if (this.CheckStarted() && (!s.equals(""))) {
+                    logger.info("ffmpeg stream confirmed started; frame count {} fps {}", s,
+                            this.ffHelper.GetStats("fps"));
 
                     // guarantees we always wait one timeout interval
                     // once the stream is marked 'running'
@@ -202,7 +203,7 @@ public class StreamTypeBase {
                 } else {
                     logger.info("hitcount = {}, stream continuing", hitCount);
                 }
-                keepalive_delay = 2;
+                keepalive_delay = config.ffKeepalivesBeforeExit;
             }
         }
         hitCount = 0;
@@ -257,7 +258,7 @@ public class StreamTypeBase {
             mimeType = contentType;
         }
 
-        logger.info("serving file {} content type {}", filename, mimeType);
+        logger.debug("serving file {} content type {}", filename, mimeType);
 
         File file = new File(filename);
         if (!file.exists()) {

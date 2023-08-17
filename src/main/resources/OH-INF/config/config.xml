@@ -66,6 +66,12 @@
 			<default>-acodec copy -vcodec copy</default>
 			<advanced>true</advanced>
 		</parameter>
+		<parameter name="ffKeepalivesBeforeExit" type="integer" required="true">
+			<label>@text/param.common.ffKeepalivesBeforeExit.label</label>
+			<description>@text/param.common.ffKeepalivesBeforeExit.description</description>
+			<default>2</default>
+			<advanced>true</advanced>
+		</parameter>
 	</config-description>
 
 	<config-description uri="thing-type:mqtt:Server">
@@ -143,5 +149,12 @@
 			<default>-acodec copy -vcodec copy</default>
 			<advanced>true</advanced>
 		</parameter>
+		<parameter name="ffKeepalivesBeforeExit" type="integer" required="true">
+			<label>@text/param.common.ffKeepalivesBeforeExit.label</label>
+			<description>@text/param.common.ffKeepalivesBeforeExit.description</description>
+			<default>2</default>
+			<advanced>true</advanced>
+		</parameter>
+
 	</config-description>
 </config-description:config-descriptions>

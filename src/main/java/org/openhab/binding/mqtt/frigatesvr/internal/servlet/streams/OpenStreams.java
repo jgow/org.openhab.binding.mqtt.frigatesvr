@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.mqtt.frigatesvr.internal.servlet;
+package org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams;
 
 import java.util.ArrayList;
 import java.util.Collections;

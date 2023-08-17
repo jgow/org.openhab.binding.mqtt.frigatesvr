@@ -38,7 +38,14 @@ public class DASHStream extends StreamTypeBase {
         super(baseURL, ffBinary, URLtoFF, readerPath, config);
 
         // String fmtCmds = " -single_file 0 -use_template 1 -window_size 5 -f dash -index_correction 1 -streaming 1";
-        String fmtCmds = " -single_file 0 -f dash -window_size 4 -extra_window_size 0 -seg_duration 2 -remove_at_exit 1 -streaming 1";
+        // String fmtCmds = " -f dash -single_file 0 -window_size 4 -extra_window_size 2 -streaming 1 -remove_at_exit 1
+        // "
+        // + "-seg_duration 2 -frag_type duration -frag_duration 0.2 -index_correction 1 -target_latency 1 "
+        // + "-ldash 1 -use_template 1 -use_timeline 0 -write_prft 1 -avioflags direct -fflags +nobuffer+flush_packets "
+        // + "-format_options movflags=+cmaf ";
+
+        String fmtCmds = " -f dash -seg_duration 1 -streaming 1 -window_size 30 -remove_at_exit 1 ";
+
         this.pathfromFF = readerPath + ".mpd";
         logger.info("sending stream to {}", this.pathfromFF);
 
@@ -58,7 +65,7 @@ public class DASHStream extends StreamTypeBase {
 
     public boolean CheckStarted() {
         File f = new File(this.ffHelper.GetDestinationPath() + "/" + this.pathfromFF);
-        logger.info("Checking stream started: path {}", this.ffHelper.GetDestinationPath() + "/" + this.pathfromFF);
+        logger.debug("Checking stream started: path {}", this.ffHelper.GetDestinationPath() + "/" + this.pathfromFF);
         return (f.exists() && f.isFile());
     }
 
@@ -116,7 +123,7 @@ public class DASHStream extends StreamTypeBase {
 
     public void Getter(HttpServletRequest req, HttpServletResponse resp, String pathInfo) throws IOException {
 
-        logger.debug("processing HLS get request");
+        logger.debug("processing DASH get request");
 
         // a hit is a request for any of the components
 
@@ -133,10 +140,8 @@ public class DASHStream extends StreamTypeBase {
 
             StartStreams();
         }
-        // Then just serve the file. It will be either the m3u8 or a
-        // numbered .ts. It will respond with error to the client
-        // if the file not found. However, we send only if the stream
-        // is running by this point.
+
+        // Serve either the playlist, or one of the segment files
 
         if (this.isStreamRunning) {
             this.SendFile(resp, this.ffHelper.GetDestinationPath() + "/" + pathInfo, "");

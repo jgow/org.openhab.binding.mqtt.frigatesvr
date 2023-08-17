@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-package org.openhab.binding.mqtt.frigatesvr.internal.servlet;
+package org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams;
 
 import java.io.IOException;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
  * The {@link StreamOutput} Streams mjpeg out to a client
  *
  * @author Matthew Skinner - Initial contribution (to ipcamera)
- * @author Dr J Gow - imported unchanged from ipcamera with some redundant functions removed
+ * @author Dr J Gow - imported from ipcamera with some redundant functions removed
  */
 
 @NonNullByDefault
@@ -78,14 +78,6 @@ public class StreamOutput {
             logger.debug("FIFO buffer has run out of space:{}", e.getMessage());
             fifo.remove();
             fifo.add(frame);
-        }
-    }
-
-    public void updateContentType(String contentType) {
-        if (!connected) {
-            this.contentType = contentType;
-            sendInitialHeaders();
-            connected = true;
         }
     }
 
