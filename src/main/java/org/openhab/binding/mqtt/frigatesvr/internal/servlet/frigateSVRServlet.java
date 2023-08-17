@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -46,15 +47,16 @@ import org.slf4j.LoggerFactory;
  * @author Dr J Gow - FrigateSVR streaming server.
  */
 @NonNullByDefault
+@SuppressWarnings("serial")
 public class frigateSVRServlet extends HttpServlet {
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
-    private static final long serialVersionUID = -134658667574L;
     private static final Dictionary<Object, Object> initParameters = new Hashtable<>(Map.of("async-supported", "true"));
     private String pathServletBase = "";
     protected final HttpService httpService;
     private String whiteList = "DISABLE";
     private boolean isStarted = false;
+    private static ReentrantLock svrMutex = new ReentrantLock();
 
     // we maintain an array of these. They are configured once at the start.
 
@@ -96,10 +98,21 @@ public class frigateSVRServlet extends HttpServlet {
         streamTypes.add(new HLSStream(pathServletBase, ffPath, sourceURL, pathReaderSuffix, config));
         streamTypes.add(new DASHStream(pathServletBase, ffPath, sourceURL, pathReaderSuffix, config));
 
-        // Once we are running, we should not change streamTypes dynamically.
-        // Should we need to, wrap the code that does so, together with get(), in some
-        // form of semaphore/mutex. Otherwise getters and posters may choke.
+        // tell our streams that we are serving. We may get async GET requests
+        // as soon as the server is up.
 
+        streamTypes.forEach(strm -> {
+            strm.ServerReady();
+        });
+
+        // The svrMutex serves a different purpose. For some reason, on occasion, if
+        // two threads in two different 'things' try to create servlets at the same time despite
+        // them being at different locations, the creation chokes. I do not have the inclination to
+        // grovel through the source code to find out why. The static mutex ensures that
+        // we complete one servlet creation at a time, providing we are in the same context.
+        // A likely possibility is when supporting multiple Frigate server instances
+
+        svrMutex.lock();
         try {
             initParameters.put("servlet-name", pathServletBase);
             httpService.registerServlet(pathServletBase, this, initParameters, httpService.createDefaultHttpContext());
@@ -107,14 +120,22 @@ public class frigateSVRServlet extends HttpServlet {
         } catch (Exception e) {
             logger.warn("Registering servlet failed:{}", e.getMessage());
             this.isStarted = false;
+            // if we haven't started for whatever reason, stop our streams.
+        }
+        svrMutex.unlock();
+
+        // if we fail, clean up the stream list.
+
+        if (!this.isStarted) {
+            streamTypes.forEach(strm -> {
+                strm.Cleanup();
+            });
+            streamTypes.clear();
         }
 
-        // after this point, streamTypes should not be changed.
-        // tell our streams that we are serving
-
-        streamTypes.forEach(strm -> {
-            strm.ServerReady();
-        });
+        // Once we are running, we should not change streamTypes dynamically.
+        // Should we need to, wrap the code that does so, together with get(), in some
+        // form of semaphore/mutex. Otherwise getters and posters may choke.
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -126,16 +147,19 @@ public class frigateSVRServlet extends HttpServlet {
     public void StopServer() {
         logger.info("StopServer called: stopping streaming server");
 
+        // serialize threads that destroy servlets
+
+        svrMutex.lock();
         if (isStarted) {
             try {
                 logger.info("Stopping and unregistering server");
                 httpService.unregister(pathServletBase);
-                this.destroy();
                 isStarted = false;
             } catch (IllegalArgumentException e) {
                 logger.warn("Unregistration of servlet failed:{}", e.getMessage());
             }
         }
+        svrMutex.unlock();
 
         // don't do this until the server has stopped, otherwise someone in
         // the middle of get() could cause concurrent access issues.
@@ -144,6 +168,10 @@ public class frigateSVRServlet extends HttpServlet {
             strm.Cleanup();
         });
         streamTypes.clear();
+
+        // close us out
+
+        this.destroy();
     }
 
     ///////////////////////////////////////////////////////////////////////////
