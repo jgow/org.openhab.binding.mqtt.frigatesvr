@@ -34,4 +34,13 @@ public class frigateSVRMiscHelper {
         }
         return rc;
     }
+
+    ///////////////////////////////////////////////////////////////////////
+    // StripTrailingSlash
+    //
+    // Remove any trailing slashes and return the string
+
+    public static String StripTrailingSlash(String str) {
+        return str.replaceFirst("/*$", "");
+    }
 }

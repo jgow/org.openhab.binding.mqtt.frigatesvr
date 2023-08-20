@@ -33,9 +33,8 @@ public class DASHStream extends StreamTypeBase {
 
     private final Logger logger = LoggerFactory.getLogger(DASHStream.class);
 
-    public DASHStream(String baseURL, String ffBinary, String URLtoFF, String readerPath,
-            frigateSVRCommonConfiguration config) {
-        super(baseURL, ffBinary, URLtoFF, readerPath, config);
+    public DASHStream(String readerPath, String ffBinary, String URLtoFF, frigateSVRCommonConfiguration config) {
+        super(readerPath, ffBinary, URLtoFF, config);
 
         // String fmtCmds = " -single_file 0 -use_template 1 -window_size 5 -f dash -index_correction 1 -streaming 1";
         // String fmtCmds = " -f dash -single_file 0 -window_size 4 -extra_window_size 2 -streaming 1 -remove_at_exit 1
@@ -70,24 +69,12 @@ public class DASHStream extends StreamTypeBase {
     }
 
     ///////////////////////////////////////////////////////////////////////
-    // canPost
-    //
-    // HLS streams do not require ffmpeg to post directly to the server
-    // for streaming - they use files. So this endpoint need not accept
-    // posting.
-
-    public boolean canPost(String pathInfo) {
-        return false;
-    }
-
-    ///////////////////////////////////////////////////////////////////////
     // canAccept
     //
-    // HLS streams will request the playlist (xxxx.m3u8) and the transport
-    // streams (xxxx.ts). We thus limit any get requests to files of this
-    // type - and only accept requests for the .ts after the .m3u8 has
-    // been accessed at least once.
+    // DASH streams will request the playlist (xxxx.mpd), the chunk-init
+    // and chunk-streams for each segment
 
+    @Override
     public boolean canAccept(String pathInfo) {
         String pattern = "(" + this.readerPath + "(\\.mpd))";
         pattern += "|(chunk-stream\\S+)|(init-stream\\S+)";
@@ -98,29 +85,26 @@ public class DASHStream extends StreamTypeBase {
     /////////////////////////////////////////////////////////////////////////
     // Getter
     //
-    // If we get here, we must be asking for an .m3u8 or a .ts, and on this
-    // path. We don't just send any old file. The request path has already
-    // been verified.
+    // If we get here, we must be asking for an .mpd, a chunk-stream or a
+    // chunk-init, and on this path. We don't just send any old file. The
+    // request path has already been verified.
     // We need to start the ffmpeg helper if it is not already
     // started. It will not know if the stream is no longer required;
     // the keepalives will shut it down if hitCount is zero between two
     // keepalives. With the ffmpeg options we have, we won't fill up the
-    // HD as it will keep wrapping, but it may be good practice to stop
-    // the producer if there is no-one listening.
-    // Use the regular keepalive? This may be too long?
+    // HD as it will keep wrapping, but unless the option is set to start
+    // streams at server start, then we can stop the producer if there is
+    // no-one listening. Use the regular keepalive to check the hitcount
+    // if the stream is set to start dynamically.
     //
-    // However, considering an option to leave the ffmpeg converter on
-    // so as to speed up initial access. This could be user-selectable.
-    // The HLS stream does not transcode (let Frigate do this) so the
-    // footprint of the ffmpeg process is very small, and only in the
-    // stream packaging
-    //
-    // We also need to serialize access to this block - if we are
-    // not running, then multiple clients need to wait until either
-    // we are running, or have errored out in the ffmpeg starting sequence
-    // The 'StartStreams' member function is serialized, and will do
-    // nothing if the ffmpeg producer is already running
+    // We also need to mutex access to the stream start if not
+    // already started. If we are not running, then multiple clients need
+    // to wait until either we are running, or have errored out in the
+    // ffmpeg starting sequence The 'StartStreams' member function has
+    // serialized access, and will do nothing if the ffmpeg producer
+    // is already running
 
+    @Override
     public void Getter(HttpServletRequest req, HttpServletResponse resp, String pathInfo) throws IOException {
 
         logger.debug("processing DASH get request");

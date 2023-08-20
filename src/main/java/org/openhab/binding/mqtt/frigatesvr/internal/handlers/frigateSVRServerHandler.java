@@ -24,6 +24,11 @@ import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.client.HttpClient;
+import org.openhab.binding.mqtt.frigatesvr.internal.servlet.HTTPHandler;
+import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.DASHStream;
+import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.FrigateAPIForwarder;
+import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.HLSStream;
+import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.MJPEGStream;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRChannelState;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRFrigateConfiguration;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRServerConfiguration;
@@ -306,10 +311,16 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
             String birdseyeFrigateStreamPath = this.svrState.rtspbase + "/birdseye";
             String viewURL = this.networkHelper.GetHostBaseURL() + serverBase + "/birdseye";
 
+            ArrayList<HTTPHandler> handlers = new ArrayList<HTTPHandler>();
+            handlers.add(new FrigateAPIForwarder("frigatesvr", config));
+            handlers.add(new MJPEGStream("birdseye", this.svrState.ffmpegPath, birdseyeFrigateStreamPath, config));
+            handlers.add(new HLSStream("birdseye", this.svrState.ffmpegPath, birdseyeFrigateStreamPath, config));
+            handlers.add(new DASHStream("birdseye", this.svrState.ffmpegPath, birdseyeFrigateStreamPath, config));
+
             logger.info("server-thing: starting streaming server");
+
             this.httpServlet.SetWhitelist(this.svrState.whitelist);
-            this.httpServlet.StartServer(serverBase, "birdseye", birdseyeFrigateStreamPath, this.svrState.ffmpegPath,
-                    config);
+            this.httpServlet.StartServer(serverBase, handlers);
 
             updateState(CHANNEL_BIRDSEYE_URL,
                     ((@NonNull frigateSVRChannelState) (this.Channels.get(CHANNEL_BIRDSEYE_URL))).toState(viewURL));

@@ -27,11 +27,6 @@ import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.mqtt.frigatesvr.internal.helpers.frigateSVRMiscHelper;
-import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.DASHStream;
-import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.HLSStream;
-import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.MJPEGStream;
-import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.StreamTypeBase;
-import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRCommonConfiguration;
 import org.osgi.service.http.HttpService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +41,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Dr J Gow - FrigateSVR streaming server.
  */
+
 @NonNullByDefault
 @SuppressWarnings("serial")
 public class frigateSVRServlet extends HttpServlet {
@@ -60,7 +56,7 @@ public class frigateSVRServlet extends HttpServlet {
 
     // we maintain an array of these. They are configured once at the start.
 
-    private ArrayList<StreamTypeBase> streamTypes = new ArrayList<StreamTypeBase>();
+    private ArrayList<HTTPHandler> handlers = new ArrayList<HTTPHandler>();
 
     ///////////////////////////////////////////////////////////////////////////
     // constructor does not start the servlet, just notes the location of our
@@ -86,23 +82,20 @@ public class frigateSVRServlet extends HttpServlet {
     // Initialize the server. We only do this once we have an onlined 'thing',
     // whether server or camera.
 
-    public void StartServer(String pathServletBase, String pathReaderSuffix, String sourceURL, String ffPath,
-            frigateSVRCommonConfiguration config) {
+    public void StartServer(String pathServletBase, ArrayList<HTTPHandler> handlers) {
 
         this.pathServletBase = pathServletBase;
 
-        logger.info("Starting server at {} for {}", pathServletBase, pathReaderSuffix);
+        logger.info("Starting server at {}", pathServletBase);
 
-        streamTypes.clear(); // start empty
-        streamTypes.add(new MJPEGStream(pathServletBase, ffPath, sourceURL, pathReaderSuffix, config));
-        streamTypes.add(new HLSStream(pathServletBase, ffPath, sourceURL, pathReaderSuffix, config));
-        streamTypes.add(new DASHStream(pathServletBase, ffPath, sourceURL, pathReaderSuffix, config));
+        this.handlers.clear(); // start empty
+        this.handlers = handlers;
 
         // tell our streams that we are serving. We may get async GET requests
         // as soon as the server is up.
 
-        streamTypes.forEach(strm -> {
-            strm.ServerReady();
+        this.handlers.forEach(strm -> {
+            strm.ServerReady(pathServletBase);
         });
 
         // The svrMutex serves a different purpose. For some reason, on occasion, if
@@ -110,7 +103,9 @@ public class frigateSVRServlet extends HttpServlet {
         // them being at different locations, the creation chokes. I do not have the inclination to
         // grovel through the source code to find out why. The static mutex ensures that
         // we complete one servlet creation at a time, providing we are in the same context.
-        // A likely possibility is when supporting multiple Frigate server instances
+        // A likely possibility is when camera 'things' and server 'things' come online
+        // together. A side-effect is to delay startup if the streams are configured to be
+        // running on startup.
 
         svrMutex.lock();
         try {
@@ -127,13 +122,13 @@ public class frigateSVRServlet extends HttpServlet {
         // if we fail, clean up the stream list.
 
         if (!this.isStarted) {
-            streamTypes.forEach(strm -> {
+            this.handlers.forEach(strm -> {
                 strm.Cleanup();
             });
-            streamTypes.clear();
+            this.handlers.clear();
         }
 
-        // Once we are running, we should not change streamTypes dynamically.
+        // Once we are running, we should not change handlers dynamically.
         // Should we need to, wrap the code that does so, together with get(), in some
         // form of semaphore/mutex. Otherwise getters and posters may choke.
     }
@@ -164,10 +159,10 @@ public class frigateSVRServlet extends HttpServlet {
         // don't do this until the server has stopped, otherwise someone in
         // the middle of get() could cause concurrent access issues.
 
-        streamTypes.forEach(strm -> {
+        handlers.forEach(strm -> {
             strm.Cleanup();
         });
-        streamTypes.clear();
+        handlers.clear();
 
         // close us out
 
@@ -182,23 +177,19 @@ public class frigateSVRServlet extends HttpServlet {
 
     @Override
     protected void doPost(@Nullable HttpServletRequest req, @Nullable HttpServletResponse resp) throws IOException {
-        if (req == null || resp == null) {
-            return;
-        }
-        String pathInfo = req.getPathInfo();
-        if (pathInfo == null) {
-            return;
-        }
-        String relPath = (@NonNull String) (frigateSVRMiscHelper.StripLeadingSlash(pathInfo));
-        streamTypes.forEach(strm -> {
-            if (strm.canPost(relPath)) {
-                try {
-                    strm.Poster(req, resp, relPath);
-                } catch (IOException e) {
-                    logger.warn("POST from ffmpeg failed: stream path: {}", strm.pathfromFF);
+        if (CheckRequest(req, resp) == true) {
+            String relPath = frigateSVRMiscHelper
+                    .StripLeadingSlash((@NonNull String) (((@NonNull HttpServletRequest) req).getPathInfo()));
+            handlers.forEach(strm -> {
+                if (strm.canPost(relPath)) {
+                    try {
+                        strm.Poster((@NonNull HttpServletRequest) req, (@NonNull HttpServletResponse) resp, relPath);
+                    } catch (IOException e) {
+                        logger.warn("POST from ffmpeg failed: stream path: {}", strm.pathfromFF);
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -209,32 +200,78 @@ public class frigateSVRServlet extends HttpServlet {
 
     @Override
     protected void doGet(@Nullable HttpServletRequest req, @Nullable HttpServletResponse resp) throws IOException {
-        if (req == null || resp == null) {
-            return;
-        }
-        String pathInfo = req.getPathInfo();
-        if (pathInfo == null) {
-            return;
-        }
-        if (!whiteList.equals("DISABLE")) {
-            String requestIP = "(" + req.getRemoteHost() + ")";
-            if (!whiteList.contains(requestIP)) {
-                logger.warn("{} was not in the whitelist and will be ignored.", requestIP);
-                return;
-            }
-        }
-        logger.debug("whitelist checks complete: {}", req.getRemoteHost());
 
-        String relPath = (@NonNull String) (frigateSVRMiscHelper.StripLeadingSlash(pathInfo));
-        streamTypes.forEach(strm -> {
-            if (strm.canAccept(relPath)) {
-                try {
-                    strm.Getter(req, resp, relPath);
-                } catch (IOException e) {
-                    logger.warn("getter failed for stream at path: {}", strm.pathfromFF);
+        if (CheckRequest(req, resp) == true) {
+
+            String relPath = frigateSVRMiscHelper
+                    .StripLeadingSlash((@NonNull String) (((@NonNull HttpServletRequest) req).getPathInfo()));
+            handlers.forEach(strm -> {
+                if (strm.canAccept(relPath)) {
+                    try {
+                        strm.Getter((@NonNull HttpServletRequest) req, (@NonNull HttpServletResponse) resp, relPath);
+                    } catch (IOException e) {
+                        logger.warn("getter failed for stream at path: {}", strm.pathfromFF);
+                    }
+                }
+            });
+        }
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // doDelete
+    //
+    // Handle the DELETE method - used for the Frigate API forwarder
+
+    @Override
+    protected void doDelete(@Nullable HttpServletRequest req, @Nullable HttpServletResponse resp) throws IOException {
+        if (CheckRequest(req, resp) == true) {
+
+            String relPath = frigateSVRMiscHelper
+                    .StripLeadingSlash((@NonNull String) (((@NonNull HttpServletRequest) req).getPathInfo()));
+            handlers.forEach(strm -> {
+                if (strm.canDelete(relPath)) {
+                    try {
+                        strm.Deleter((@NonNull HttpServletRequest) req, (@NonNull HttpServletResponse) resp, relPath);
+                    } catch (IOException e) {
+                        logger.warn("deleter failed for stream at path: {}", strm.pathfromFF);
+                    }
+                }
+            });
+        }
+    }
+
+    /////////////////////////////////////////////////////////////////
+    // CheckRequest
+    //
+    // Deals with the common functionality to check validity of
+    // requests
+
+    private boolean CheckRequest(@Nullable HttpServletRequest req, @Nullable HttpServletResponse resp)
+            throws IOException {
+        boolean valid = false;
+        do {
+            if (req == null || resp == null) {
+                break;
+            }
+            if (req.getPathInfo() == null) {
+                break;
+            }
+            // this whitelist methodology is the same as from 'ipcamera' - it
+            // seems sensible to keep this consistent. However, we always make
+            // certain that our localhost is in the whitelist, otherwise the
+            // forwarder would screw up.
+
+            if (!whiteList.equals("DISABLE")) {
+                String requestIP = "(" + req.getRemoteHost() + ")(127.0.0.1)";
+                if (!whiteList.contains(requestIP)) {
+                    logger.warn("{} was not in the whitelist and will be ignored.", requestIP);
+                    break;
                 }
             }
-        });
+            logger.debug("validity checks complete: {}", req.getRemoteHost());
+            valid = true;
+        } while (false);
+        return valid;
     }
 
     /////////////////////////////////////////////////////////////////
@@ -244,7 +281,7 @@ public class frigateSVRServlet extends HttpServlet {
     // check our ffmpeg processes if we have open streams
 
     public void PokeMe() {
-        streamTypes.forEach(strm -> {
+        handlers.forEach(strm -> {
             strm.PokeMe();
         });
     }

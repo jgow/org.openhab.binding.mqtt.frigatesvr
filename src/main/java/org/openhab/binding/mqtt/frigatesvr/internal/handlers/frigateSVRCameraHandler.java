@@ -15,11 +15,16 @@ package org.openhab.binding.mqtt.frigatesvr.internal.handlers;
 import static org.openhab.binding.mqtt.frigatesvr.internal.frigateSVRBindingConstants.*;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Map;
 
 import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jetty.client.HttpClient;
+import org.openhab.binding.mqtt.frigatesvr.internal.servlet.HTTPHandler;
+import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.DASHStream;
+import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.HLSStream;
+import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.MJPEGStream;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRCameraConfiguration;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRChannelState;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRServerState;
@@ -430,9 +435,14 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
             String serverBase = new String("/frigateSVR/") + this.getThing().getUID().getId();
             String viewURL = this.networkHelper.GetHostBaseURL() + serverBase + "/camera";
 
+            ArrayList<HTTPHandler> handlers = new ArrayList<HTTPHandler>();
+            handlers.add(new MJPEGStream("camera", this.svrState.ffmpegPath, ffmpegSource, config));
+            handlers.add(new HLSStream("camera", this.svrState.ffmpegPath, ffmpegSource, config));
+            handlers.add(new DASHStream("camera", this.svrState.ffmpegPath, ffmpegSource, config));
+
             logger.info("camera-thing: starting streaming server");
             this.httpServlet.SetWhitelist(this.svrState.whitelist);
-            this.httpServlet.StartServer(serverBase, "camera", ffmpegSource, this.svrState.ffmpegPath, config);
+            this.httpServlet.StartServer(serverBase, handlers);
 
             logger.info("Multistream server process running");
             updateState(CHANNEL_MJPEG_URL,

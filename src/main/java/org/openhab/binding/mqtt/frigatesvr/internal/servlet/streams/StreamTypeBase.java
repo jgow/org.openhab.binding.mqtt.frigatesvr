@@ -18,11 +18,11 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.openhab.binding.mqtt.frigatesvr.internal.servlet.HTTPHandler;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRCommonConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
  * @author Dr J Gow - initial contribution
  */
 @NonNullByDefault
-public class StreamTypeBase {
+public class StreamTypeBase extends HTTPHandler {
 
     private final Logger logger = LoggerFactory.getLogger(StreamTypeBase.class);
     protected FFmpegManager ffHelper = new FFmpegManager();
@@ -44,6 +44,7 @@ public class StreamTypeBase {
     private int keepalive_delay = 2;
     protected frigateSVRCommonConfiguration config;
     protected boolean startOnLoad = true;
+    protected String serverBase = "";
 
     @SuppressWarnings("serial")
     private static final Map<String, String> mimeExt = new HashMap<String, String>() {
@@ -58,8 +59,7 @@ public class StreamTypeBase {
         }
     };
 
-    public StreamTypeBase(String baseURL, String ffBinary, String URLtoFF, String readerPath,
-            frigateSVRCommonConfiguration config) {
+    public StreamTypeBase(String readerPath, String ffBinary, String URLtoFF, frigateSVRCommonConfiguration config) {
         this.readerPath = readerPath;
         this.config = config;
         this.keepalive_delay = config.ffKeepalivesBeforeExit;
@@ -86,7 +86,9 @@ public class StreamTypeBase {
     // Called when the server is ready - we can use this to start streams
     // if the stream producer start on demand is disabled.
 
-    public void ServerReady() {
+    @Override
+    public void ServerReady(String serverBase) {
+        this.serverBase = serverBase;
         if (this.startOnLoad) {
             StartStreams();
         }
@@ -113,7 +115,7 @@ public class StreamTypeBase {
             // and that it is available, otherwise we may get browser error
             // messages. Need to have this online before the browser timeouts
             // This can take some time. While this code doesn't actually block,
-            // it could sit in the loop up to 15 seconds in order to get
+            // it could sit in the loop 15 seconds or more in order to get
             // ffmpeg started.
             // To check, we use stream-specific presence of output from ffmpeg,
             // together with a valid frame count.
@@ -210,41 +212,6 @@ public class StreamTypeBase {
     }
 
     /////////////////////////////////////////////////////////////////////////
-    // canPost
-    //
-    // Must return true if the post is valid for this stream type
-
-    public boolean canPost(String pathInfo) {
-        return false;
-    }
-
-    ////////////////////////////////////////////////////////////////////////
-    // canAccept
-    //
-    // Must return true if the stream can accept the GET request.
-
-    public boolean canAccept(String pathInfo) {
-        return false;
-    }
-
-    ////////////////////////////////////////////////////////////////////////
-    // Poster
-    //
-    // Callback in response to a valid POST response sent to this endpoint
-
-    public void Poster(HttpServletRequest req, HttpServletResponse resp, String pathInfo) throws IOException {
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-    // Getter
-    //
-    // Callback in response to a GET
-
-    public void Getter(HttpServletRequest req, HttpServletResponse resp, String pathInfo) throws IOException {
-        resp.sendError(HttpServletResponse.SC_NOT_FOUND);
-    }
-
-    /////////////////////////////////////////////////////////////////////////
     // SendFile
     //
     // Send a file in response.
@@ -272,7 +239,7 @@ public class StreamTypeBase {
 
         // Ensure headers are set to inform the client
         // that files should not be cached. Otherwise we will get old stream
-        // data over and over.
+        // data over and over in the case of the multipart stuff.
 
         response.setHeader("Access-Control-Allow-Origin", "*");
         response.setHeader("Access-Control-Expose-Headers", "*");

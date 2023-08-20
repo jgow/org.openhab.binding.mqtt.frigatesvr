@@ -36,13 +36,12 @@ public class MJPEGStream extends StreamTypeBase {
     protected OpenStreams streamList = new OpenStreams();
     private boolean postFlag = false;
 
-    public MJPEGStream(String baseURL, String ffBinary, String URLtoFF, String readerPath,
-            frigateSVRCommonConfiguration config) {
-        super(baseURL, ffBinary, URLtoFF, readerPath, config);
+    public MJPEGStream(String readerPath, String ffBinary, String URLtoFF, frigateSVRCommonConfiguration config) {
+        super(readerPath, ffBinary, URLtoFF, config);
         this.startOnLoad = config.ffMJPEGStartProducerOnLoad;
 
         this.pathfromFF = "frigate-in.jpg";
-        String ffDestURL = new String("http://127.0.0.1:8080") + baseURL + "/" + pathfromFF;
+        String ffDestURL = new String("http://127.0.0.1:8080") + serverBase + "/" + pathfromFF;
         // no WD prefix here
         this.ffHelper.BuildFFMPEGCommand(ffBinary, URLtoFF, ffDestURL, config.ffMJPEGTranscodeCommands, null);
     }
@@ -70,7 +69,7 @@ public class MJPEGStream extends StreamTypeBase {
     /////////////////////////////////////////////////////////////////////////
     // canPost
     //
-    // Must return true if the post is valid for this stream type
+    // FFmpeg must be able to post to us.
 
     public boolean canPost(String pathInfo) {
         return (pathInfo.equals(this.pathfromFF)) ? true : false;

@@ -33,9 +33,8 @@ public class HLSStream extends StreamTypeBase {
 
     private final Logger logger = LoggerFactory.getLogger(HLSStream.class);
 
-    public HLSStream(String baseURL, String ffBinary, String URLtoFF, String readerPath,
-            frigateSVRCommonConfiguration config) {
-        super(baseURL, ffBinary, URLtoFF, readerPath, config);
+    public HLSStream(String readerPath, String ffBinary, String URLtoFF, frigateSVRCommonConfiguration config) {
+        super(readerPath, ffBinary, URLtoFF, config);
 
         String fmtCmds = " -f hls -hls_flags delete_segments -hls_time 2 -hls_list_size 6";
         this.pathfromFF = readerPath + ".m3u8";
@@ -61,23 +60,13 @@ public class HLSStream extends StreamTypeBase {
     }
 
     ///////////////////////////////////////////////////////////////////////
-    // canPost
-    //
-    // HLS streams do not require ffmpeg to post directly to the server
-    // for streaming - they use files. So this endpoint need not accept
-    // posting.
-
-    public boolean canPost(String pathInfo) {
-        return false;
-    }
-
-    ///////////////////////////////////////////////////////////////////////
     // canAccept
     //
     // HLS streams will request the playlist (xxxx.m3u8) and the transport
     // streams (xxxx.ts). We thus limit any get requests to files of this
-    // type - and only accept requests for the .ts after the .m3u8 has
-    // been accessed at least once.
+    // type - and ideally only accept requests for the .ts after the .m3u8
+    // has been accessed at least once (not yet implemented except where
+    // stream is started dynamically
 
     public boolean canAccept(String pathInfo) {
         String pattern = this.readerPath + "((\\d+\\.ts)|(\\.m3u8))";
@@ -96,21 +85,17 @@ public class HLSStream extends StreamTypeBase {
     // started. It will not know if the stream is no longer required;
     // the keepalives will shut it down if hitCount is zero between two
     // keepalives. With the ffmpeg options we have, we won't fill up the
-    // HD as it will keep wrapping, but it may be good practice to stop
-    // the producer if there is no-one listening.
-    // Use the regular keepalive? This may be too long?
+    // HD as it will keep wrapping, but unless the option is set to start
+    // streams at server start, then we can stop the producer if there is
+    // no-one listening. Use the regular keepalive to check the hitcount
+    // if the stream is set to start dynamically.
     //
-    // However, considering an option to leave the ffmpeg converter on
-    // so as to speed up initial access. This could be user-selectable.
-    // The HLS stream does not transcode (let Frigate do this) so the
-    // footprint of the ffmpeg process is very small, and only in the
-    // stream packaging
-    //
-    // We also need to serialize access to this block - if we are
-    // not running, then multiple clients need to wait until either
-    // we are running, or have errored out in the ffmpeg starting sequence
-    // The 'StartStreams' member function is serialized, and will do
-    // nothing if the ffmpeg producer is already running
+    // We also need to mutex access to the stream start if not
+    // already started. If we are not running, then multiple clients need
+    // to wait until either we are running, or have errored out in the
+    // ffmpeg starting sequence The 'StartStreams' member function has
+    // serialized access, and will do nothing if the ffmpeg producer
+    // is already running
 
     public void Getter(HttpServletRequest req, HttpServletResponse resp, String pathInfo) throws IOException {
 
