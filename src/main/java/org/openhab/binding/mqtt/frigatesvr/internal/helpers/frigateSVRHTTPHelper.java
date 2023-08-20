@@ -86,6 +86,15 @@ public class frigateSVRHTTPHelper {
         return sb.append(baseurl).append(request).toString();
     }
 
+    public Request GetFrigateRequest(String APICall) throws Exception {
+        if (this.client != null) {
+            assert this.client != null;
+            return ((@NonNull HttpClient) this.client).newRequest(buildURL(APICall));
+        } else {
+            throw new Exception("Client not available");
+        }
+    }
+
     public @Nullable String runGet(String call) {
         try {
             Request request = ((@NonNull HttpClient) this.client).newRequest(buildURL(call));

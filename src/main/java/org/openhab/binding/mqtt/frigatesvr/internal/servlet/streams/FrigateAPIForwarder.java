@@ -12,10 +12,9 @@
  */
 package org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Enumeration;
 
 import javax.servlet.http.HttpServletRequest;
@@ -23,9 +22,15 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
-import org.openhab.binding.mqtt.frigatesvr.internal.helpers.frigateSVRMiscHelper;
+import org.eclipse.jetty.client.api.ContentResponse;
+import org.eclipse.jetty.client.api.Request;
+import org.eclipse.jetty.client.util.StringContentProvider;
+import org.eclipse.jetty.http.HttpField;
+import org.eclipse.jetty.http.HttpHeader;
+import org.eclipse.jetty.http.HttpMethod;
+import org.openhab.binding.mqtt.frigatesvr.internal.helpers.frigateSVRHTTPHelper;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.HTTPHandler;
-import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRServerConfiguration;
+import org.openhab.core.library.types.RawType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,12 +45,12 @@ public class FrigateAPIForwarder extends HTTPHandler {
 
     private final Logger logger = LoggerFactory.getLogger(FrigateAPIForwarder.class);
     private String prefix = "";
-    private String fgServerURL = "";
+    private frigateSVRHTTPHelper helper;
 
-    public FrigateAPIForwarder(String prefix, frigateSVRServerConfiguration config) {
+    public FrigateAPIForwarder(String prefix, frigateSVRHTTPHelper helper) {
         super();
         this.prefix = prefix;
-        this.fgServerURL = frigateSVRMiscHelper.StripTrailingSlash(config.serverURL);
+        this.helper = helper;
     }
 
     ///////////////////////////////////////////////////////////////////////
@@ -89,8 +94,9 @@ public class FrigateAPIForwarder extends HTTPHandler {
         logger.debug("processing API forwarder request - POST");
 
         try {
-            URL url = BuildURL(pathInfo, req);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+            Request request = this.helper.GetFrigateRequest(GetAPIPathString(pathInfo, req));
+            request.method(HttpMethod.POST);
 
             // copy the request headers over
 
@@ -102,40 +108,33 @@ public class FrigateAPIForwarder extends HTTPHandler {
                     @Nullable
                     Enumeration<String> values = req.getHeaders(header);
                     while (values.hasMoreElements()) {
-                        connection.addRequestProperty(header, values.nextElement());
+                        request.header(header, values.nextElement());
                     }
                 }
             }
 
-            connection.setRequestMethod("POST");
-            connection.setUseCaches(false);
-            connection.setDoInput(true);
-            connection.connect();
+            ByteArrayOutputStream bs = new ByteArrayOutputStream();
+            req.getInputStream().transferTo(bs);
 
-            // send the data block
+            // send it
 
-            req.getInputStream().transferTo(connection.getOutputStream());
+            request.content(new StringContentProvider(bs.toString()));
+            ContentResponse response = request.method(HttpMethod.POST).send();
 
             // do we need to keep the returned headers? Probably
 
-            int idx = 0;
-            do {
-                String header = connection.getHeaderFieldKey(idx);
-                if (header == null) {
-                    break;
-                }
-                String value = connection.getHeaderField(idx);
-                logger.info("adding header {}: {}", header, value);
-                resp.setHeader(header, value);
-                idx++;
-            } while (true);
+            for (HttpField field : response.getHeaders()) {
+                resp.setHeader(field.getName(), field.getValue());
+            }
 
             // POST can send us something back.
 
-            connection.getInputStream().transferTo(resp.getOutputStream());
+            RawType raw = new RawType(response.getContent(), response.getHeaders().get(HttpHeader.CONTENT_TYPE));
+            ByteArrayInputStream is = new ByteArrayInputStream(raw.getBytes());
+            is.transferTo(resp.getOutputStream());
 
-            resp.setStatus(connection.getResponseCode());
-            logger.info("response: {} {}", connection.getResponseCode(), connection.getResponseMessage());
+            resp.setStatus(response.getStatus());
+            logger.info("response: {} {}", response.getStatus(), response.getReason());
 
         } catch (Exception e) {
             resp.setStatus(500);
@@ -155,42 +154,43 @@ public class FrigateAPIForwarder extends HTTPHandler {
         logger.debug("processing API forwarder request - GET");
 
         try {
-            URL url = BuildURL(pathInfo, req);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+            Request request = this.helper.GetFrigateRequest(GetAPIPathString(pathInfo, req));
+            request.method(HttpMethod.POST);
 
             // copy the request headers over
 
+            @Nullable
             Enumeration<String> allHeaders = req.getHeaderNames();
-            while (allHeaders.hasMoreElements()) {
-                String header = allHeaders.nextElement();
-                Enumeration<String> values = req.getHeaders(header);
-                while (values.hasMoreElements()) {
-                    connection.addRequestProperty(header, values.nextElement());
+            if (allHeaders != null) {
+                while (allHeaders.hasMoreElements() == true) {
+                    String header = allHeaders.nextElement();
+                    @Nullable
+                    Enumeration<String> values = req.getHeaders(header);
+                    while (values.hasMoreElements()) {
+                        request.header(header, values.nextElement());
+                    }
                 }
             }
 
-            connection.setRequestMethod("GET");
-            connection.setUseCaches(false);
-            connection.setDoInput(true);
-            connection.connect();
+            // send it
+
+            ContentResponse response = request.method(HttpMethod.GET).send();
 
             // do we need to keep the returned headers? Probably
 
-            int idx = 0;
-            do {
-                String header = connection.getHeaderFieldKey(idx);
-                if (header == null) {
-                    break;
-                }
-                String value = connection.getHeaderField(idx);
-                logger.info("adding header {}: {}", header, value);
-                resp.setHeader(header, value);
-                idx++;
-            } while (true);
+            for (HttpField field : response.getHeaders()) {
+                resp.setHeader(field.getName(), field.getValue());
+            }
 
-            connection.getInputStream().transferTo(resp.getOutputStream());
-            resp.setStatus(connection.getResponseCode());
-            logger.info("response: {} {}", connection.getResponseCode(), connection.getResponseMessage());
+            // GET can send us something back.
+
+            RawType raw = new RawType(response.getContent(), response.getHeaders().get(HttpHeader.CONTENT_TYPE));
+            ByteArrayInputStream is = new ByteArrayInputStream(raw.getBytes());
+            is.transferTo(resp.getOutputStream());
+
+            resp.setStatus(response.getStatus());
+            logger.info("response: {} {}", response.getStatus(), response.getReason());
 
         } catch (Exception e) {
             resp.setStatus(500);
@@ -210,47 +210,49 @@ public class FrigateAPIForwarder extends HTTPHandler {
         logger.debug("processing API forwarder request - DELETE");
 
         try {
-            URL url = BuildURL(pathInfo, req);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+            Request request = this.helper.GetFrigateRequest(GetAPIPathString(pathInfo, req));
+            request.method(HttpMethod.POST);
 
             // copy the request headers over
 
+            @Nullable
             Enumeration<String> allHeaders = req.getHeaderNames();
-            while (allHeaders.hasMoreElements()) {
-                String header = allHeaders.nextElement();
-                Enumeration<String> values = req.getHeaders(header);
-                while (values.hasMoreElements()) {
-                    connection.addRequestProperty(header, values.nextElement());
+            if (allHeaders != null) {
+                while (allHeaders.hasMoreElements() == true) {
+                    String header = allHeaders.nextElement();
+                    @Nullable
+                    Enumeration<String> values = req.getHeaders(header);
+                    while (values.hasMoreElements()) {
+                        request.header(header, values.nextElement());
+                    }
                 }
             }
 
-            connection.setRequestMethod("DELETE");
-            connection.setUseCaches(false);
-            connection.setDoInput(true);
-            connection.connect();
+            // DELETE can have a data block
 
-            // DELETE may have a data block
+            ByteArrayOutputStream bs = new ByteArrayOutputStream();
+            req.getInputStream().transferTo(bs);
 
-            req.getInputStream().transferTo(connection.getOutputStream());
+            // send it
+
+            request.content(new StringContentProvider(bs.toString()));
+            ContentResponse response = request.method(HttpMethod.DELETE).send();
 
             // do we need to keep the returned headers? Probably
 
-            int idx = 0;
-            do {
-                String header = connection.getHeaderFieldKey(idx);
-                if (header == null) {
-                    break;
-                }
-                String value = connection.getHeaderField(idx);
-                logger.info("adding header {}: {}", header, value);
-                resp.setHeader(header, value);
-                idx++;
-            } while (true);
+            for (HttpField field : response.getHeaders()) {
+                resp.setHeader(field.getName(), field.getValue());
+            }
 
-            // DELETE may send us something back
-            connection.getInputStream().transferTo(resp.getOutputStream());
-            resp.setStatus(connection.getResponseCode());
-            logger.info("response: {} {}", connection.getResponseCode(), connection.getResponseMessage());
+            // POST can send us something back.
+
+            RawType raw = new RawType(response.getContent(), response.getHeaders().get(HttpHeader.CONTENT_TYPE));
+            ByteArrayInputStream is = new ByteArrayInputStream(raw.getBytes());
+            is.transferTo(resp.getOutputStream());
+
+            resp.setStatus(response.getStatus());
+            logger.info("response: {} {}", response.getStatus(), response.getReason());
 
         } catch (Exception e) {
             resp.setStatus(500);
@@ -259,17 +261,12 @@ public class FrigateAPIForwarder extends HTTPHandler {
         }
     }
 
-    private URL BuildURL(String pathInfo, HttpServletRequest req) throws MalformedURLException {
-
-        // Here we just need to grab everything we need after the prefix.
-        // string. The Frigate API does use a query string for some
-        // API calls.
-
-        String urlString = this.fgServerURL + "/" + pathInfo.substring(this.prefix.length());
+    private String GetAPIPathString(String pathInfo, HttpServletRequest req) {
+        String urlString = pathInfo.substring(this.prefix.length());
         if (req.getQueryString() != null) {
             urlString += "?" + req.getQueryString();
         }
-        logger.info("forwarding API request to {}", urlString);
-        return new URL(urlString);
+        logger.info("API call {}", urlString);
+        return urlString;
     }
 }
