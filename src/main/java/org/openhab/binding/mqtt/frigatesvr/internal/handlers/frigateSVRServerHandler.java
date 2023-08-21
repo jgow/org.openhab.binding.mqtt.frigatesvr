@@ -317,7 +317,7 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
 
             logger.info("enabling API forwarder");
 
-            APIBase = this.networkHelper.GetHostBaseURL() + serverBase + "frigatesvr";
+            APIBase = this.networkHelper.GetHostBaseURL() + serverBase + "/frigatesvr";
             handlers.add(new FrigateAPIForwarder("frigatesvr", this.httpHelper));
 
         }
