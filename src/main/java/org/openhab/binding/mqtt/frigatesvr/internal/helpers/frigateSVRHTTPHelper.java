@@ -45,14 +45,29 @@ public class frigateSVRHTTPHelper {
     public frigateSVRHTTPHelper() {
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // configure
+    //
+    // Configure at initialization
+
     public void configure(HttpClient httpClient, String address) {
         this.setBaseURL(address);
         this.client = httpClient;
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // getBaseURL
+    //
+    // Return the base URL
+
     public String getBaseURL() {
         return baseurl;
     }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // setBaseURL
+    //
+    // Set the base URL at the start
 
     public void setBaseURL(String address) {
         StringBuilder sb = new StringBuilder();
@@ -63,6 +78,14 @@ public class frigateSVRHTTPHelper {
         this.baseurl = sb.toString();
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // getHostAndPort
+    //
+    // Return the host name and port together: Frigate usually operates on
+    // port 5000 but this can be changed. These are concatenated without the
+    // usual colon as the intention is to use this string to build unique
+    // identifiers for each Frigate server instance.
+
     public String getHostAndPort() {
         try {
             URL url = new URL(baseurl);
@@ -71,6 +94,11 @@ public class frigateSVRHTTPHelper {
             return new String("");
         }
     }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // getHost
+    //
+    // Return the Frigate server host
 
     public String getHost() {
         try {
@@ -81,19 +109,36 @@ public class frigateSVRHTTPHelper {
         }
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+    // buildURL
+    //
+    // Helper to generate URLs from the Frigate server base
+
     private String buildURL(String request) {
         StringBuilder sb = new StringBuilder();
         return sb.append(baseurl).append(request).toString();
     }
 
-    public Request GetFrigateRequest(String APICall) throws Exception {
+    /////////////////////////////////////////////////////////////////////////////
+    // GetFrigateRequest
+    //
+    // Used by the API forwarder to generate a specific request to the pre-
+    // configured Frigate server client.
+
+    public Request GetFrigateRequest(String APICall) throws UnsupportedOperationException {
         if (this.client != null) {
             assert this.client != null;
             return ((@NonNull HttpClient) this.client).newRequest(buildURL(APICall));
         } else {
-            throw new Exception("Client not available");
+            throw new UnsupportedOperationException("Client not available");
         }
     }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // runGet
+    //
+    // Synchronous GET call to the Frigate API. To date we only use a couple
+    // of different GET calls from within the binding
 
     public @Nullable String runGet(String call) {
         try {

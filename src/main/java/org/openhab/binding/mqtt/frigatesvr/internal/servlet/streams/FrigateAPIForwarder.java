@@ -59,7 +59,7 @@ public class FrigateAPIForwarder extends HTTPHandler {
     // We can post from anything in our prefix
 
     public boolean canPost(String pathInfo) {
-        logger.info("canPost: pathInfo: {} prefix: {}", pathInfo, this.prefix);
+        logger.debug("canPost: pathInfo: {} prefix: {}", pathInfo, this.prefix);
         return pathInfo.startsWith(this.prefix);
     }
 
@@ -69,7 +69,7 @@ public class FrigateAPIForwarder extends HTTPHandler {
     // We accept anything that starts with our prefix.
 
     public boolean canAccept(String pathInfo) {
-        logger.info("canAccept: pathInfo: {} prefix: {}", pathInfo, this.prefix);
+        logger.debug("canAccept: pathInfo: {} prefix: {}", pathInfo, this.prefix);
         return pathInfo.startsWith(this.prefix);
     }
 
@@ -79,7 +79,7 @@ public class FrigateAPIForwarder extends HTTPHandler {
     // We accept anything that starts with our prefix.
 
     public boolean canDelete(String pathInfo) {
-        logger.info("canDelete: pathInfo: {} prefix: {}", pathInfo, this.prefix);
+        logger.debug("canDelete: pathInfo: {} prefix: {}", pathInfo, this.prefix);
         return pathInfo.startsWith(this.prefix);
     }
 

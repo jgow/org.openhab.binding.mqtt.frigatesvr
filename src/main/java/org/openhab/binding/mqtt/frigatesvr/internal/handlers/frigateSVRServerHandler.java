@@ -74,8 +74,9 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
                 Map.entry(CHANNEL_UI_URL,
                         new frigateSVRChannelState(CHANNEL_UI_URL, frigateSVRChannelState::fromStringMQTT,
                                 frigateSVRChannelState::toStringMQTT, false)),
-                Map.entry(CHANNEL_APIFORWARDER_URL, new frigateSVRChannelState(CHANNEL_APIFORWARDER_URL,
-                        frigateSVRChannelState::fromStringMQTT, frigateSVRChannelState::toStringMQTT, false)),                
+                Map.entry(CHANNEL_APIFORWARDER_URL,
+                        new frigateSVRChannelState(CHANNEL_APIFORWARDER_URL, frigateSVRChannelState::fromStringMQTT,
+                                frigateSVRChannelState::toStringMQTT, false)),
                 Map.entry(CHANNEL_BIRDSEYE_URL, new frigateSVRChannelState(CHANNEL_BIRDSEYE_URL,
                         frigateSVRChannelState::fromStringMQTT, frigateSVRChannelState::toStringMQTT, false)));
     }
@@ -318,9 +319,9 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
 
             APIBase = this.networkHelper.GetHostBaseURL() + serverBase + "frigatesvr";
             handlers.add(new FrigateAPIForwarder("frigatesvr", this.httpHelper));
-        
+
         }
-        
+
         if ((config.enableStream == true) && (this.frigateConfig.block.birdseye.enableRestream == true)) {
 
             logger.info("enabling birdseye streaming server");
@@ -333,7 +334,7 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
             handlers.add(new DASHStream("birdseye", this.svrState.ffmpegPath, birdseyeFrigateStreamPath, config));
         }
 
-        if (handlers.size() > 0) {
+        if (!handlers.isEmpty()) {
             logger.info("starting streaming server");
 
             this.httpServlet.SetWhitelist(this.svrState.whitelist);

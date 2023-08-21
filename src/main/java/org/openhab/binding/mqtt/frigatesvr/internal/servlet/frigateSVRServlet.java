@@ -39,7 +39,7 @@ import org.slf4j.LoggerFactory;
  * streams, as these have a lower framerate. It can also be used to stream the birdseye view
  * at the Frigate server level.
  *
- * @author Dr J Gow - FrigateSVR streaming server.
+ * @author Dr J Gow - Initial contribution
  */
 
 @NonNullByDefault
