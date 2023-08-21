@@ -74,6 +74,8 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
                 Map.entry(CHANNEL_UI_URL,
                         new frigateSVRChannelState(CHANNEL_UI_URL, frigateSVRChannelState::fromStringMQTT,
                                 frigateSVRChannelState::toStringMQTT, false)),
+                Map.entry(CHANNEL_APIFORWARDER_URL, new frigateSVRChannelState(CHANNEL_APIFORWARDER_URL,
+                        frigateSVRChannelState::fromStringMQTT, frigateSVRChannelState::toStringMQTT, false)),                
                 Map.entry(CHANNEL_BIRDSEYE_URL, new frigateSVRChannelState(CHANNEL_BIRDSEYE_URL,
                         frigateSVRChannelState::fromStringMQTT, frigateSVRChannelState::toStringMQTT, false)));
     }
@@ -305,28 +307,47 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
 
     private void StartStream() {
 
-        if ((config.enableStream == true) && (this.frigateConfig.block.birdseye.clientID == true)) {
+        ArrayList<HTTPHandler> handlers = new ArrayList<HTTPHandler>();
+        String serverBase = new String("/") + this.svrTopicPrefix;
+        String APIBase = new String("");
+        String viewURL = new String("");
 
-            String serverBase = new String("/") + this.svrTopicPrefix;
-            String birdseyeFrigateStreamPath = this.svrState.rtspbase + "/birdseye";
-            String viewURL = this.networkHelper.GetHostBaseURL() + serverBase + "/birdseye";
+        if ((config.enableAPIForwarder == true)) {
 
-            ArrayList<HTTPHandler> handlers = new ArrayList<HTTPHandler>();
+            logger.info("enabling API forwarder");
+
+            APIBase = this.networkHelper.GetHostBaseURL() + serverBase + "frigatesvr";
             handlers.add(new FrigateAPIForwarder("frigatesvr", this.httpHelper));
+        
+        }
+        
+        if ((config.enableStream == true) && (this.frigateConfig.block.birdseye.enableRestream == true)) {
+
+            logger.info("enabling birdseye streaming server");
+
+            String birdseyeFrigateStreamPath = this.svrState.rtspbase + "/birdseye";
+            viewURL = this.networkHelper.GetHostBaseURL() + serverBase + "/birdseye";
+
             handlers.add(new MJPEGStream("birdseye", this.svrState.ffmpegPath, birdseyeFrigateStreamPath, config));
             handlers.add(new HLSStream("birdseye", this.svrState.ffmpegPath, birdseyeFrigateStreamPath, config));
             handlers.add(new DASHStream("birdseye", this.svrState.ffmpegPath, birdseyeFrigateStreamPath, config));
+        }
 
-            logger.info("server-thing: starting streaming server");
+        if (handlers.size() > 0) {
+            logger.info("starting streaming server");
 
             this.httpServlet.SetWhitelist(this.svrState.whitelist);
             this.httpServlet.StartServer(serverBase, handlers);
 
             updateState(CHANNEL_BIRDSEYE_URL,
                     ((@NonNull frigateSVRChannelState) (this.Channels.get(CHANNEL_BIRDSEYE_URL))).toState(viewURL));
+            updateState(CHANNEL_APIFORWARDER_URL,
+                    ((@NonNull frigateSVRChannelState) (this.Channels.get(CHANNEL_APIFORWARDER_URL))).toState(APIBase));
         } else {
             updateState(CHANNEL_BIRDSEYE_URL,
                     ((@NonNull frigateSVRChannelState) (this.Channels.get(CHANNEL_BIRDSEYE_URL))).toState(""));
+            updateState(CHANNEL_APIFORWARDER_URL,
+                    ((@NonNull frigateSVRChannelState) (this.Channels.get(CHANNEL_APIFORWARDER_URL))).toState(""));
         }
     }
 

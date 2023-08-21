@@ -104,6 +104,12 @@
 			<description>@text/param.server.serverKeepAlive.description</description>
 			<default>5</default>
 		</parameter>
+        <parameter name="enableAPIForwarder" type="boolean" required="true">
+            <context>name</context>
+            <label>@text/param.server.enableAPIForwarder.label</label>
+            <description>@text/param.server.enableAPIForwarder.description</description>
+            <default>true</default>
+        </parameter>
 		<parameter name="enableStream" type="boolean" required="false">
 			<context>name</context>
 			<label>@text/param.server.enableStream.label</label>

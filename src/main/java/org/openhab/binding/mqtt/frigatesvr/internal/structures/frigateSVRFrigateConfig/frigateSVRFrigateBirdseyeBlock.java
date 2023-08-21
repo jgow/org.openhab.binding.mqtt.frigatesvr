@@ -28,5 +28,5 @@ public class frigateSVRFrigateBirdseyeBlock {
 
     @Expose
     @SerializedName("restream")
-    public boolean clientID = false;
+    public boolean enableRestream = false;
 }

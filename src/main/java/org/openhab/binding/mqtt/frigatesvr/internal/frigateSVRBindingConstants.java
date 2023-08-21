@@ -40,6 +40,7 @@ public class frigateSVRBindingConstants {
     // List of all Channel ids
     public static final String CHANNEL_API_VERSION = "fgAPIVersion";
     public static final String CHANNEL_UI_URL = "fgUI";
+    public static final String CHANNEL_APIFORWARDER_URL = "fgAPIForwarderURL";
     public static final String CHANNEL_BIRDSEYE_URL = "fgBirdseyeURL";
 
     public static final String CHANNEL_CAM_CAMFPS = "fgCameraFPS";

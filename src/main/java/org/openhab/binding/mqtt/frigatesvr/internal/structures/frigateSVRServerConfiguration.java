@@ -24,6 +24,7 @@ public class frigateSVRServerConfiguration extends frigateSVRCommonConfiguration
     public String serverURL = "";
     public String serverClientID = "";
     public int serverKeepAlive = 5;
+    public boolean enableAPIForwarder = true;
     public String streamWhitelist = "";
     public String ffmpegLocation = "";
 }
