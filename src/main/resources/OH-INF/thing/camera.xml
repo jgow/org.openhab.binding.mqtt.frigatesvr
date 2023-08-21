@@ -27,7 +27,7 @@
 			<channel id="fgMotionThreshold" typeId="fgMotionThreshold"/>
 			<channel id="fgMotionContourArea" typeId="fgMotionContourArea"/>
 			<channel id="fgMotionDetected" typeId="fgMotionDetected"/>
-			<channel id="fgMJPEGURL" typeId="fgMJPEGURL"/>
+			<channel id="fgStreamURL" typeId="fgStreamURL"/>
 			<channel id="fgLastSnapshotObject" typeId="fgLastSnapshotObject"/>
 			<channel id="fgLastSnapshot" typeId="fgLastSnapshot"/>
 			<channel id="fgEventType" typeId="fgEventType"/>
@@ -143,10 +143,10 @@
 		<label>@text/channel.motionDetected</label>
 		<description>@text/channel.motionDetected.description</description>
 	</channel-type>
-	<channel-type id="fgMJPEGURL">
+	<channel-type id="fgStreamURL">
 		<item-type>String</item-type>
-		<label>@text/channel.MJPEGURL</label>
-		<description>@text/channel.MJPEGURL</description>
+		<label>@text/channel.StreamURL</label>
+		<description>@text/channel.StreamURL</description>
 	</channel-type>
 	<channel-type id="fgLastSnapshotObject">
 		<item-type>String</item-type>

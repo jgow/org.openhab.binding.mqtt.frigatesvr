@@ -306,7 +306,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
                 Map.entry(CHANNEL_LAST_SNAPSHOT,
                         new frigateSVRChannelState("", frigateSVRChannelState::fromNoConversion,
                                 frigateSVRChannelState::toNoConversion, false)),
-                Map.entry(CHANNEL_MJPEG_URL, new frigateSVRChannelState("", frigateSVRChannelState::fromStringMQTT,
+                Map.entry(CHANNEL_STREAM_URL, new frigateSVRChannelState("", frigateSVRChannelState::fromStringMQTT,
                         frigateSVRChannelState::toStringMQTT, false)));
     }
 
@@ -445,12 +445,12 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
             this.httpServlet.StartServer(serverBase, handlers);
 
             logger.info("Multistream server process running");
-            updateState(CHANNEL_MJPEG_URL,
-                    ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_MJPEG_URL)).toState(viewURL));
+            updateState(CHANNEL_STREAM_URL,
+                    ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_STREAM_URL)).toState(viewURL));
         } else {
             logger.info("Multistream server process disabled in configuration");
-            updateState(CHANNEL_MJPEG_URL,
-                    ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_MJPEG_URL)).toState(""));
+            updateState(CHANNEL_STREAM_URL,
+                    ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_STREAM_URL)).toState(""));
         }
     }
 

@@ -81,20 +81,29 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 
 ### `frigateSVR Server` 'Thing' Configuration
 
-| Name             | Type    | Description                            | Default               | Required | Advanced |
-|------------------|---------|----------------------------------------|-----------------------|----------|----------|
-| serverURL        | text    | URL to the running Frigate server      | N/A                   | yes      | no       |
-| serverClientID   | text    | 'clientID' parameter in Frigate config | N/A                   | no       | no       |
-| serverKeepAlive  | integer | Interval the device is polled in sec.  | 5                     | yes      | no       |
-| enableStream     | boolean | Enable the internal stream server      | true                  | yes      | no       |
-| streamWhitelist  | text    | List of IPs allowed to connect         | DISABLE               | no       | yes      |    
-| ffmpegLocation   | text    | Location of ffmpeg binary              | /usr/bin/ffmpeg       | yes      | yes      |
-| ffmpegCommands   | text    | Additional ffmpeg commands             | -q:v 5 -r 2 -update 1 | no       | yes      |
+| Name                           | Type    | Description                                             | Default                                | Required | Advanced |
+|--------------------------------|---------|---------------------------------------------------------|----------------------------------------|----------|----------|
+| serverURL                      | text    | URL to the running Frigate server                       | N/A                                    | yes      | no       |
+| serverClientID                 | text    | 'clientID' parameter in Frigate config                  | N/A                                    | no       | no       |
+| serverKeepAlive                | integer | Interval the device is polled in sec.                   | 5                                      | yes      | no       |
+| enableAPIForwarder             | boolean | Enable the Frigate API forwarder                        | true                                   | yes      | no       |
+| enableStream                   | boolean | Enable the internal stream server                       | true                                   | yes      | no       |
+| streamWhitelist                | text    | List of IPs allowed to connect                          | DISABLE                                | no       | yes      |    
+| ffmpegLocation                 | text    | Location of ffmpeg binary                               | /usr/bin/ffmpeg                        | yes      | yes      |
+| ffMJPEGStartProducerOnLoad     | text    | Start ffmpeg for MJPEG streams when binding started     | false                                  | yes      | yes      |
+| ffMJPEGTranscodeCommands       | text    | Commands for ffmpeg transcode section for MJPEG streams | -q:v 5 -r 2 -vf scale=640:-2 -update 1 | yes      | yes      |
+| ffHLSStartProducerOnLoad       | text    | Start ffmpeg on binding start for HLS streams           | false                                  | yes      | yes      |
+| ffHLSTranscodeCommands         | text    | Commands for ffmpeg transcode section for HLS streams   | -acodec copy -vcodec copy              | yes      | yes      |
+| ffDASHStartProducerOnLoad      | text    | Start ffmpeg on binding start for DASH streams          | false                                  | yes      | yes      |
+| ffDASHTranscodeCommands        | text    | Commands for ffmpeg transcode section for DASH streams  | -acodec copy -vcodec copy              | yes      | yes      |
+| ffDASHPackageCommands          | text    | Commands for ffmpeg stream package section for DASH     | -seg_duration 1 -streaming 1           | yes      | yes      |
+| ffKeepalivesBeforeExit         | integer | Number of keepalives to wait before terminating ffmpeg  | 2                                      | yes      | yes      |
+| ffTempDir                      | text    | Working directory for stream data                       | openHAB user data area                 | yes      | yes      |
 
 #### Notes:
 
 - In most instances, only the 'Frigate server URL' needs to be added manually. This should be the base URL to the Frigate server.
-- The 'serverClientID' should be set to the same client ID as is set in your Frigate configuration.
+- The 'serverClientID' should be set to the same client ID as is set in your Frigate configuration. This allows support of multiple Frigate instances
 - if there are no UI streams requested, there is virtually no additional CPU or network load increase by setting 'enableStream' to true
 - the 'streamWhiteList' is a space-separated string of IP addresses that will be accepted by the stream server. Set to 'DISABLE' to disable completely, allowing connections from anywhere.
 - the 'ffmpeglocation' refers to the location of ffmpeg on the device running the openHAB instance.
@@ -102,13 +111,21 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 
 ### `frigateSVR Camera` 'Thing' Configuration
 
-| Name                     | Type    | Description                                   | Default | Required | Advanced |
-|--------------------------|---------|-----------------------------------------------|---------|----------|----------|
-| serverID                 | text    | Thing ID of bound Server 'Thing'              | N/A     | yes      | no       |
-| cameraName               | text    | Camera name of Frigate camera                 | N/A     | yes      | no       |
-| enableStream             | boolean | Enable the internal stream server             | true    | yes      | no       |
-| ffmpegCommands           | text    | Additional ffmpeg commands                    | -q:v 5 -r 2 -vf scale=640:-2 -update 1        | no       | yes      |
-| ffmpegCameraNameOverride | text    | Name of an alternate RTSP stream from Frigate | empty   | no       | yes      |
+| Name                           | Type    | Description                                             | Default                                | Required | Advanced |
+|--------------------------------|---------|---------------------------------------------------------|----------------------------------------|----------|----------|
+| serverID                       | text    | Thing ID of bound Server 'Thing'                        | N/A                                    | yes      | no       |
+| cameraName                     | text    | Camera name of Frigate camera                           | N/A                                    | yes      | no       |
+| enableStream                   | boolean | Enable the internal stream server                       | true                                   | no       | no       |
+| ffmpegCameraNameOverride       | text    | Name of an alternate RTSP stream from Frigate           | empty                                  | no       | yes      |
+| ffMJPEGStartProducerOnLoad     | text    | Start ffmpeg for MJPEG streams when binding started     | false                                  | yes      | yes      |
+| ffMJPEGTranscodeCommands       | text    | Commands for ffmpeg transcode section for MJPEG streams | -q:v 5 -r 2 -vf scale=640:-2 -update 1 | yes      | yes      |
+| ffHLSStartProducerOnLoad       | text    | Start ffmpeg on binding start for HLS streams           | false                                  | yes      | yes      |
+| ffHLSTranscodeCommands         | text    | Commands for ffmpeg transcode section for HLS streams   | -acodec copy -vcodec copy              | yes      | yes      |
+| ffDASHStartProducerOnLoad      | text    | Start ffmpeg on binding start for DASH streams          | false                                  | yes      | yes      |
+| ffDASHTranscodeCommands        | text    | Commands for ffmpeg transcode section for DASH streams  | -acodec copy -vcodec copy              | yes      | yes      |
+| ffDASHPackageCommands          | text    | Commands for ffmpeg stream package section for DASH     | -seg_duration 1 -streaming 1           | yes      | yes      |
+| ffKeepalivesBeforeExit         | integer | Number of keepalives to wait before terminating ffmpeg  | 2                                      | yes      | yes      |
+| ffTempDir                      | text    | Working directory for stream data                       | openHAB user data area                 | yes      | yes      |
 
 #### Notes:
 
@@ -122,11 +139,12 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 
 ### `frigateSVR Server` 'Thing' Channels
 
-| Channel        | Type   | Read/Write  | Description                                                           |
-|----------------|--------|-------------|-----------------------------------------------------------------------|
-| fgAPIVersion   | String | R/O         | Version of the Frigate API being used                                 |
-| fgUI           | String | R/O         | URL to the Frigate UI for this server (useful for openHAB UI widgets) |
-| fgBirdseyeURL  | String | R/O         | URL to the openHAB stream for the Frigate 'birdseye' view (if enabled)|
+| Channel            | Type   | Read/Write  | Description                                                                                           |
+|--------------------|--------|-------------|-------------------------------------------------------------------------------------------------------|
+| fgAPIVersion       | String | R/O         | Version of the Frigate API being used                                                                 |
+| fgUI               | String | R/O         | URL to the Frigate UI for this server (useful for openHAB UI widgets)                                 |
+| fgAPIForwarderURL  | String | R/O         | URL to the API forwarder - allowing UI widgets to access the Frigate API from a local server instance |
+| fgBirdseyeURL      | String | R/O         | URL to the openHAB stream for the Frigate 'birdseye' view (if enabled)                                |
 
 #### Notes
 
@@ -151,7 +169,7 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 | fgMotionThreshold     | Number   | R/W         | Read/set motion detection threshold                           |
 | fgMotionContourArea   | Number   | R/W         | Read/set motion contour area                                  |
 | fgMotionDetected      | Contact  | R/O         | Motion detected                                               |
-| fgMJPEGURL            | String   | R/O         | URL to local camera stream for UIs (if enabled)               |
+| fgStreamURL           | String   | R/O         | URL to local camera streams for UIs (if enabled)              |
 | fgLastSnapshotObject  | String   | R/O         | Type of object detected in last snapshot                      |
 | fgLastSnapshot        | Image    | R/O         | Snapshot of last detected object                              |
 | fgCurrentEventType    | String   | R/O         | Current event type ('new', 'update' or 'end')                 |
