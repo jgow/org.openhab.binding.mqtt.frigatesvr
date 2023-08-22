@@ -18,6 +18,18 @@ The binding supports:
 - an API forwarder, allowing a local UI to use the Frigate server's HTTP API via a local endpoint on the OpenHAB server.
 - a streaming mechanism, allowing video for the 'birdseye' view and individual camera feeds to be viewed on the OpenHAB API.
 
+## Versions:
+
+- Versions prior to 1.5:
+  - do not have video support
+  - do have full event support
+- Version 1.5:
+  -  introduced video streaming for birdseye and cameras (MJPEG only)
+- Version 1.6:
+  - has a rewritten video subsystem
+  - adds an API forwarder
+  - adds full multi-type streaming support
+
 ## Philosophy
 
 The design philosophy behind this binding is to allow for three main areas of functionality
