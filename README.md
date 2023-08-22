@@ -52,7 +52,7 @@ An API forwarder is available, allowing a UI widget to communicate with the Frig
 
 ### Streaming
 
-Prior to binding version 1.5, the binding did not handle video in any way. However, starting with binding version 1.5 - video streams are now available directly from a servlet on the openHAB instance. This makes use of the Frigate rtsp stream exports, and internally the binding uses a very similar mechanism to the 'ipcamera' binding to allow them to be rendered locally. That having been said, it is recommended that this facility be used only for low resolution streams as otherwise network and CPU loads may become intolerable.
+Prior to binding version 1.5, the binding did not handle video in any way. However, starting with binding version 1.5 - video streams are now available directly from a servlet on the openHAB instance. This makes use of the Frigate rtsp stream exports and provides a restream mechanism to package them and to allow them to be rendered locally. That having been said, it is recommended that this facility be used only for low resolution streams as otherwise network and CPU loads may become intolerable.
 
 Frigate does all of the 'heavy lifting', including the object detection. An openHAB UI widget (e.g. oh-video) can read the stream directly from a URL provided on a channel to display real time feeds.
 
@@ -81,7 +81,7 @@ The FrigateSVR binding supports two 'things':
 - a frigateServer 'thing'
 - a frigateCamera 'thing'
 
-**It is important to note** that this binding initially requires a frigateServer 'thing' to be instantiated, one per Frigate server (it is possible to have multiple frigateServer 'things' each pointing to a different Frigate server. In this case, the 'clientID' parameter must be set in the Frigate configuration to allow the servers to be discriminated.
+**It is important to note** that a frigateServer 'thing' be instantiated first, one per Frigate server (it is possible to have multiple frigateServer 'things' each pointing to a different Frigate server), manually. In this case, the 'clientID' parameter must be set in the Frigate configuration to allow the servers to be discriminated.
 
 Once a frigateServer 'thing' is instantiated, then the frigateCamera 'things' can be instantiated. The easiest way to do this is via a discovery scan (see below). FrigateCamera 'things' can be instantiated manually as well if the ThingID of the relevant frigateServer 'thing' is known and can be entered into the frigateCamera configuration.
 
@@ -89,15 +89,15 @@ _It is important to note that frigateCamera 'things' can not be instantiated alo
 
 ## Discovery
 
-Autodiscovery of your cameras (manually through use of the 'scan' button on the UI) is supported.
+Autodiscovery of your cameras (through use of the 'scan' button on the UI) is supported.
 
 You must first manually instantiate and configure a frigateServer 'thing'.
 
-To make use of the autodiscovery of cameras, when creating a new 'thing' first select the MQTT broker bridge. Then select the frigateServer 'thing' you have instantiated as above (it is impossible, practically, to automatically scan for Frigate **servers** without aggressive network probing). In the configuration panel for the frigateServer 'thing', select the bridge to the MQTT binding, and fill in the 'Frigate server URL' configuration field with the URL to your Frigate server. If you have multiple Frigate instances with the Frigate 'clientID' parameter set, then enter the relevant client ID in the 'Frigate server client ID' field. The keepalive interval can remain at the default to start with. Then complete the creation of the thing.
+To make use of the autodiscovery of cameras, it is necessary first to configure a server 'thing'. First select the MQTT broker bridge. Then select the frigateServer 'thing' you have instantiated as above (it is impossible, practically, to automatically scan for Frigate **servers** without aggressive network probing). In the configuration panel for the frigateServer 'thing', select the bridge to the MQTT binding, and fill in the 'Frigate server URL' configuration field with the URL to your Frigate server. If you have multiple Frigate instances with the Frigate 'clientID' parameter set, then enter the relevant client ID in the 'Frigate server client ID' field. The keepalive interval can remain at the default to start with. Then complete the creation of the thing.
 
 The Frigate server 'thing' will appear in your list of 'things'.
 
-Providing your Frigate server is accessible, within 5-8 seconds, your Frigate server 'thing' should be listed green and 'online'. Once this is the case, return to the 'Things' menu and click the '+' button. Select the MQTT broker from the list and hit the red 'Scan Now' button. The cameras attached to the Frigate server will appear in the list. These can then be instantiated in the normal way.
+Providing your Frigate server is accessible, within 5-8 seconds (potentially longer if you have configured the streams to start on load), your Frigate server 'thing' should be listed green and 'online'. Once this is the case, return to the 'Things' menu and click the '+' button. Select the MQTT broker from the list and hit the red 'Scan Now' button. The cameras attached to the Frigate server will appear in the list. These can then be instantiated in the normal way.
 
 ## 'Thing' Configuration
 
@@ -191,6 +191,7 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 
 - the 'fgAPIVersion' is the version returned by the Frigate API
 - 'fgUI' is the base URL of the Frigate server being used
+- 'fgAPIForwarderURL: If the API forwarder is enabled, this channel contains a local URL from which the Frigate HTTP API can be accessed (add /api/<frigate API string> to the URL to access it).
 - 'fgBirdseyeURL': if the Frigate server is set up to restream the 'birdseye' view (if in the Frigate config, 'restream: true' is set in the 'birdseye' section), and if the 'enableStream' configuration parameter on the frigateSVR server 'thing' is set true, then a stream of the 'birdseye' view can be had at this URL. If Frigate is not configured to provide this, or the 'enableStream' parameter is set to off, then this URL will be blank.
 
 
@@ -260,7 +261,7 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 
 - 'Current event' and 'Prior to event' channels are updated with fgCurrentEventType. This ensures consistency of information passed to event handlers - there should be no 'stale' information left in any of the 'Cur' or 'Prev' channels. Note also that some of these values may change to NULL if the value on the Frigate server side is NULL. Thus, rules that wish to interrogate multiple 'cur' or 'prev' channels should trigger on changes to 'fgCurrentEventType' as this channel is updated once all other event channels have been updated.
 - the event and control channels follow the Frigate documentation and there should be no surprises here.
-- 'fgMJPEGURL': if the configuration parameter 'enableStream' is set true, if Frigate is configured to restream cameras and if the stream is on either 'cameraName' or 'ffmpegCameraNameOverride', then 'fgMJPEGURL' will provide a URL to a locally restreamed feed of MJPEG. Note that if you select a high resolution stream from Frigate, this could significantly increase CPU and network load as the local instance will have to transcode the stream. Consider using the detection substreams at lower frame rates - these are often sufficient and will result in much lower CPU loads.
+- 'fgStreamURL': if the configuration parameter 'enableStream' is set true, if Frigate is configured to restream cameras and if the stream is on either 'cameraName' or 'ffmpegCameraNameOverride', then 'fgStreamURL' will provide a URL to a locally restreamed feed of the camera. Note that if you select a high resolution stream from Frigate, this could significantly increase CPU and network load as the local instance will have to transcode the stream. Consider using the detection substreams at lower frame rates - these are often sufficient and will result in much lower CPU loads. Multiple stream types are supported: append '.m3u8' for HLS, '.mpd' for DASH, or use the bare URL as it is to access MJPEG. The availability of each type depends if it is enabled.
 
 ## Writing rules for FrigateSVR cameras
 
@@ -309,8 +310,8 @@ actions:
 
 ## Displaying Frigate camera video streams on OpenHAB UI - an example
 
-Versions of this binding prior to 1.5 do not handle video - but these older versions can be used with the 'ipcamera' binding to transcode restreamed video from Frigate. This was not satisfactory as it required installation of a lot of additional 'stuff' just to get the video proxy.
-If you are reading this, then the version in this tree **does** support native video and should do so with the minimum of configuration:
+Versions of this binding prior to 1.5 do not handle video - but these older versions could be used with the 'ipcamera' binding to transcode restreamed video from Frigate. This was not satisfactory as it required installation of a lot of additional 'stuff' just to get the video proxy.
+If you are reading this, then the version in this tree **does** support native video and should do so with the minimum of configuration without requiring ipcamera to be installed:
 
 - Ensure you have a version of ffmpeg installed on your OpenHAB box that has access to the appropriate codecs (e.g. h264) - for example I use openSuSE, so had to install the 'Packman' version of ffmpeg in order to get the necessary codecs. There should be a similar source of codecs for your distribution of choice. Note the path of ffmpeg (usually /usr/bin/ffmpeg under Linux).
 - For cameras:
