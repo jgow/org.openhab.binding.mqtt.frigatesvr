@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
  * The {@link MJPEGStream} encapsulates a served MJPEG stream
  *
  * @author Dr J Gow - initial contribution
+ * @author Matthew Skinner - OpenStreams/StreamOutput mjpeg buffering scheme from ipcamera.
  */
 
 @NonNullByDefault

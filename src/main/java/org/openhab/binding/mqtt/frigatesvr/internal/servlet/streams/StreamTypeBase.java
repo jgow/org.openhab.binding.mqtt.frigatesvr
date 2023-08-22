@@ -130,7 +130,16 @@ public class StreamTypeBase extends HTTPHandler {
                     break;
                 }
                 String s = this.ffHelper.GetStats("frame");
-                if (this.CheckStarted() && (!s.equals(""))) {
+                int frm = 0;
+                if (!s.isBlank()) {
+                    try {
+                        frm = Integer.valueOf(s);
+                    } catch (NumberFormatException e) {
+                        frm = 0;
+                    }
+                }
+
+                if (this.CheckStarted() && ((!s.equals("")) && frm >= this.config.ffMinFramesToStart)) {
                     logger.info("ffmpeg stream confirmed started; frame count {} fps {}", s,
                             this.ffHelper.GetStats("fps"));
 

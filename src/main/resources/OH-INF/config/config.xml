@@ -72,6 +72,12 @@
 			<default>-seg_duration 1 -streaming 1</default>
 			<advanced>true</advanced>
 		</parameter>
+		<parameter name="ffMinFramesToStart" type="integer" required="true">
+			<label>@text/param.common.ffMinFramesToStart.label</label>
+			<description>@text/param.common.ffMinFramesToStart.description</description>
+			<default>10</default>
+			<advanced>true</advanced>
+		</parameter>
 		<parameter name="ffKeepalivesBeforeExit" type="integer" required="true">
 			<label>@text/param.common.ffKeepalivesBeforeExit.label</label>
 			<description>@text/param.common.ffKeepalivesBeforeExit.description</description>
@@ -171,6 +177,12 @@
 			<label>@text/param.common.ffDASHPackageCommands.label</label>
 			<description>@text/param.common.ffDASHPackageCommands.description</description>
 			<default>-seg_duration 1 -streaming 1</default>
+			<advanced>true</advanced>
+		</parameter>
+		<parameter name="ffMinFramesToStart" type="integer" required="true">
+			<label>@text/param.common.ffMinFramesToStart.label</label>
+			<description>@text/param.common.ffMinFramesToStart.description</description>
+			<default>10</default>
 			<advanced>true</advanced>
 		</parameter>
 		<parameter name="ffKeepalivesBeforeExit" type="integer" required="true">

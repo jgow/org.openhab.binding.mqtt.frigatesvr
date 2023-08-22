@@ -134,5 +134,4 @@ public class frigateSVRBindingConstants {
     public static final String CONF_ID_SERVERID = "serverID";
     public static final String CONF_ID_ENABLESTREAM = "enableStream";
     public static final String CONF_ID_FFMPEGLOCATION = "ffmpegLocation";
-    public static final String CONF_ID_FFMPEGCOMMANDS = "ffmpegCommands";
 }
