@@ -436,7 +436,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
             String viewURL = this.networkHelper.GetHostBaseURL() + serverBase + "/camera";
 
             ArrayList<HTTPHandler> handlers = new ArrayList<HTTPHandler>();
-            handlers.add(new MJPEGStream("camera", this.svrState.ffmpegPath, ffmpegSource, config));
+            handlers.add(new MJPEGStream("camera", this.svrState.ffmpegPath, ffmpegSource, serverBase, config));
             handlers.add(new HLSStream("camera", this.svrState.ffmpegPath, ffmpegSource, config));
             handlers.add(new DASHStream("camera", this.svrState.ffmpegPath, ffmpegSource, config));
 

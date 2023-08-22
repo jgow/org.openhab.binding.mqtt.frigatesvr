@@ -37,7 +37,8 @@ public class MJPEGStream extends StreamTypeBase {
     protected OpenStreams streamList = new OpenStreams();
     private boolean postFlag = false;
 
-    public MJPEGStream(String readerPath, String ffBinary, String URLtoFF, frigateSVRCommonConfiguration config) {
+    public MJPEGStream(String readerPath, String ffBinary, String URLtoFF, String serverBase,
+            frigateSVRCommonConfiguration config) {
         super(readerPath, ffBinary, URLtoFF, config);
         this.startOnLoad = config.ffMJPEGStartProducerOnLoad;
 
@@ -64,6 +65,7 @@ public class MJPEGStream extends StreamTypeBase {
 
     public void StopStreams() {
         this.streamList.closeAllStreams();
+        postFlag = false;
         super.StopStreams();
     }
 

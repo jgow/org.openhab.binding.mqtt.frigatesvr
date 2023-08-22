@@ -12,28 +12,37 @@ The binding supports:
 - tracking and notification of Frigate server status
 - autodiscovery of your cameras as listed in the Frigate configuration
 - comprehensive camera event notification on a per-camera basis
-- ability to change individual camera settings (such as turning motion detect on/off, enabling 'improve contrast' etc.)
-- availability of snapshots of last-detected object to OpenHAB as a channel.
+- ability to change individual camera settings (such as turning recording and object detection on/off, enabling 'improve contrast' etc) via suitable channels.
+- availability of JPEG snapshots (with boundary boxes) of last-detected object to OpenHAB as a channel.
 - statistics information on a per-camera basis (fps etc).
-- (coming soon):
-    - server memory state (allowing OpenHAB to trigger rules/notifications if the Frigate server starts to run out of resources)
+- an API forwarder, allowing a local UI to use the Frigate server's HTTP API via a local endpoint on the OpenHAB server.
+- a streaming mechanism, allowing video for the 'birdseye' view and individual camera feeds to be viewed on the OpenHAB API.
 
 ## Philosophy
 
-The design philosophy behind this binding is to allow OpenHAB access to the useful and considerable status and event information from the cameras attached to the Frigate server, to allow rules to be triggered based upon changes to the streams as detected by Frigate.
+The design philosophy behind this binding is to allow for three main areas of functionality
 
+- OpenHAB access to the useful and considerable status and event information from the cameras attached to the Frigate server, to allow rules to be triggered based upon changes to the streams as detected by Frigate. 
+- Per-camera configuration (such as turning motion detect on/off)
+- A forwarder mechanism to allow API calls to the Frigate server via an endpoint on the openHAB instance.
+- A streaming mechanism allowing video from the RTSP feeds of server 'birdseye' view and individual camera feeds to be visible on a UI widget via a URL on the local instance.
+
+### Events and channels
 Frigate detection events fall into three types: 'new', 'update', and 'end'. When an event occurs, it is assigned a unique ID and an event is posted. The binding picks this up and farms out the useful information into a set of channels.
 
 Frigate sends events as a delta - the event packet contains information pertaining to both the previous state (before the event occurred - denoted 'previous' in the camera channel descriptions) and information relating to the current state (denoted 'current' in the camera channel descriptions). This allows openHAB rules to make an intelligent decision based upon changes to the 'picture' seen by the cameras, with Frigate itself responsible for all the detection and image processing. 
 
+The frigateSVR binding provides a *lot* of openHAB channels that can be used in a multitude of ways. Further information can be obtained through perusal of the Frigate documentation - the channel mapping is logical and follows the Frigate specifications - there should be no surprises. However, the architecture of this binding is slightly different from usual and the following section provides an overview.
+
+### API forwarder
+
+An API forwarder is available, allowing a UI widget to communicate with the Frigate server via a URL to the local openHAB instance (see channel fgAPIForwarderURL)
+
+### Streaming
+
 Prior to binding version 1.5, the binding did not handle video in any way. However, starting with binding version 1.5 - video streams are now available directly from a servlet on the openHAB instance. This makes use of the Frigate rtsp stream exports, and internally the binding uses a very similar mechanism to the 'ipcamera' binding to allow them to be rendered locally. That having been said, it is recommended that this facility be used only for low resolution streams as otherwise network and CPU loads may become intolerable.
 
-Frigate does all of the 'heavy lifting', including the object detection. Similarly, the management, viewing and downloading of actual video clips is more appropriately carried out by a UI - either Frigate's own UI or a UI widget integrated into OpenHAB - Frigate provides a rich REST API with which to facilitate such a design and this should be leveraged directly by a UI designer should an OpenHAB UI element wish to incorporate these features. You can find an example of how to display Frigate camera streams on the OpenHAB UI towards the end of this document, [here](#displaying-Frigate-camera-video-streams-on-openHAB-ui---an-example).
-
-
-It is clearly necessary for the openHAB instance to be able to communicate with the Frigate instance, however for UI purposes and depending on the topology of your network it may be desirable to pass part of the Frigate API through a reverse proxy so that it is accessible remotely. This binding does *not* provide these features either, as there is much more appropriate open-source software available to provide this if needed (e.g. one of the Apache web servers).
-
-That having been said, the frigateSVR binding provides a *lot* of openHAB channels that can be used in a multitude of ways. Further information can be obtained through perusal of the Frigate documentation - the channel mapping is logical and follows the Frigate specifications - there should be no surprises. However, the architecture of this binding is slightly different from usual and the following section provides an overview.
+Frigate does all of the 'heavy lifting', including the object detection. An openHAB UI widget (e.g. oh-video) can read the stream directly from a URL provided on a channel to display real time feeds.
 
 ## Architecture
 
@@ -61,6 +70,7 @@ The FrigateSVR binding supports two 'things':
 - a frigateCamera 'thing'
 
 **It is important to note** that this binding initially requires a frigateServer 'thing' to be instantiated, one per Frigate server (it is possible to have multiple frigateServer 'things' each pointing to a different Frigate server. In this case, the 'clientID' parameter must be set in the Frigate configuration to allow the servers to be discriminated.
+
 Once a frigateServer 'thing' is instantiated, then the frigateCamera 'things' can be instantiated. The easiest way to do this is via a discovery scan (see below). FrigateCamera 'things' can be instantiated manually as well if the ThingID of the relevant frigateServer 'thing' is known and can be entered into the frigateCamera configuration.
 
 _It is important to note that frigateCamera 'things' can not be instantiated alone without a server 'thing' - there must be a frigateServer 'thing' available to which the frigateCamera is bound (strictly speaking, a frigateCamera 'thing' can be instantiated, but it will remain offline until bound to a frigateServer 'thing' that supports this camera)._
@@ -69,7 +79,9 @@ _It is important to note that frigateCamera 'things' can not be instantiated alo
 
 Autodiscovery of your cameras (manually through use of the 'scan' button on the UI) is supported.
 
-To make use of this, when creating a new 'thing' first select the MQTT broker bridge. Then select the frigateServer 'thing' (it is impossible, practically, to automatically scan for Frigate **servers** without aggressive network probing). In the configuration panel for the frigateServer 'thing', select the bridge to the MQTT binding, and fill in the 'Frigate server URL' configuration field with the URL to your Frigate server. If you have multiple Frigate instances with the Frigate 'clientID' parameter set, then enter the relevant client ID in the 'Frigate server client ID' field. The keepalive interval can remain at the default to start with. Then complete the creation of the thing.
+You must first manually instantiate and configure a frigateServer 'thing'.
+
+To make use of the autodiscovery of cameras, when creating a new 'thing' first select the MQTT broker bridge. Then select the frigateServer 'thing' you have instantiated as above (it is impossible, practically, to automatically scan for Frigate **servers** without aggressive network probing). In the configuration panel for the frigateServer 'thing', select the bridge to the MQTT binding, and fill in the 'Frigate server URL' configuration field with the URL to your Frigate server. If you have multiple Frigate instances with the Frigate 'clientID' parameter set, then enter the relevant client ID in the 'Frigate server client ID' field. The keepalive interval can remain at the default to start with. Then complete the creation of the thing.
 
 The Frigate server 'thing' will appear in your list of 'things'.
 
@@ -81,51 +93,60 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 
 ### `frigateSVR Server` 'Thing' Configuration
 
-| Name                           | Type    | Description                                             | Default                                | Required | Advanced |
-|--------------------------------|---------|---------------------------------------------------------|----------------------------------------|----------|----------|
-| serverURL                      | text    | URL to the running Frigate server                       | N/A                                    | yes      | no       |
-| serverClientID                 | text    | 'clientID' parameter in Frigate config                  | N/A                                    | no       | no       |
-| serverKeepAlive                | integer | Interval the device is polled in sec.                   | 5                                      | yes      | no       |
-| enableAPIForwarder             | boolean | Enable the Frigate API forwarder                        | true                                   | yes      | no       |
-| enableStream                   | boolean | Enable the internal stream server                       | true                                   | yes      | no       |
-| streamWhitelist                | text    | List of IPs allowed to connect                          | DISABLE                                | no       | yes      |    
-| ffmpegLocation                 | text    | Location of ffmpeg binary                               | /usr/bin/ffmpeg                        | yes      | yes      |
-| ffMJPEGStartProducerOnLoad     | text    | Start ffmpeg for MJPEG streams when binding started     | false                                  | yes      | yes      |
-| ffMJPEGTranscodeCommands       | text    | Commands for ffmpeg transcode section for MJPEG streams | -q:v 5 -r 2 -vf scale=640:-2 -update 1 | yes      | yes      |
-| ffHLSStartProducerOnLoad       | text    | Start ffmpeg on binding start for HLS streams           | false                                  | yes      | yes      |
-| ffHLSTranscodeCommands         | text    | Commands for ffmpeg transcode section for HLS streams   | -acodec copy -vcodec copy              | yes      | yes      |
-| ffDASHStartProducerOnLoad      | text    | Start ffmpeg on binding start for DASH streams          | false                                  | yes      | yes      |
-| ffDASHTranscodeCommands        | text    | Commands for ffmpeg transcode section for DASH streams  | -acodec copy -vcodec copy              | yes      | yes      |
-| ffDASHPackageCommands          | text    | Commands for ffmpeg stream package section for DASH     | -seg_duration 1 -streaming 1           | yes      | yes      |
-| ffKeepalivesBeforeExit         | integer | Number of keepalives to wait before terminating ffmpeg  | 2                                      | yes      | yes      |
-| ffTempDir                      | text    | Working directory for stream data                       | openHAB user data area                 | yes      | yes      |
+| Name                           | Type    | Description                                                           | Default                                | Required | Advanced |
+|--------------------------------|---------|-----------------------------------------------------------------------|----------------------------------------|----------|----------|
+| serverURL                      | text    | URL to the running Frigate server                                     | N/A                                    | yes      | no       |
+| serverClientID                 | text    | 'clientID' parameter in Frigate config                                | N/A                                    | no       | no       |
+| serverKeepAlive                | integer | Interval the device is polled in sec.                                 | 5                                      | yes      | no       |
+| enableAPIForwarder             | boolean | Enable the Frigate API forwarder                                      | true                                   | yes      | no       |
+| enableStream                   | boolean | Enable the internal stream server                                     | true                                   | yes      | no       |
+| streamWhitelist                | text    | List of IPs allowed to connect                                        | DISABLE                                | no       | yes      |    
+| ffmpegLocation                 | text    | Location of ffmpeg binary                                             | /usr/bin/ffmpeg                        | yes      | yes      |
+| ffMJPEGStartProducerOnLoad     | text    | Start ffmpeg for MJPEG streams when binding started                   | false                                  | yes      | yes      |
+| ffMJPEGTranscodeCommands       | text    | Commands for ffmpeg transcode section for MJPEG streams               | -q:v 5 -r 2 -vf scale=640:-2 -update 1 | yes      | yes      |
+| ffHLSStartProducerOnLoad       | text    | Start ffmpeg on binding start for HLS streams                         | false                                  | yes      | yes      |
+| ffHLSTranscodeCommands         | text    | Commands for ffmpeg transcode section for HLS streams                 | -acodec copy -vcodec copy              | yes      | yes      |
+| ffDASHStartProducerOnLoad      | text    | Start ffmpeg on binding start for DASH streams                        | false                                  | yes      | yes      |
+| ffDASHTranscodeCommands        | text    | Commands for ffmpeg transcode section for DASH streams                | -acodec copy -vcodec copy              | yes      | yes      |
+| ffDASHPackageCommands          | text    | Commands for ffmpeg stream package section for DASH                   | -seg_duration 1 -streaming 1           | yes      | yes      |
+| ffMinFramesToStart             | integer | Minimum number of frames processed by ffmpeg to indicate stream start | 10                                     | yes      | yes      |
+| ffKeepalivesBeforeExit         | integer | Number of keepalives to wait before terminating ffmpeg                | 2                                      | yes      | yes      |
+| ffTempDir                      | text    | Working directory for stream data                                     | openHAB user data area                 | no       | yes      |
 
 #### Notes:
 
-- In most instances, only the 'Frigate server URL' needs to be added manually. This should be the base URL to the Frigate server.
-- The 'serverClientID' should be set to the same client ID as is set in your Frigate configuration. This allows support of multiple Frigate instances
-- if there are no UI streams requested, there is virtually no additional CPU or network load increase by setting 'enableStream' to true
+- serverURL: In most instances, only this needs to be added manually. This should be the base URL to the Frigate server.
+- serverClientID: this should be set to the same client ID as is set in your Frigate configuration. This allows support of multiple Frigate instances
+- serverKeepAlive: this is the keepalive interval between calls to the Frigate HTTP API (to evaluate Frigate server state)
+- enableAPIForwarder: this will enable the API forwarder. All aspects of the Frigate HTTP API are available on the endpoint (specified by the channel fgAPIForwarderURL) except the MJPEG debug streams.
+- enableStream: if there are no UI streams requested, there is virtually no additional CPU or network load increase by setting 'enableStream' to true, unless corresponding 'ff***StartProducerOnLoad flags are set.
 - the 'streamWhiteList' is a space-separated string of IP addresses that will be accepted by the stream server. Set to 'DISABLE' to disable completely, allowing connections from anywhere.
-- the 'ffmpeglocation' refers to the location of ffmpeg on the device running the openHAB instance.
-- 'ffmpegCommands' is configured not to scale the birdseye view as this is not a high resolution stream usually. It can be modified: see the section below where the individual cameras have a similar property.
+- ff***StartProducerOnLoad: if these parameters are set true, then the relevant ffmpeg processes will be started with the binding, rather than on demand when a UI element requests the stream. For non-transcoding streams such as DASH and HLS, the CPU impact is minimal. However, the network impact should be considered. Note that starting on load will delay the onlining of the 'things' by the time it takes to start the streams. If set false, there will be a short delay when the stream is requested to allow the ffmpeg processes to start.
+- ffmpeglocation: this refers to the location of the installed ffmpeg binary on the device running the openHAB instance. **A relatively recent ffmpeg is required**
+- ff***TranscodeCommands: these are ffmpeg commands for the transcode section of the ffmpeg command string for the relevant stream type
+- ff***PackageCommands: these are ffmpeg command line options for the stream package section of the ffmpeg command string (after -f <format>).
+- ffMinFramesToStart: The stream start sequence looks for files to be present, and also for the minimum number of frames processed by ffmpeg to be equal or greater to this quantity before the stream is considered started.
+- ffKeepalivesBeforeExit: If the ff***StartProducerOnLoad is set false, this parameter specifies how many keepalives should elapse without a stream file request being received before the ffmpeg process is shut down.
+- ffTempDir: this is the working directory for the served streams. This is by default the openHAB user data area, but could be set to a ramdisk (e.g. /dev/shm) to improve performance. The files created are deleted when a stream is shut down, and the streams are organized to rotate and not fill the disk.
 
 ### `frigateSVR Camera` 'Thing' Configuration
 
-| Name                           | Type    | Description                                             | Default                                | Required | Advanced |
-|--------------------------------|---------|---------------------------------------------------------|----------------------------------------|----------|----------|
-| serverID                       | text    | Thing ID of bound Server 'Thing'                        | N/A                                    | yes      | no       |
-| cameraName                     | text    | Camera name of Frigate camera                           | N/A                                    | yes      | no       |
-| enableStream                   | boolean | Enable the internal stream server                       | true                                   | no       | no       |
-| ffmpegCameraNameOverride       | text    | Name of an alternate RTSP stream from Frigate           | empty                                  | no       | yes      |
-| ffMJPEGStartProducerOnLoad     | text    | Start ffmpeg for MJPEG streams when binding started     | false                                  | yes      | yes      |
-| ffMJPEGTranscodeCommands       | text    | Commands for ffmpeg transcode section for MJPEG streams | -q:v 5 -r 2 -vf scale=640:-2 -update 1 | yes      | yes      |
-| ffHLSStartProducerOnLoad       | text    | Start ffmpeg on binding start for HLS streams           | false                                  | yes      | yes      |
-| ffHLSTranscodeCommands         | text    | Commands for ffmpeg transcode section for HLS streams   | -acodec copy -vcodec copy              | yes      | yes      |
-| ffDASHStartProducerOnLoad      | text    | Start ffmpeg on binding start for DASH streams          | false                                  | yes      | yes      |
-| ffDASHTranscodeCommands        | text    | Commands for ffmpeg transcode section for DASH streams  | -acodec copy -vcodec copy              | yes      | yes      |
-| ffDASHPackageCommands          | text    | Commands for ffmpeg stream package section for DASH     | -seg_duration 1 -streaming 1           | yes      | yes      |
-| ffKeepalivesBeforeExit         | integer | Number of keepalives to wait before terminating ffmpeg  | 2                                      | yes      | yes      |
-| ffTempDir                      | text    | Working directory for stream data                       | openHAB user data area                 | yes      | yes      |
+| Name                           | Type    | Description                                                           | Default                                | Required | Advanced |
+|--------------------------------|---------|-----------------------------------------------------------------------|----------------------------------------|----------|----------|
+| serverID                       | text    | Thing ID of bound Server 'Thing'                                      | N/A                                    | yes      | no       |
+| cameraName                     | text    | Camera name of Frigate camera                                         | N/A                                    | yes      | no       |
+| enableStream                   | boolean | Enable the internal stream server                                     | true                                   | no       | no       |
+| ffmpegCameraNameOverride       | text    | Name of an alternate RTSP stream from Frigate                         | empty                                  | no       | yes      |
+| ffMJPEGStartProducerOnLoad     | text    | Start ffmpeg for MJPEG streams when binding started                   | false                                  | yes      | yes      |
+| ffMJPEGTranscodeCommands       | text    | Commands for ffmpeg transcode section for MJPEG streams               | -q:v 5 -r 2 -vf scale=640:-2 -update 1 | yes      | yes      |
+| ffHLSStartProducerOnLoad       | text    | Start ffmpeg on binding start for HLS streams                         | false                                  | yes      | yes      |
+| ffHLSTranscodeCommands         | text    | Commands for ffmpeg transcode section for HLS streams                 | -acodec copy -vcodec copy              | yes      | yes      |
+| ffDASHStartProducerOnLoad      | text    | Start ffmpeg on binding start for DASH streams                        | false                                  | yes      | yes      |
+| ffDASHTranscodeCommands        | text    | Commands for ffmpeg transcode section for DASH streams                | -acodec copy -vcodec copy              | yes      | yes      |
+| ffDASHPackageCommands          | text    | Commands for ffmpeg stream package section for DASH                   | -seg_duration 1 -streaming 1           | yes      | yes      |
+| ffMinFramesToStart             | integer | Minimum number of frames processed by ffmpeg to indicate stream start | 10                                     | yes      | yes      |
+| ffKeepalivesBeforeExit         | integer | Number of keepalives to wait before terminating ffmpeg                | 2                                      | yes      | yes      |
+| ffTempDir                      | text    | Working directory for stream data                                     | openHAB user data area                 | yes      | yes      |
 
 #### Notes:
 
@@ -134,6 +155,14 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 - the ffmpeg binary location is passed in from the server 'thing'.
 - the 'ffmpegCameraNameOverride' parameter is useful. If you have configured Frigate's cameras with multiple streams - say a high resolution stream for recording on Frigate and a lower resolution for detection, these streams may have a different name to the camera name. For example, using this field, you could pull in a substream running at a lower frame rate for display in openHAB to reduce network resources and CPU load. If you pass in the detection stream rather than the high resolution stream, the CPU and network load will be **much** lower than if you use the high resolution stream.
 - Similarly, if your restream from Frigate has a different name to your camera, the 'ffmpegCameraNameOverride' field is where you can specify it.
+- ff***StartProducerOnLoad: if these parameters are set true, then the relevant ffmpeg processes will be started with the binding, rather than on demand when a UI element requests the stream. For non-transcoding streams such as DASH and HLS, the CPU impact is minimal. However, the network impact should be considered. Note that starting on load will delay the onlining of the 'things' by the time it takes to start the streams. If set false, there will be a short delay when the stream is requested to allow the ffmpeg processes to start.
+- ffmpeglocation: this refers to the location of the installed ffmpeg binary on the device running the openHAB instance. **A relatively recent ffmpeg is required**
+- ff***TranscodeCommands: these are ffmpeg commands for the transcode section of the ffmpeg command string for the relevant stream type
+- ff***PackageCommands: these are ffmpeg command line options for the stream package section of the ffmpeg command string (after -f <format>).
+- ffMinFramesToStart: The stream start sequence looks for files to be present, and also for the minimum number of frames processed by ffmpeg to be equal or greater to this quantity before the stream is considered started.
+- ffKeepalivesBeforeExit: If the ff***StartProducerOnLoad is set false, this parameter specifies how many keepalives should elapse without a stream file request being received before the ffmpeg process is shut down.
+- ffTempDir: this is the working directory for the served streams. This is by default the openHAB user data area, but could be set to a ramdisk (e.g. /dev/shm) to improve performance. The files created are deleted when a stream is shut down, and the streams are organized to rotate and not fill the disk.
+
 
 ## Channels
 
@@ -276,7 +305,7 @@ If you are reading this, then the version in this tree **does** support native v
     - Frigate exports RTSP streams for each camera on `http://<frigate-server>:8554/<stream-name>` The binding will by default look for a stream where <stream-NAME> is equal to the cameraName. If the Frigate configuration differs, ensure the desired Frigate <stream-name> is inserted in the 'ffmpegCameraNameOverride' parameter on the camera 'thing'.
     - Ensure that the streaming is turned on using the 'enableStream' parameter on the camera 'thing'.
     - On the frigateSVR server 'thing' check the 'ffmpegLocation' parameter points to the ffmpeg binary.
-    - If the camera is online, the 'fgMJPEGURL' channel on the camera 'thing' should contain a URL to which you can point your UI widget. You should then see the video stream in the UI widget. This will be a 'clean' video stream from the camera - there will be no overlays on object detection etc.
+    - If the camera is online, the 'fgStreamURL' channel on the camera 'thing' should contain a URL. To access the relevant stream, append an extension to this URL (.m3u8 for HLS, .mpd for DASH, or  to which you can point your UI widget. You should then see the video stream in the UI widget. This will be a 'clean' video stream from the camera - there will be no overlays on object detection etc.
     - The **snapshots** exposed by the frigateSVR binding  _will_  show the overlays on detection of objects.
 - For the 'birdseye' view:
     - Ensure this is turned on in Frigate by having 'restream: true' in the 'birdseye' section of the Frigate config.

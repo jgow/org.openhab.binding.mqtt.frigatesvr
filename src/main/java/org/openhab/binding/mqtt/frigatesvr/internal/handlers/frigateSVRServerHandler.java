@@ -329,7 +329,8 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
             String birdseyeFrigateStreamPath = this.svrState.rtspbase + "/birdseye";
             viewURL = this.networkHelper.GetHostBaseURL() + serverBase + "/birdseye";
 
-            handlers.add(new MJPEGStream("birdseye", this.svrState.ffmpegPath, birdseyeFrigateStreamPath, config));
+            handlers.add(new MJPEGStream("birdseye", this.svrState.ffmpegPath, birdseyeFrigateStreamPath, serverBase,
+                    config));
             handlers.add(new HLSStream("birdseye", this.svrState.ffmpegPath, birdseyeFrigateStreamPath, config));
             handlers.add(new DASHStream("birdseye", this.svrState.ffmpegPath, birdseyeFrigateStreamPath, config));
         }
