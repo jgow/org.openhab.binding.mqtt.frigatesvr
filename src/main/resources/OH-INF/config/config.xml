@@ -78,7 +78,7 @@
 			<default>2</default>
 			<advanced>true</advanced>
 		</parameter>
-		<parameter name="ffTempDir" type="text" required="true">
+		<parameter name="ffTempDir" type="text" required="false">
 			<label>@text/param.common.ffTempDir.label</label>
 			<description>@text/param.common.ffTempDir.description</description>
 			<default/>
