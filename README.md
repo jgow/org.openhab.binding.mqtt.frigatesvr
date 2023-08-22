@@ -305,13 +305,21 @@ If you are reading this, then the version in this tree **does** support native v
     - Frigate exports RTSP streams for each camera on `http://<frigate-server>:8554/<stream-name>` The binding will by default look for a stream where <stream-NAME> is equal to the cameraName. If the Frigate configuration differs, ensure the desired Frigate <stream-name> is inserted in the 'ffmpegCameraNameOverride' parameter on the camera 'thing'.
     - Ensure that the streaming is turned on using the 'enableStream' parameter on the camera 'thing'.
     - On the frigateSVR server 'thing' check the 'ffmpegLocation' parameter points to the ffmpeg binary.
-    - If the camera is online, the 'fgStreamURL' channel on the camera 'thing' should contain a URL. To access the relevant stream, append an extension to this URL (.m3u8 for HLS, .mpd for DASH, or  to which you can point your UI widget. You should then see the video stream in the UI widget. This will be a 'clean' video stream from the camera - there will be no overlays on object detection etc.
+    - If the camera is online, the 'fgStreamURL' channel on the camera 'thing' should contain a URL. To access the relevant stream, append an extension to this URL (.m3u8 for HLS, .mpd for DASH,  no extension for MJPEG) and this forms a URL to which you can point your UI widget. You should then see the video stream in the UI widget. This will be a 'clean' video stream from the camera - there will be no overlays on object detection etc.
     - The **snapshots** exposed by the frigateSVR binding  _will_  show the overlays on detection of objects.
 - For the 'birdseye' view:
     - Ensure this is turned on in Frigate by having 'restream: true' in the 'birdseye' section of the Frigate config.
     - On the server 'thing', ensure 'enableStream' is on and that the ffmpeg binary path is correct in 'ffmpegLocation'.
     - If the stream is available, the channel 'fgBirdseyeURL' should contain a URL to point a UI widget at to display the Frigate birdseye view.
     - The birdseye view is quite a good mechanism to look at all cameras in openHAB while minimizing CPU and network load.
+
+### UI example
+
+```
+- component: oh-video
+  config:
+      url: =items.frigateSVR_Server_Birdseye_stream_URL.state + ".m3u8"
+```
 
 # Building
 
