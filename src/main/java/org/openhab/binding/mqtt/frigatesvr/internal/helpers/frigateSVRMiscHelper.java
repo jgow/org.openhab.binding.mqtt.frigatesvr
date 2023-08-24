@@ -13,6 +13,7 @@
 package org.openhab.binding.mqtt.frigatesvr.internal.helpers;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 
 /**
  * The {@link mqtt.frigateSVRMiscHelper} provides miscellaneous utility functions
@@ -27,12 +28,16 @@ public class frigateSVRMiscHelper {
     //
     // Remove any leading slashes and return the string
 
-    public static String StripLeadingSlash(String str) {
-        String rc = str.trim();
-        if (rc.charAt(0) == '/') {
-            rc = rc.substring(1);
+    public static String StripLeadingSlash(@Nullable String str) {
+        if (str != null) {
+            String rc = str.trim();
+            if (rc.charAt(0) == '/') {
+                rc = rc.substring(1);
+            }
+            return rc;
+        } else {
+            return new String("");
         }
-        return rc;
     }
 
     ///////////////////////////////////////////////////////////////////////

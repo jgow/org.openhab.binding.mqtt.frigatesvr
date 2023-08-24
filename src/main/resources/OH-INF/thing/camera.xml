@@ -30,6 +30,7 @@
 			<channel id="fgStreamURL" typeId="fgStreamURL"/>
 			<channel id="fgLastSnapshotObject" typeId="fgLastSnapshotObject"/>
 			<channel id="fgLastSnapshot" typeId="fgLastSnapshot"/>
+			<channel id="fgEventJSON" typeId="fgEventJSON"/>
 			<channel id="fgEventType" typeId="fgEventType"/>
 			<channel id="fgEventID" typeId="fgEventID"/>
 			<channel id="fgEventClipURL" typeId="fgEventClipURL"/>
@@ -157,6 +158,11 @@
 		<item-type>Image</item-type>
 		<label>@text/channel.lastSnapshot</label>
 		<description>@text/channel.lastSnapshot.description</description>
+	</channel-type>
+	<channel-type id="fgEventJSON">
+		<item-type>String</item-type>
+		<label>@text/channel.EventJSON</label>
+		<description>@text/channel.EventJSON.description</description>
 	</channel-type>
 	<channel-type id="fgEventType">
 		<item-type>String</item-type>

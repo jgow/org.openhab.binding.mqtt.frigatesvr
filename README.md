@@ -40,6 +40,7 @@ The design philosophy behind this binding is to allow for three main areas of fu
 - A streaming mechanism allowing video from the RTSP feeds of server 'birdseye' view and individual camera feeds to be visible on a UI widget via a URL on the local instance.
 
 ### Events and channels
+
 Frigate detection events fall into three types: 'new', 'update', and 'end'. When an event occurs, it is assigned a unique ID and an event is posted. The binding picks this up and farms out the useful information into a set of channels.
 
 Frigate sends events as a delta - the event packet contains information pertaining to both the previous state (before the event occurred - denoted 'previous' in the camera channel descriptions) and information relating to the current state (denoted 'current' in the camera channel descriptions). This allows openHAB rules to make an intelligent decision based upon changes to the 'picture' seen by the cameras, with Frigate itself responsible for all the detection and image processing. 

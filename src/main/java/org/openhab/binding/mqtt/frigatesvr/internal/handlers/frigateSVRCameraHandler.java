@@ -171,6 +171,9 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
                 Map.entry(CHANNEL_STATE_MOTIONDETECTED,
                         new frigateSVRChannelState(MQTT_MOTION, frigateSVRChannelState::fromContactMQTT,
                                 frigateSVRChannelState::toContactMQTT, false)),
+                Map.entry(CHANNEL_EVENT_JSON,
+                        new frigateSVRChannelState("", frigateSVRChannelState::fromStringMQTT,
+                                frigateSVRChannelState::toStringMQTT, false)),
                 Map.entry(CHANNEL_EVENT_TYPE,
                         new frigateSVRChannelState("update", frigateSVRChannelState::fromStringMQTT,
                                 frigateSVRChannelState::toStringMQTT, false)),
@@ -635,6 +638,8 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
                                     .toState(ecURL));
                     updateState(CHANNEL_EVENT_ID,
                             ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_EVENT_ID)).toState(id));
+                    updateState(CHANNEL_EVENT_JSON,
+                            ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_EVENT_JSON)).toState(state));
                     updateState(CHANNEL_EVENT_TYPE,
                             ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_EVENT_TYPE)).toState(evtType));
                 }
