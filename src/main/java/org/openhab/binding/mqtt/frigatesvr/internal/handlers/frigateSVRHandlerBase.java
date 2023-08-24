@@ -150,7 +150,7 @@ public class frigateSVRHandlerBase extends BaseThingHandler implements MqttMessa
                 return;
             }
             this.MQTTConnection = connection;
-            this.BridgeGoingOnline((@NonNull MqttBrokerConnection) (this.MQTTConnection));
+            this.BridgeGoingOnline(connection);
         }
         return;
     }
@@ -256,6 +256,6 @@ public class frigateSVRHandlerBase extends BaseThingHandler implements MqttMessa
 
     @Override
     public void processMessage(String topic, byte[] payload) {
-        logger.debug("Received the following MQTT message:{}:{}", topic, new String(payload, StandardCharsets.UTF_8));
+        logger.debug("Received MQTT message:{}:{}", topic, new String(payload, StandardCharsets.UTF_8));
     }
 }

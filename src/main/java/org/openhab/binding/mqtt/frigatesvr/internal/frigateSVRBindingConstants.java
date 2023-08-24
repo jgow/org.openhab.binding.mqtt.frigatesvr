@@ -60,6 +60,7 @@ public class frigateSVRBindingConstants {
     public static final String CHANNEL_EVENT_ID = "fgEventID";
     public static final String CHANNEL_EVENT_CLIP_URL = "fgEventClipURL";
     public static final String CHANNEL_STREAM_URL = "fgStreamURL";
+    public static final String CHANNEL_EVENT_JSON = "fgEventJson";
 
     public static final String CHANNEL_LAST_SNAPSHOT_OBJECT = "fgLastSnapshotObject";
     public static final String CHANNEL_LAST_SNAPSHOT = "fgLastSnapshot";

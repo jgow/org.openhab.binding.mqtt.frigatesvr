@@ -16,7 +16,6 @@ import static org.openhab.binding.mqtt.frigatesvr.internal.frigateSVRBindingCons
 
 import java.util.Hashtable;
 
-import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.client.HttpClient;
@@ -98,11 +97,12 @@ public class frigateSVRHandlerFactory extends BaseThingHandlerFactory {
     // removes the running server Thing instance - without it we can not
     // discover cameras.
 
+    @SuppressWarnings("null")
     @Override
     protected synchronized void removeHandler(ThingHandler thingHandler) {
         if (thingHandler instanceof frigateSVRServerHandler) {
             if (this.CameraDiscoveryServiceRegistration != null) {
-                ((@NonNull ServiceRegistration<?>) this.CameraDiscoveryServiceRegistration).unregister();
+                this.CameraDiscoveryServiceRegistration.unregister();
             }
         }
     }

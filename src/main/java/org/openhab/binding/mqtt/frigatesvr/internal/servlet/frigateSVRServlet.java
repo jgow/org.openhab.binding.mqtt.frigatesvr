@@ -175,11 +175,11 @@ public class frigateSVRServlet extends HttpServlet {
     // this is the input point for streams from ffmpeg that are not
     // passed through files.
 
+    @SuppressWarnings("null")
     @Override
     protected void doPost(@Nullable HttpServletRequest req, @Nullable HttpServletResponse resp) throws IOException {
         if (CheckRequest(req, resp) == true) {
-            String relPath = frigateSVRMiscHelper
-                    .StripLeadingSlash((@NonNull String) (((@NonNull HttpServletRequest) req).getPathInfo()));
+            String relPath = frigateSVRMiscHelper.StripLeadingSlash(req.getPathInfo());
             handlers.forEach(strm -> {
                 if (strm.canPost(relPath)) {
                     try {
@@ -198,6 +198,7 @@ public class frigateSVRServlet extends HttpServlet {
     // Connections from UI elements wishing to display the streams from
     // the Frigate server or the cameras
 
+    @SuppressWarnings("null")
     @Override
     protected void doGet(@Nullable HttpServletRequest req, @Nullable HttpServletResponse resp) throws IOException {
 
@@ -222,6 +223,7 @@ public class frigateSVRServlet extends HttpServlet {
     //
     // Handle the DELETE method - used for the Frigate API forwarder
 
+    @SuppressWarnings("null")
     @Override
     protected void doDelete(@Nullable HttpServletRequest req, @Nullable HttpServletResponse resp) throws IOException {
         if (CheckRequest(req, resp) == true) {
