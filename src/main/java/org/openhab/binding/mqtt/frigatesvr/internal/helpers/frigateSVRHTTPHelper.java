@@ -90,8 +90,8 @@ public class frigateSVRHTTPHelper {
     public String getHostAndPort() {
         try {
             URL url = new URL(baseurl);
-            String s =  url.getHost() + url.getPort();
-            return s.replace(".","-");
+            String s = url.getHost() + url.getPort();
+            return s.replace(".", "-");
         } catch (Exception e) {
             return new String("");
         }
