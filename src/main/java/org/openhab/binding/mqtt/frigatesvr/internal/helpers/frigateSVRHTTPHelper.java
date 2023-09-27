@@ -84,12 +84,14 @@ public class frigateSVRHTTPHelper {
     // Return the host name and port together: Frigate usually operates on
     // port 5000 but this can be changed. These are concatenated without the
     // usual colon as the intention is to use this string to build unique
-    // identifiers for each Frigate server instance.
+    // identifiers for each Frigate server instance. To this end, we also
+    // replace periods in the URL with underscores.
 
     public String getHostAndPort() {
         try {
             URL url = new URL(baseurl);
-            return url.getHost() + url.getPort();
+            String s =  url.getHost() + url.getPort();
+            return s.replace(".","_");
         } catch (Exception e) {
             return new String("");
         }
