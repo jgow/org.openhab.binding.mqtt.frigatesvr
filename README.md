@@ -215,6 +215,7 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 | fgStreamURL           | String   | R/O         | URL to local camera streams for UIs (if enabled)              |
 | fgLastSnapshotObject  | String   | R/O         | Type of object detected in last snapshot                      |
 | fgLastSnapshot        | Image    | R/O         | Snapshot of last detected object                              |
+| fgEventJSON           | String   | R/O         | Full JSON string containing the event                         |
 | fgCurrentEventType    | String   | R/O         | Current event type ('new', 'update' or 'end')                 |
 | fgEventClipURL        | String   | R/O         | Full URL to the clip of the current event                     |
 | fgPrevFrameTime       | DateTime | R/O         | Prior to event: Frame time prior to event                     |
