@@ -29,6 +29,8 @@ The binding supports:
   - has a rewritten video subsystem
   - adds an API forwarder
   - adds full multi-type streaming support
+- Version 1.7
+  - adds a channel on cameras containing the latest full JSON event string from Frigate, unmodified, filtered by camera (fgEventJSON)
 
 ## Philosophy
 
