@@ -12,14 +12,20 @@
  */
 package org.openhab.binding.mqtt.frigatesvr.internal.actions;
 
+<<<<<<< HEAD
 import java.util.HashMap;
 import java.util.Map;
 
+=======
+>>>>>>> a95211e (Initial external event trigger action)
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.mqtt.frigatesvr.internal.handlers.frigateSVRCameraHandler;
 import org.openhab.core.automation.annotation.ActionInput;
+<<<<<<< HEAD
 import org.openhab.core.automation.annotation.ActionOutput;
+=======
+>>>>>>> a95211e (Initial external event trigger action)
 import org.openhab.core.automation.annotation.RuleAction;
 import org.openhab.core.thing.binding.ThingActions;
 import org.openhab.core.thing.binding.ThingActionsScope;
@@ -40,10 +46,13 @@ public class CameraActions implements ThingActions {
     private final Logger logger = LoggerFactory.getLogger(CameraActions.class);
     private @Nullable frigateSVRCameraHandler handler;
 
+<<<<<<< HEAD
     ///////////////////////////////////////////////////////////////////////////
     ///
     /// Access to the handler objects
 
+=======
+>>>>>>> a95211e (Initial external event trigger action)
     @Override
     public void setThingHandler(@Nullable ThingHandler handler) {
         this.handler = (frigateSVRCameraHandler) handler;
@@ -54,6 +63,7 @@ public class CameraActions implements ThingActions {
         return handler;
     }
 
+<<<<<<< HEAD
     ///////////////////////////////////////////////////////////////////////////
     // TriggerEvent
     //
@@ -95,6 +105,26 @@ public class CameraActions implements ThingActions {
             @Nullable String event) {
         if (actions instanceof CameraActions) {
             return ((CameraActions) actions).TriggerEvent(label, event);
+=======
+    @RuleAction(label = "triggerEvent", description = "Trigger an event")
+    public void TriggerEvent(
+            @ActionInput(name = "label", label = "@text/EventLabel", description = "@text/EventLabelDesc") @Nullable String label) {
+        if (this.handler != null) {
+            logger.info("Action triggered: label {}", label);
+            if (label != null) {
+                logger.info("Handling action");
+            } else {
+                logger.error("event label is null");
+            }
+        } else {
+            logger.error("action not processed; handler null");
+        }
+    }
+
+    public static void TriggerEvent(@Nullable ThingActions actions, @Nullable String label) {
+        if (actions instanceof CameraActions) {
+            ((CameraActions) actions).TriggerEvent(label);
+>>>>>>> a95211e (Initial external event trigger action)
         } else {
             throw new IllegalArgumentException("Instance is not a CameraActions class.");
         }

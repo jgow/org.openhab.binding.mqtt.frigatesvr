@@ -18,7 +18,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+<<<<<<< HEAD
 import java.util.HashMap;
+=======
+>>>>>>> a95211e (Initial external event trigger action)
 import java.util.Map;
 
 import org.eclipse.jdt.annotation.NonNull;
@@ -339,6 +342,11 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     //
     // Initialize
     //
+
+    @Override
+    public Collection<Class<? extends ThingHandlerService>> getServices() {
+        return Collections.singleton(CameraActions.class);
+    }
 
     @Override
     public void initialize() {
