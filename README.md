@@ -148,7 +148,7 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 
 | Name                           | Type    | Description                                                           | Default                                | Required | Advanced |
 |--------------------------------|---------|-----------------------------------------------------------------------|----------------------------------------|----------|----------|
-| serverID                       | text    | Thing ID of bound Server 'Thing'                                      | N/A                                    | yes      | no       |
+| serverID                       | text    | FULL Thing ID of bound Server 'Thing'                                 | N/A                                    | yes      | no       |
 | cameraName                     | text    | Camera name of Frigate camera                                         | N/A                                    | yes      | no       |
 | enableStream                   | boolean | Enable the internal stream server                                     | true                                   | no       | no       |
 | ffmpegCameraNameOverride       | text    | Name of an alternate RTSP stream from Frigate                         | empty                                  | no       | yes      |
@@ -165,7 +165,7 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 
 #### Notes:
 
-- for the camera 'thing', both 'serverID' and 'cameraName' configuration fields are completed automatically if autodiscovery is used. If not, then the 'serverID' should be the ID of the instantiated and running frigateSVRServer 'thing' supporting the camera. The 'Camera name' is the name of the camera as it appears in the Frigate config, or the Frigate UI.
+- for the camera 'thing', both 'serverID' and 'cameraName' configuration fields are completed automatically if autodiscovery is used. If not, then the 'serverID' should be the **full openHAB Thing ID** (not the server hostname or IP address) of the instantiated and running frigateSVRServer 'thing' supporting the camera. The 'Camera name' is the name of the camera as it appears in the Frigate config, or the Frigate UI.
 - the camera streams 'whitelist' is passed in from the server 'thing' to which the camera 'thing' is bound.
 - the ffmpeg binary location is passed in from the server 'thing'.
 - the 'ffmpegCameraNameOverride' parameter is useful. If you have configured Frigate's cameras with multiple streams - say a high resolution stream for recording on Frigate and a lower resolution for detection, these streams may have a different name to the camera name. For example, using this field, you could pull in a substream running at a lower frame rate for display in openHAB to reduce network resources and CPU load. If you pass in the detection stream rather than the high resolution stream, the CPU and network load will be **much** lower than if you use the high resolution stream.
