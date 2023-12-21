@@ -16,11 +16,14 @@ import static org.openhab.binding.mqtt.frigatesvr.internal.frigateSVRBindingCons
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 
 import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jetty.client.HttpClient;
+import org.openhab.binding.mqtt.frigatesvr.internal.actions.CameraActions;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.HTTPHandler;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.DASHStream;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.HLSStream;
@@ -33,6 +36,7 @@ import org.openhab.core.io.transport.mqtt.MqttMessageSubscriber;
 import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingStatus;
 import org.openhab.core.thing.ThingStatusDetail;
+import org.openhab.core.thing.binding.ThingHandlerService;
 import org.osgi.service.http.HttpService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -311,6 +315,11 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
                                 frigateSVRChannelState::toNoConversion, false)),
                 Map.entry(CHANNEL_STREAM_URL, new frigateSVRChannelState("", frigateSVRChannelState::fromStringMQTT,
                         frigateSVRChannelState::toStringMQTT, false)));
+    }
+
+    @Override
+    public Collection<Class<? extends ThingHandlerService>> getServices() {
+        return Collections.singleton(CameraActions.class);
     }
 
     @Override

@@ -395,6 +395,13 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
                     this.svrState.GetJsonString().getBytes(), 1, false);
         }
 
+        // if a camera requests an event trigger, process it
+
+        if (topic.equals(this.svrTopicPrefix + "/eventTrigger")) {
+            logger.debug("received request for event trigger from camera; publishing");
+
+        }
+
         // We remain handling the availability topic, even when the Frigate server appears
         // offline. When it comes back, if the topic prefix hasn't changed, it will post an
         // 'online' message.
