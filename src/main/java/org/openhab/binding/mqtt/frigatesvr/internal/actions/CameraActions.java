@@ -36,6 +36,10 @@ public class CameraActions implements ThingActions {
     private final Logger logger = LoggerFactory.getLogger(CameraActions.class);
     private @Nullable frigateSVRCameraHandler handler;
 
+    ///////////////////////////////////////////////////////////////////////////
+    ///
+    /// Access to the handler objects
+    
     @Override
     public void setThingHandler(@Nullable ThingHandler handler) {
         this.handler = (frigateSVRCameraHandler) handler;
@@ -46,7 +50,12 @@ public class CameraActions implements ThingActions {
         return handler;
     }
 
-    @RuleAction(label = "triggerEvent", description = "Trigger an event")
+    ///////////////////////////////////////////////////////////////////////////
+    /// TriggerEvent
+    ///
+    /// Initiate an event on the specific camera.
+    
+    @RuleAction(label = "TriggerEvent", description = "Trigger event on camera")
     public void TriggerEvent(
             @ActionInput(name = "label", label = "@text/EventLabel", description = "@text/EventLabelDesc") @Nullable String label) {
         if (this.handler != null) {
