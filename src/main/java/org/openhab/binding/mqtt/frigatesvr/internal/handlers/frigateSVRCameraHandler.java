@@ -62,6 +62,10 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     private String cameraTopicPrefix = new String();
     private boolean firstInit = true;
 
+    public static enum camActions {
+        CAMACTION_TRIGGEREVENT
+    }
+
     // makes for easy change if Frigate ever extend the API
     //
     // First map maps from MQTT topic suffix to channel ID
@@ -346,6 +350,42 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     }
 
     ///////////////////////////////////////////////////////////////////
+    // SendActionEvent
+    //
+    // Send an action event to the server; this will be an action that
+    // needs to be picked up by the server's HTTP API, but one that is
+    // also specific to this camera.
+
+    public void SendActionEvent(camActions etype, String payload) {
+        if (this.getThing().getStatus().equals(ThingStatus.ONLINE)) {
+            switch (etype) {
+
+                case CAMACTION_TRIGGEREVENT:
+
+                    // for an event trigger, the payload must be the event label
+                    // and it must be alphanumeric.
+
+                    if (payload.matches("^[A-Za-z0-9]+$")) {
+                        String evtString = this.svrTopicPrefix + "/TriggerEvent/" + this.config.cameraName + "/"
+                                + payload;
+                        logger.info("publishing as '{}'", evtString);
+                        ((@NonNull MqttBrokerConnection) this.MQTTConnection).publish(evtString,
+                                new String("event").getBytes(), 1, false);
+                    } else {
+                        logger.error("TriggerEvent cancelled; non-alphanumeric label {}", payload);
+                    }
+                    break;
+
+                default:
+                    logger.error("Unknown event type in SendActionEvent");
+                    break;
+            }
+        } else {
+            logger.warn("camera offline; event call ignored");
+        }
+    }
+
+    ///////////////////////////////////////////////////////////////////
     // BridgeGoingOffline
     //
     // A callback when the MQTT bridge is going offline. We just need
@@ -364,11 +404,11 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     protected void BridgeGoingOnline(MqttBrokerConnection connection) {
 
         ((@NonNull MqttBrokerConnection) this.MQTTConnection).subscribe(this.svrTopicPrefix + "/status", this);
-        logger.debug("publishing req. for status: {}/camOnLine", this.svrTopicPrefix);
+        logger.debug("publishing req. for status: {}", this.svrTopicPrefix + "/" + MQTT_ONLINE_SUFFIX);
 
         // tell the server we are going online
 
-        ((@NonNull MqttBrokerConnection) this.MQTTConnection).publish(this.svrTopicPrefix + "/camOnLine",
+        ((@NonNull MqttBrokerConnection) this.MQTTConnection).publish(this.svrTopicPrefix + "/" + MQTT_ONLINE_SUFFIX,
                 this.config.cameraName.getBytes(), 1, false);
         updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING);
     }

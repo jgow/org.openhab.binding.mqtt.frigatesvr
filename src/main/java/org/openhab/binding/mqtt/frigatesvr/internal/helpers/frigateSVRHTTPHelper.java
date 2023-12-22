@@ -166,9 +166,43 @@ public class frigateSVRHTTPHelper {
                 errorMsg = String.format("InterruptedException: %s", e.getMessage());
                 Thread.currentThread().interrupt();
             }
-            logger.debug("{}", errorMsg);
+            logger.error("{}", errorMsg);
         } catch (Exception e) {
-            logger.debug("HTTP helper called in unconfigured state");
+            logger.error("HTTP helper called in unconfigured state");
+        }
+        return null;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // runPost
+    //
+    // Synchronous POST call to the Frigate API.
+
+    public @Nullable String runPost(String call) {
+        try {
+            Request request = ((@NonNull HttpClient) this.client).POST(buildURL(call));
+            request.timeout(100, TimeUnit.MILLISECONDS);
+            String errorMsg;
+            try {
+                ContentResponse response = request.send();
+                if (response.getStatus() == HttpStatus.OK_200) {
+                    RawType jsonrq = new RawType(response.getContent(),
+                            response.getHeaders().get(HttpHeader.CONTENT_TYPE));
+                    return new String(jsonrq.getBytes());
+                } else {
+                    errorMsg = String.format("HTTP GET failed: %d, %s", response.getStatus(), response.getReason());
+                }
+            } catch (TimeoutException e) {
+                errorMsg = String.format("TimeoutException: Call to Frigate Server timed out after {} msec", 100);
+            } catch (ExecutionException e) {
+                errorMsg = String.format("ExecutionException: %s", e.getMessage());
+            } catch (InterruptedException e) {
+                errorMsg = String.format("InterruptedException: %s", e.getMessage());
+                Thread.currentThread().interrupt();
+            }
+            logger.error("{}", errorMsg);
+        } catch (Exception e) {
+            logger.error("HTTP helper called in unconfigured state");
         }
         return null;
     }
