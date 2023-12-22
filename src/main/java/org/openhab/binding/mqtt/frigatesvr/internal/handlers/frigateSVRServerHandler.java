@@ -118,7 +118,8 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
         this.svrState.status = "offline";
         UnsubscribeMQTTTopics(this.MQTTTopicPrefix);
         if (this.MQTTConnection != null) {
-            ((@NonNull MqttBrokerConnection) this.MQTTConnection).unsubscribe(this.svrTopicPrefix + "/" + MQTT_ONLINE_SUFFIX, this);
+            ((@NonNull MqttBrokerConnection) this.MQTTConnection)
+                    .unsubscribe(this.svrTopicPrefix + "/" + MQTT_ONLINE_SUFFIX, this);
             ((@NonNull MqttBrokerConnection) this.MQTTConnection)
                     .unsubscribe(this.svrTopicPrefix + "/" + MQTT_EVTTRIGGER_SUFFIX + "/#", this);
             ((@NonNull MqttBrokerConnection) this.MQTTConnection).publish(this.svrTopicPrefix + "/status",
