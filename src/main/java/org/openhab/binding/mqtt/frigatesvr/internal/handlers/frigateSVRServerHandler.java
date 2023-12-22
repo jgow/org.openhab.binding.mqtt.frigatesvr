@@ -118,7 +118,9 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
         this.svrState.status = "offline";
         UnsubscribeMQTTTopics(this.MQTTTopicPrefix);
         if (this.MQTTConnection != null) {
-            ((@NonNull MqttBrokerConnection) this.MQTTConnection).unsubscribe(this.svrTopicPrefix + "/camOnLine", this);
+            ((@NonNull MqttBrokerConnection) this.MQTTConnection).unsubscribe(this.svrTopicPrefix + "/" + MQTT_ONLINE_SUFFIX, this);
+            ((@NonNull MqttBrokerConnection) this.MQTTConnection)
+                    .unsubscribe(this.svrTopicPrefix + "/" + MQTT_EVTTRIGGER_SUFFIX + "/#", this);
             ((@NonNull MqttBrokerConnection) this.MQTTConnection).publish(this.svrTopicPrefix + "/status",
                     this.svrState.GetJsonString().getBytes(), 1, false);
         }
@@ -276,8 +278,9 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
             keepalive = 60;
         }
         servercheck = scheduler.scheduleWithFixedDelay(this::CheckServerAccessThread, 0, keepalive, TimeUnit.SECONDS);
-        logger.debug("subscribing to SVR topic {}/camOnLine", this.svrTopicPrefix);
-        connection.subscribe(this.svrTopicPrefix + "/camOnLine", this);
+        logger.debug("subscribing to SVR topics");
+        connection.subscribe(this.svrTopicPrefix + "/" + MQTT_ONLINE_SUFFIX, this);
+        connection.subscribe(this.svrTopicPrefix + "/" + MQTT_EVTTRIGGER_SUFFIX + "/#", this);
         updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING);
     }
 
@@ -362,6 +365,8 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
         if (this.MQTTConnection != null) {
             ((@NonNull MqttBrokerConnection) this.MQTTConnection).subscribe(prefix + "/" + MQTT_AVAILABILITY_SUFFIX,
                     this);
+            ((@NonNull MqttBrokerConnection) this.MQTTConnection).subscribe(prefix + "/" + MQTT_EVTTRIGGER_SUFFIX,
+                    this);
         }
     }
 
@@ -372,8 +377,45 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
 
     private void UnsubscribeMQTTTopics(String prefix) {
         if (this.MQTTConnection != null) {
+            ((@NonNull MqttBrokerConnection) this.MQTTConnection).unsubscribe(prefix + "/" + MQTT_EVTTRIGGER_SUFFIX,
+                    this);
             ((@NonNull MqttBrokerConnection) this.MQTTConnection).unsubscribe(prefix + "/" + MQTT_AVAILABILITY_SUFFIX,
                     this);
+        }
+    }
+
+    ///////////////////////////////////////////////////////////////////
+    // HandleEvents
+    //
+    // Process actions, usually passed from cameras, via the HTTP
+    // Frigate API
+
+    private void HandleEvents(String topic) {
+        if (this.svrState.status.equals("online")) {
+            String[] bits = topic.split("/");
+            if (bits.length == 5) {
+                String cam = bits[3];
+                String label = bits[4];
+                ArrayList<String> cams = GetCameraList();
+                if (cams.contains(cam)) {
+                    // the cam is one of ours.
+                    // Why do we check the label again, since we already did it in the
+                    // cam handler? Well, some muppet may have poked us with this message
+                    // manually....
+                    if (label.matches("^[A-Za-z0-9]+$")) {
+                        String response;
+                        logger.info("posting: POST '{}'", "/api/events/" + cam + "/" + label + "/create");
+                        response = this.httpHelper.runPost("/api/events/" + cam + "/" + label + "/create");
+                        if (response != null) {
+                            logger.info("event trigger response returned {}", response);
+                        }
+                    }
+                }
+            } else {
+                logger.error("event ignored, invalid topic string '{}'", topic);
+            }
+        } else {
+            logger.warn("event ignored, server offline");
         }
     }
 
@@ -389,17 +431,15 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
 
         // if a camera comes online, send out our status
 
-        if (topic.equals(this.svrTopicPrefix + "/camOnLine")) {
-            logger.debug("received request for SVR status update; publishing");
+        if (topic.equals(this.svrTopicPrefix + "/" + MQTT_ONLINE_SUFFIX)) {
             ((@NonNull MqttBrokerConnection) this.MQTTConnection).publish(this.svrTopicPrefix + "/status",
                     this.svrState.GetJsonString().getBytes(), 1, false);
         }
 
         // if a camera requests an event trigger, process it
 
-        if (topic.equals(this.svrTopicPrefix + "/eventTrigger")) {
-            logger.debug("received request for event trigger from camera; publishing");
-
+        if (topic.startsWith(this.svrTopicPrefix + "/" + MQTT_EVTTRIGGER_SUFFIX + "/")) {
+            HandleEvents(topic);
         }
 
         // We remain handling the availability topic, even when the Frigate server appears

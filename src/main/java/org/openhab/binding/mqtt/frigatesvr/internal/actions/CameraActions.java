@@ -39,7 +39,7 @@ public class CameraActions implements ThingActions {
     ///////////////////////////////////////////////////////////////////////////
     ///
     /// Access to the handler objects
-    
+
     @Override
     public void setThingHandler(@Nullable ThingHandler handler) {
         this.handler = (frigateSVRCameraHandler) handler;
@@ -54,14 +54,14 @@ public class CameraActions implements ThingActions {
     /// TriggerEvent
     ///
     /// Initiate an event on the specific camera.
-    
+
     @RuleAction(label = "TriggerEvent", description = "Trigger event on camera")
     public void TriggerEvent(
             @ActionInput(name = "label", label = "@text/EventLabel", description = "@text/EventLabelDesc") @Nullable String label) {
         if (this.handler != null) {
             logger.info("Action triggered: label {}", label);
             if (label != null) {
-                logger.info("Handling action");
+                this.handler.SendActionEvent(frigateSVRCameraHandler.camActions.CAMACTION_TRIGGEREVENT, label);
             } else {
                 logger.error("event label is null");
             }
