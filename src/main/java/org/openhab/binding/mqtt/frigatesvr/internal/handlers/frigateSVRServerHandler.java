@@ -407,8 +407,14 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
                         String response;
                         logger.info("posting: POST '{}'", "/api/events/" + cam + "/" + label + "/create");
                         response = this.httpHelper.runPost("/api/events/" + cam + "/" + label + "/create", payload);
+                        String camTopicPrefix = this.svrState.topicPrefix + "/" + cam + "/TriggerEventResult";
                         if (response != null) {
                             logger.info("event trigger response returned {}", response);
+                            ((@NonNull MqttBrokerConnection) MQTTConnection).publish(camTopicPrefix,
+                                    response.getBytes(), 1, false);
+                        } else {
+                            ((@NonNull MqttBrokerConnection) MQTTConnection).publish(camTopicPrefix,
+                                    new String("{\"result\":\"post failed\"}").getBytes(), 1, false);
                         }
                     }
                 }

@@ -30,6 +30,7 @@
 			<channel id="fgStreamURL" typeId="fgStreamURL"/>
 			<channel id="fgLastSnapshotObject" typeId="fgLastSnapshotObject"/>
 			<channel id="fgLastSnapshot" typeId="fgLastSnapshot"/>
+			<channel id="fgTriggerEventResult" typeId="fgTriggerEventResult"/>
 			<channel id="fgEventJSON" typeId="fgEventJSON"/>
 			<channel id="fgEventType" typeId="fgEventType"/>
 			<channel id="fgEventID" typeId="fgEventID"/>
@@ -179,7 +180,11 @@
 		<label>@text/channel.eventClipURL</label>
 		<description>@text/channel.eventClipURL.description</description>
 	</channel-type>
-
+	<channel-type id="fgTriggerEventResult">
+		<item-type>String</item-type>
+		<label>@text/channel.triggerEventResult</label>
+		<description>@text/channel.triggerEventResult.description</description>
+	</channel-type>
 	<!-- Event: channels relating to the previous state -->
 
 	<channel-type id="fgPrevFrameTime">

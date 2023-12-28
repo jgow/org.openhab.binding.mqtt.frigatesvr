@@ -64,6 +64,7 @@ public class frigateSVRBindingConstants {
 
     public static final String CHANNEL_LAST_SNAPSHOT_OBJECT = "fgLastSnapshotObject";
     public static final String CHANNEL_LAST_SNAPSHOT = "fgLastSnapshot";
+    public static final String CHANNEL_TRIGGER_EVENT_RESULT = "fgTriggerEventResult";
 
     public static final String CHANNEL_PREV_FRAME_TIME = "fgPrevFrameTime";
     public static final String CHANNEL_PREV_SNAPSHOT_TIME = "fgPrevSnapshotTime";
@@ -129,6 +130,7 @@ public class frigateSVRBindingConstants {
     public static final String MQTT_MOTIONCONTOUR_SET = "motion_contour_area/set";
     public static final String MQTT_MOTIONCONTOUR_GET = "motion_contour_area/state";
     public static final String MQTT_MOTION = "motion";
+    public static final String MQTT_TRIGGEREVENTRESULT = "TriggerEventResult";
 
     // config properties
     public static final String CONF_ID_UNIQUE = "uniqueID";
