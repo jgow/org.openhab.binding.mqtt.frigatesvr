@@ -12,10 +12,14 @@
  */
 package org.openhab.binding.mqtt.frigatesvr.internal.actions;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.mqtt.frigatesvr.internal.handlers.frigateSVRCameraHandler;
 import org.openhab.core.automation.annotation.ActionInput;
+import org.openhab.core.automation.annotation.ActionOutput;
 import org.openhab.core.automation.annotation.RuleAction;
 import org.openhab.core.thing.binding.ThingActions;
 import org.openhab.core.thing.binding.ThingActionsScope;
@@ -51,28 +55,46 @@ public class CameraActions implements ThingActions {
     }
 
     ///////////////////////////////////////////////////////////////////////////
-    /// TriggerEvent
-    ///
-    /// Initiate an event on the specific camera.
+    // TriggerEvent
+    //
+    // Initiate an event on the specific camera. These in and of themselves
+    // do not interact directly with OH channels.
+    //
+    // OH architecture does not seem to provide a means for Things to speak
+    // to each other directly (indeed seems to be discouraged). Due to this
+    // omission, the result is that we process the action asynchronously.
+    //
+    // Static member function is provided for older OH variants.
 
     @RuleAction(label = "TriggerEvent", description = "Trigger event on camera")
-    public void TriggerEvent(
-            @ActionInput(name = "label", label = "@text/EventLabel", description = "@text/EventLabelDesc") @Nullable String label) {
+    @ActionOutput(name = "rc", label = "@text/action.TriggerEvent.rc.label", description = "@text/action.TriggerEvent.rc.description", type = "java.util.List<String>")
+    @ActionOutput(name = "desc", label = "@text/action.TriggerEvent.desc.label", description = "@text/action.TriggerEvent.desc.description", type = "java.util.List<String>")
+    public Map<String, Object> TriggerEvent(
+            @ActionInput(name = "eventLabel", label = "@text/action.TriggerEvent.eventLabel.label", description = "@text/action.TriggerEvent.eventLabel.description") @Nullable String eventLabel,
+            @ActionInput(name = "eventRequest", label = "@text/action.TriggerEvent.eventRequest.label", description = "@text/action.TriggerEvent.eventRequest.description") @Nullable String event) {
+        Map<String, Object> rc = new HashMap<>();
         if (this.handler != null) {
-            logger.info("Action triggered: label {}", label);
-            if (label != null) {
-                this.handler.SendActionEvent(frigateSVRCameraHandler.camActions.CAMACTION_TRIGGEREVENT, label);
+            logger.debug("Action triggered: label {}", eventLabel);
+            if (eventLabel != null) {
+                this.handler.SendActionEvent(frigateSVRCameraHandler.camActions.CAMACTION_TRIGGEREVENT, eventLabel,
+                        event);
+                rc.put("rc", true);
+                rc.put("desc", new String("event queued"));
             } else {
-                logger.error("event label is null");
+                rc.put("rc", false);
+                rc.put("desc", "error: event label is null");
             }
         } else {
-            logger.error("action not processed; handler null");
+            rc.put("rc", false);
+            rc.put("desc", "action not processed; handler null");
         }
+        return rc;
     }
 
-    public static void TriggerEvent(@Nullable ThingActions actions, @Nullable String label) {
+    public static Map<String, Object> TriggerEvent(@Nullable ThingActions actions, @Nullable String label,
+            @Nullable String event) {
         if (actions instanceof CameraActions) {
-            ((CameraActions) actions).TriggerEvent(label);
+            return ((CameraActions) actions).TriggerEvent(label, event);
         } else {
             throw new IllegalArgumentException("Instance is not a CameraActions class.");
         }

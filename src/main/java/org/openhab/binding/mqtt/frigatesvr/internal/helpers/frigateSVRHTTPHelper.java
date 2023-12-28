@@ -23,6 +23,7 @@ import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.client.api.Request;
+import org.eclipse.jetty.client.util.StringContentProvider;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.http.HttpStatus;
@@ -178,10 +179,13 @@ public class frigateSVRHTTPHelper {
     //
     // Synchronous POST call to the Frigate API.
 
-    public @Nullable String runPost(String call) {
+    public @Nullable String runPost(String call, @Nullable String payload) {
         try {
             Request request = ((@NonNull HttpClient) this.client).POST(buildURL(call));
             request.timeout(100, TimeUnit.MILLISECONDS);
+            if (payload != null) {
+                request.content(new StringContentProvider(payload));
+            }
             String errorMsg;
             try {
                 ContentResponse response = request.send();

@@ -391,7 +391,7 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
     // Process actions, usually passed from cameras, via the HTTP
     // Frigate API
 
-    private void HandleEvents(String topic) {
+    private void HandleEvents(String topic, String payload) {
         if (this.svrState.status.equals("online")) {
             String[] bits = topic.split("/");
             if (bits.length == 5) {
@@ -406,7 +406,7 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
                     if (label.matches("^[A-Za-z0-9]+$")) {
                         String response;
                         logger.info("posting: POST '{}'", "/api/events/" + cam + "/" + label + "/create");
-                        response = this.httpHelper.runPost("/api/events/" + cam + "/" + label + "/create");
+                        response = this.httpHelper.runPost("/api/events/" + cam + "/" + label + "/create", payload);
                         if (response != null) {
                             logger.info("event trigger response returned {}", response);
                         }
@@ -440,7 +440,7 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
         // if a camera requests an event trigger, process it
 
         if (topic.startsWith(this.svrTopicPrefix + "/" + MQTT_EVTTRIGGER_SUFFIX + "/")) {
-            HandleEvents(topic);
+            HandleEvents(topic, new String(payload));
         }
 
         // We remain handling the availability topic, even when the Frigate server appears

@@ -18,10 +18,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.client.HttpClient;
 import org.openhab.binding.mqtt.frigatesvr.internal.actions.CameraActions;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.HTTPHandler;
@@ -321,10 +323,18 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
                         frigateSVRChannelState::toStringMQTT, false)));
     }
 
+    //
+    // Required to enable the Thing actions
+    //
+
     @Override
     public Collection<Class<? extends ThingHandlerService>> getServices() {
         return Collections.singleton(CameraActions.class);
     }
+
+    //
+    // Initialize
+    //
 
     @Override
     public void initialize() {
@@ -356,33 +366,41 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     // needs to be picked up by the server's HTTP API, but one that is
     // also specific to this camera.
 
-    public void SendActionEvent(camActions etype, String payload) {
+    public Map<String, Object> SendActionEvent(camActions etype, String label, @Nullable String payload) {
+        Map<String, Object> rc = new HashMap<>();
         if (this.getThing().getStatus().equals(ThingStatus.ONLINE)) {
             switch (etype) {
 
                 case CAMACTION_TRIGGEREVENT:
 
-                    // for an event trigger, the payload must be the event label
-                    // and it must be alphanumeric.
+                    // for an event trigger, the label must be the event label
+                    // and it must be alphanumeric. The payload is the JSON
+                    // string required by Frigate
 
-                    if (payload.matches("^[A-Za-z0-9]+$")) {
+                    if (label.matches("^[A-Za-z0-9]+$")) {
                         String evtString = this.svrTopicPrefix + "/TriggerEvent/" + this.config.cameraName + "/"
-                                + payload;
+                                + label;
                         logger.info("publishing as '{}'", evtString);
                         ((@NonNull MqttBrokerConnection) this.MQTTConnection).publish(evtString,
-                                new String("event").getBytes(), 1, false);
+                                (payload != null) ? payload.getBytes() : new String("").getBytes(), 1, false);
+                        rc.put("rc", true);
+                        rc.put("desc", "event queued");
                     } else {
-                        logger.error("TriggerEvent cancelled; non-alphanumeric label {}", payload);
+                        rc.put("rc", false);
+                        rc.put("desc", "TriggerEvent cancelled; non-alphanumeric label");
                     }
                     break;
 
                 default:
-                    logger.error("Unknown event type in SendActionEvent");
+                    rc.put("rc", false);
+                    rc.put("desc", "Unknown event type in SendActionEvent");
                     break;
             }
         } else {
-            logger.warn("camera offline; event call ignored");
+            rc.put("rc", false);
+            rc.put("desc", "camera object offline");
         }
+        return rc;
     }
 
     ///////////////////////////////////////////////////////////////////
@@ -522,7 +540,8 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     // SubscribeMQTTTopics
     //
     // Called during initialization to subscribe to the relevant MQTT
-    // topics other than the server status messages.
+    // topics other than the server status messages. In other words,
+    // all MQTT messages originating from Frigate
 
     private void SubscribeMQTTTopics(String prefix) {
         MqttBrokerConnection conn = this.MQTTConnection;
@@ -540,7 +559,8 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     ///////////////////////////////////////////////////////////////////
     // UnsubscribeMQTTTopics
     //
-    // Called when offlined to unsubscribe the MQTT topics used
+    // Called when offlined to unsubscribe the MQTT topics originating
+    // from Frigate itself, rather than from the server Thing.
 
     private void UnsubscribeMQTTTopics(String prefix) {
 
