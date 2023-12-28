@@ -83,7 +83,8 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
             Map.entry(MQTT_IMPCONTRAST_GET, CHANNEL_STATE_IMPCONTRAST),
             Map.entry(MQTT_MOTIONTHRESH_GET, CHANNEL_STATE_MOTIONTHRESH),
             Map.entry(MQTT_MOTIONCONTOUR_GET, CHANNEL_STATE_MOTIONCONTOUR),
-            Map.entry(MQTT_MOTION, CHANNEL_STATE_MOTIONDETECTED));
+            Map.entry(MQTT_MOTION, CHANNEL_STATE_MOTIONDETECTED),
+            Map.entry(MQTT_TRIGGEREVENTRESULT, CHANNEL_TRIGGER_EVENT_RESULT));
 
     private Map<String, String> JSONEventGettersToPrev = Map.ofEntries(Map.entry("frame_time", CHANNEL_PREV_FRAME_TIME),
             Map.entry("snapshot_time", CHANNEL_PREV_SNAPSHOT_TIME), Map.entry("label", CHANNEL_PREV_LABEL),
@@ -319,8 +320,11 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
                 Map.entry(CHANNEL_LAST_SNAPSHOT,
                         new frigateSVRChannelState("", frigateSVRChannelState::fromNoConversion,
                                 frigateSVRChannelState::toNoConversion, false)),
-                Map.entry(CHANNEL_STREAM_URL, new frigateSVRChannelState("", frigateSVRChannelState::fromStringMQTT,
-                        frigateSVRChannelState::toStringMQTT, false)));
+                Map.entry(CHANNEL_STREAM_URL,
+                        new frigateSVRChannelState("", frigateSVRChannelState::fromStringMQTT,
+                                frigateSVRChannelState::toStringMQTT, false)),
+                Map.entry(CHANNEL_TRIGGER_EVENT_RESULT, new frigateSVRChannelState("",
+                        frigateSVRChannelState::fromStringMQTT, frigateSVRChannelState::toStringMQTT, false)));
     }
 
     //
