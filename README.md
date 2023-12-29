@@ -267,6 +267,42 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 - the event and control channels follow the Frigate documentation and there should be no surprises here.
 - 'fgStreamURL': if the configuration parameter 'enableStream' is set true, if Frigate is configured to restream cameras and if the stream is on either 'cameraName' or 'ffmpegCameraNameOverride', then 'fgStreamURL' will provide a URL to a locally restreamed feed of the camera. Note that if you select a high resolution stream from Frigate, this could significantly increase CPU and network load as the local instance will have to transcode the stream. Consider using the detection substreams at lower frame rates - these are often sufficient and will result in much lower CPU loads. Multiple stream types are supported: append '.m3u8' for HLS, '.mpd' for DASH, or use the bare URL as it is to access MJPEG. The availability of each type depends if it is enabled.
 
+## ThingActions
+
+The binding supports ThingActions giving access to the events model in Frigate.
+
+### Server ThingActions
+
+To be implemented. This will allow access to the event history, deletion of events, event recall etc.
+
+### Camera ThingActions
+
+1. **TriggerEvent**.
+    - Arguments:
+        - String eventLabel  (label of the event)
+        - String eventRequest (optional JSON formatted string containing Frigate event request)
+    - Returns:
+        - boolean rc  (true: call successful false: call failed)
+        - string desc (message containing nature of error)
+    - Description:
+        - For versions of Frigate >= 0.13.0-beta6, this ThingAction will trigger an event. The event will be created with the label 'eventLabel' and the argument 'eventRequest' should contain the JSON string expected by Frigate. **Note that this call is asynchronous**.
+        - The event call will return a map containing two entries; the 'rc' entry is a boolean return code denoting success or failure. The 'desc' entry will contain a message relating to the nature of the result. Note that this refers to success or failure of the queuing of the call ONLY. The returned JSON from Frigate itself will appear in the channel 'fgTriggerEventResult' once the asynchronous call has completed. This channel will contain the full JSON string from Frigate.
+        - For versions of Frigate that do not support this call, a 404 error will be returned in 'fgTriggerEventResult'.
+        
+#### Using camera ThingActions in a rule - an example
+
+```
+var camActions = actions.thingActions("frigateCamera","mqtt:frigateCamera:122343:locationCam");
+
+if (camActions != null) {
+  var response = camActions.TriggerEvent("thisEvent","{}");
+  console.log("response:rc="+response.rc);
+  console.log("response:payload:"+response.desc);
+} else {
+  console.log("camera actions null");
+}
+```
+
 ## Writing rules for FrigateSVR cameras
 
 An example of how a rule can be written to use the event information follows. This example updates an item with the number of persons currently present in the field of regard of a Frigate camera, whose Thing ID is 'Camera-Main' and is triggering on the channel fgCurrentEventType, bound to item 'Camera__Main_Current_Event_Type'
