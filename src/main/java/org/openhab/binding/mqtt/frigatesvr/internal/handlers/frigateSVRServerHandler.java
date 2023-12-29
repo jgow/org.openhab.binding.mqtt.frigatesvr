@@ -24,6 +24,7 @@ import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.client.HttpClient;
+import org.openhab.binding.mqtt.frigatesvr.internal.helpers.ReturnStruct;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.HTTPHandler;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.DASHStream;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.FrigateAPIForwarder;
@@ -154,24 +155,27 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
 
                 // Get the version string.
 
-                this.version = this.httpHelper.runGet("/api/version");
+                ReturnStruct r = this.httpHelper.runGet("/api/version");
 
-                if (this.version == null) {
+                if (!r.rc) {
                     logger.warn("unable to get version string");
                     break;
                 }
+                this.version = r.message;
 
                 // Get the full Frigate server configuration. We will need
                 // this for all descendants.
 
-                String cfg = this.httpHelper.runGet("/api/config");
+                r = this.httpHelper.runGet("/api/config");
 
                 // If this fails, we can go no further.
 
-                if (cfg == null) {
+                if (!r.rc) {
                     logger.warn("Unable to obtain Frigate configuration");
                     break;
                 }
+
+                String cfg = r.message;
 
                 // extricate the configuration - this can stay as a simple
                 // JSON object as we are only going to pick bits out of it
@@ -221,7 +225,7 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
 
                 updateState(CHANNEL_API_VERSION,
                         ((@NonNull frigateSVRChannelState) (this.Channels.get(CHANNEL_API_VERSION)))
-                                .toState(GetVersionString()));
+                                .toState(this.version));
                 updateState(CHANNEL_UI_URL, ((@NonNull frigateSVRChannelState) (this.Channels.get(CHANNEL_UI_URL)))
                         .toState(this.httpHelper.getBaseURL()));
             }
@@ -235,9 +239,9 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
 
                 // Get the version string.
 
-                this.version = this.httpHelper.runGet("/api/version");
+                ReturnStruct r = this.httpHelper.runGet("/api/version");
 
-                if (this.version == null) {
+                if (!r.rc) {
 
                     // we need to offline ourselves, but leave the pinger working. At this stage
                     // stop the streaming servers but do not unsubscribe our MQTT transports.
@@ -249,6 +253,8 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
                     ((@NonNull MqttBrokerConnection) MQTTConnection).publish(this.svrTopicPrefix + "/status",
                             this.svrState.GetJsonString().getBytes(), 1, false);
                 } else {
+
+                    this.version = r.message;
 
                     // here we send the keepalive message to the cams, and prod the stream
 
@@ -399,22 +405,25 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
                 String label = bits[4];
                 ArrayList<String> cams = GetCameraList();
                 if (cams.contains(cam)) {
+
                     // the cam is one of ours.
                     // Why do we check the label again, since we already did it in the
                     // cam handler? Well, some muppet may have poked us with this message
                     // manually....
+
                     if (label.matches("^[A-Za-z0-9]+$")) {
-                        String response;
                         logger.info("posting: POST '{}'", "/api/events/" + cam + "/" + label + "/create");
-                        response = this.httpHelper.runPost("/api/events/" + cam + "/" + label + "/create", payload);
+                        ReturnStruct r = this.httpHelper.runPost("/api/events/" + cam + "/" + label + "/create",
+                                payload);
                         String camTopicPrefix = this.svrState.topicPrefix + "/" + cam + "/TriggerEventResult";
-                        if (response != null) {
-                            logger.info("event trigger response returned {}", response);
+                        if (r.rc) {
+                            logger.info("event trigger response returned {}", r.message);
                             ((@NonNull MqttBrokerConnection) MQTTConnection).publish(camTopicPrefix,
-                                    response.getBytes(), 1, false);
+                                    r.message.getBytes(), 1, false);
                         } else {
+                            String errFormat = String.format("{\"success\":false,\"message\":\"%s\"}", r.message);
                             ((@NonNull MqttBrokerConnection) MQTTConnection).publish(camTopicPrefix,
-                                    new String("{\"result\":\"post failed\"}").getBytes(), 1, false);
+                                    errFormat.getBytes(), 1, false);
                         }
                     }
                 }
@@ -495,15 +504,6 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
                 }
             }
         }
-    }
-
-    //////////////////////////////////////////////////////////////////
-    // GetVersionString
-    //
-    // Return the version string
-
-    private @Nullable String GetVersionString() {
-        return this.httpHelper.runGet("/api/version");
     }
 
     //////////////////////////////////////////////////////////////////

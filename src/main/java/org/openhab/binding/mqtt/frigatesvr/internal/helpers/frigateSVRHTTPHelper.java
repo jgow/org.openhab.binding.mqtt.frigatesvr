@@ -143,71 +143,77 @@ public class frigateSVRHTTPHelper {
     // Synchronous GET call to the Frigate API. To date we only use a couple
     // of different GET calls from within the binding
 
-    public @Nullable String runGet(String call) {
+    public ReturnStruct runGet(String call) {
+        ReturnStruct r = new ReturnStruct();
         try {
             Request request = ((@NonNull HttpClient) this.client).newRequest(buildURL(call));
             request.method(HttpMethod.GET);
             request.timeout(100, TimeUnit.MILLISECONDS);
 
-            String errorMsg;
             try {
                 ContentResponse response = request.send();
                 if (response.getStatus() == HttpStatus.OK_200) {
                     RawType jsonrq = new RawType(response.getContent(),
                             response.getHeaders().get(HttpHeader.CONTENT_TYPE));
-                    return new String(jsonrq.getBytes());
+                    r.rc = true;
+                    r.message = new String(jsonrq.getBytes());
                 } else {
-                    errorMsg = String.format("HTTP GET failed: %d, %s", response.getStatus(), response.getReason());
+                    r.message = String.format("HTTP GET failed: %d, %s", response.getStatus(), response.getReason());
                 }
             } catch (TimeoutException e) {
-                errorMsg = String.format("TimeoutException: Call to Frigate Server timed out after {} msec", 100);
+                r.message = String.format("TimeoutException: Call to Frigate Server timed out after {} msec", 100);
             } catch (ExecutionException e) {
-                errorMsg = String.format("ExecutionException: %s", e.getMessage());
+                r.message = String.format("ExecutionException: %s", e.getMessage());
             } catch (InterruptedException e) {
-                errorMsg = String.format("InterruptedException: %s", e.getMessage());
+                r.message = String.format("InterruptedException: %s", e.getMessage());
                 Thread.currentThread().interrupt();
             }
-            logger.error("{}", errorMsg);
         } catch (Exception e) {
-            logger.error("HTTP helper called in unconfigured state");
+            r.message = new String("HTTP helper called in unconfigured state");
         }
-        return null;
+        if (!r.rc) {
+            logger.error("{}", r.message);
+        }
+        return r;
     }
 
     ////////////////////////////////////////////////////////////////////////////
     // runPost
     //
-    // Synchronous POST call to the Frigate API.
+    // Synchronous POST call to the Frigate API.import java.net.URL;
 
-    public @Nullable String runPost(String call, @Nullable String payload) {
+    public ReturnStruct runPost(String call, @Nullable String payload) {
+        ReturnStruct r = new ReturnStruct();
         try {
             Request request = ((@NonNull HttpClient) this.client).POST(buildURL(call));
             request.timeout(100, TimeUnit.MILLISECONDS);
             if (payload != null) {
                 request.content(new StringContentProvider(payload));
             }
-            String errorMsg;
             try {
                 ContentResponse response = request.send();
                 if (response.getStatus() == HttpStatus.OK_200) {
                     RawType jsonrq = new RawType(response.getContent(),
                             response.getHeaders().get(HttpHeader.CONTENT_TYPE));
-                    return new String(jsonrq.getBytes());
+                    r.rc = true;
+                    r.message = new String(jsonrq.getBytes());
                 } else {
-                    errorMsg = String.format("HTTP GET failed: %d, %s", response.getStatus(), response.getReason());
+                    r.message = String.format("HTTP GET failed: %d, %s", response.getStatus(), response.getReason());
                 }
             } catch (TimeoutException e) {
-                errorMsg = String.format("TimeoutException: Call to Frigate Server timed out after {} msec", 100);
+                r.message = String.format("TimeoutException: Call to Frigate Server timed out after {} msec", 100);
             } catch (ExecutionException e) {
-                errorMsg = String.format("ExecutionException: %s", e.getMessage());
+                r.message = String.format("ExecutionException: %s", e.getMessage());
             } catch (InterruptedException e) {
-                errorMsg = String.format("InterruptedException: %s", e.getMessage());
+                r.message = String.format("InterruptedException: %s", e.getMessage());
                 Thread.currentThread().interrupt();
             }
-            logger.error("{}", errorMsg);
         } catch (Exception e) {
-            logger.error("HTTP helper called in unconfigured state");
+            r.message = new String("HTTP helper POST called in unconfigured state");
         }
-        return null;
+        if (!r.rc) {
+            logger.error("{}", r.message);
+        }
+        return r;
     }
 }
