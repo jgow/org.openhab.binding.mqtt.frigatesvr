@@ -12,20 +12,15 @@
  */
 package org.openhab.binding.mqtt.frigatesvr.internal.actions;
 
-<<<<<<< HEAD
 import java.util.HashMap;
 import java.util.Map;
 
-=======
->>>>>>> a95211e (Initial external event trigger action)
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.mqtt.frigatesvr.internal.handlers.frigateSVRCameraHandler;
 import org.openhab.core.automation.annotation.ActionInput;
-<<<<<<< HEAD
 import org.openhab.core.automation.annotation.ActionOutput;
-=======
->>>>>>> a95211e (Initial external event trigger action)
+
 import org.openhab.core.automation.annotation.RuleAction;
 import org.openhab.core.thing.binding.ThingActions;
 import org.openhab.core.thing.binding.ThingActionsScope;
@@ -46,13 +41,10 @@ public class CameraActions implements ThingActions {
     private final Logger logger = LoggerFactory.getLogger(CameraActions.class);
     private @Nullable frigateSVRCameraHandler handler;
 
-<<<<<<< HEAD
     ///////////////////////////////////////////////////////////////////////////
     ///
     /// Access to the handler objects
 
-=======
->>>>>>> a95211e (Initial external event trigger action)
     @Override
     public void setThingHandler(@Nullable ThingHandler handler) {
         this.handler = (frigateSVRCameraHandler) handler;
