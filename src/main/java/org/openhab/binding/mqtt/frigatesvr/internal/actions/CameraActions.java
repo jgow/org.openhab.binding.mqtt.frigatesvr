@@ -63,7 +63,6 @@ public class CameraActions implements ThingActions {
         return handler;
     }
 
-<<<<<<< HEAD
     ///////////////////////////////////////////////////////////////////////////
     // TriggerEvent
     //
@@ -105,26 +104,6 @@ public class CameraActions implements ThingActions {
             @Nullable String event) {
         if (actions instanceof CameraActions) {
             return ((CameraActions) actions).TriggerEvent(label, event);
-=======
-    @RuleAction(label = "triggerEvent", description = "Trigger an event")
-    public void TriggerEvent(
-            @ActionInput(name = "label", label = "@text/EventLabel", description = "@text/EventLabelDesc") @Nullable String label) {
-        if (this.handler != null) {
-            logger.info("Action triggered: label {}", label);
-            if (label != null) {
-                logger.info("Handling action");
-            } else {
-                logger.error("event label is null");
-            }
-        } else {
-            logger.error("action not processed; handler null");
-        }
-    }
-
-    public static void TriggerEvent(@Nullable ThingActions actions, @Nullable String label) {
-        if (actions instanceof CameraActions) {
-            ((CameraActions) actions).TriggerEvent(label);
->>>>>>> a95211e (Initial external event trigger action)
         } else {
             throw new IllegalArgumentException("Instance is not a CameraActions class.");
         }
