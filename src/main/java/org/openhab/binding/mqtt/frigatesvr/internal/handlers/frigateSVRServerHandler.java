@@ -119,10 +119,11 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
         this.svrState.status = "offline";
         UnsubscribeMQTTTopics(this.MQTTTopicPrefix);
         if (this.MQTTConnection != null) {
-            ((@NonNull MqttBrokerConnection) this.MQTTConnection)
-                    .unsubscribe(this.svrTopicPrefix + "/" + MQTT_ONLINE_SUFFIX, this);
-            ((@NonNull MqttBrokerConnection) this.MQTTConnection)
-                    .unsubscribe(this.svrTopicPrefix + "/" + MQTT_EVTTRIGGER_SUFFIX + "/#", this);
+            // ((@NonNull MqttBrokerConnection) this.MQTTConnection)
+            // .unsubscribe(this.svrTopicPrefix + "/" + MQTT_ONLINE_SUFFIX, this);
+            // ((@NonNull MqttBrokerConnection) this.MQTTConnection)
+            // .unsubscribe(this.svrTopicPrefix + "/" + MQTT_EVTTRIGGER_SUFFIX + "/#", this);
+            ((@NonNull MqttBrokerConnection) this.MQTTConnection).unsubscribe(this.svrTopicPrefix + "/#", this);
             ((@NonNull MqttBrokerConnection) this.MQTTConnection).publish(this.svrTopicPrefix + "/status",
                     this.svrState.GetJsonString().getBytes(), 1, false);
         }
@@ -161,7 +162,7 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
                     logger.warn("unable to get version string");
                     break;
                 }
-                this.version = r.message;
+                this.version = new String(r.raw);
 
                 // Get the full Frigate server configuration. We will need
                 // this for all descendants.
@@ -175,7 +176,7 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
                     break;
                 }
 
-                String cfg = r.message;
+                String cfg = new String(r.raw);
 
                 // extricate the configuration - this can stay as a simple
                 // JSON object as we are only going to pick bits out of it
@@ -286,8 +287,9 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
         }
         servercheck = scheduler.scheduleWithFixedDelay(this::CheckServerAccessThread, 0, keepalive, TimeUnit.SECONDS);
         logger.debug("subscribing to SVR topics");
-        connection.subscribe(this.svrTopicPrefix + "/" + MQTT_ONLINE_SUFFIX, this);
-        connection.subscribe(this.svrTopicPrefix + "/" + MQTT_EVTTRIGGER_SUFFIX + "/#", this);
+        // connection.subscribe(this.svrTopicPrefix + "/" + MQTT_ONLINE_SUFFIX, this);
+        // connection.subscribe(this.svrTopicPrefix + "/" + MQTT_EVTTRIGGER_SUFFIX + "/#", this);
+        connection.subscribe(this.svrTopicPrefix + "/#", this);
         updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING);
     }
 
@@ -372,8 +374,9 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
         if (this.MQTTConnection != null) {
             ((@NonNull MqttBrokerConnection) this.MQTTConnection).subscribe(prefix + "/" + MQTT_AVAILABILITY_SUFFIX,
                     this);
-            ((@NonNull MqttBrokerConnection) this.MQTTConnection).subscribe(prefix + "/" + MQTT_EVTTRIGGER_SUFFIX,
-                    this);
+            // ((@NonNull MqttBrokerConnection) this.MQTTConnection).subscribe(prefix + "/" + MQTT_EVTTRIGGER_SUFFIX,
+            // this);
+            // ((@NonNull MqttBrokerConnection) this.MQTTConnection).subscribe(this.svrTopicPrefix + "/#", this);
         }
     }
 
@@ -384,8 +387,8 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
 
     private void UnsubscribeMQTTTopics(String prefix) {
         if (this.MQTTConnection != null) {
-            ((@NonNull MqttBrokerConnection) this.MQTTConnection).unsubscribe(prefix + "/" + MQTT_EVTTRIGGER_SUFFIX,
-                    this);
+            // ((@NonNull MqttBrokerConnection) this.MQTTConnection).unsubscribe(prefix + "/" + MQTT_EVTTRIGGER_SUFFIX,
+            // this);
             ((@NonNull MqttBrokerConnection) this.MQTTConnection).unsubscribe(prefix + "/" + MQTT_AVAILABILITY_SUFFIX,
                     this);
         }
@@ -398,40 +401,127 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
     // Frigate API
 
     private void HandleEvents(String topic, String payload) {
+
+        String[] bits = topic.split("/");
         if (this.svrState.status.equals("online")) {
-            String[] bits = topic.split("/");
-            if (bits.length == 5) {
-                String cam = bits[3];
-                String label = bits[4];
-                ArrayList<String> cams = GetCameraList();
-                if (cams.contains(cam)) {
+            if (bits.length >= 3) {
+                String event = bits[2];
+                switch (event) {
 
-                    // the cam is one of ours.
-                    // Why do we check the label again, since we already did it in the
-                    // cam handler? Well, some muppet may have poked us with this message
-                    // manually....
+                    // Camera has reported online, send it the status
 
-                    if (label.matches("^[A-Za-z0-9]+$")) {
-                        logger.info("posting: POST '{}'", "/api/events/" + cam + "/" + label + "/create");
-                        ReturnStruct r = this.httpHelper.runPost("/api/events/" + cam + "/" + label + "/create",
-                                payload);
-                        String camTopicPrefix = this.svrState.topicPrefix + "/" + cam + "/TriggerEventResult";
-                        if (r.rc) {
-                            logger.info("event trigger response returned {}", r.message);
-                            ((@NonNull MqttBrokerConnection) MQTTConnection).publish(camTopicPrefix,
-                                    r.message.getBytes(), 1, false);
+                    case MQTT_ONLINE_SUFFIX:
+
+                        ((@NonNull MqttBrokerConnection) this.MQTTConnection).publish(this.svrTopicPrefix + "/status",
+                                this.svrState.GetJsonString().getBytes(), 1, false);
+                        break;
+
+                    // Trigger an event
+
+                    case MQTT_EVTTRIGGER_SUFFIX:
+
+                        if (bits.length == 5) {
+                            String cam = bits[3];
+                            String label = bits[4];
+                            HandleCamTriggerEvent(cam, label, payload);
                         } else {
-                            String errFormat = String.format("{\"success\":false,\"message\":\"%s\"}", r.message);
-                            ((@NonNull MqttBrokerConnection) MQTTConnection).publish(camTopicPrefix,
-                                    errFormat.getBytes(), 1, false);
+                            logger.error("Trigger event ignored, invalid topic string '{}'", topic);
                         }
-                    }
+                        break;
+
+                    // Get camera last frame
+
+                    case MQTT_GETLASTFRAME_SUFFIX:
+
+                        if (bits.length == 4) {
+                            String cam = bits[3];
+                            HandleCamGetLastFrame(cam, payload);
+                        } else {
+                            logger.error("GetLastFrame event ignored, invalid topic string '{}'", topic);
+                        }
+                        break;
+
+                    // ignore our own keepalives.
+
+                    case "keepalive":
+                        break;
+
+                    default:
+
+                        logger.error("server: unknown event {} passed to server", event);
                 }
-            } else {
-                logger.error("event ignored, invalid topic string '{}'", topic);
             }
         } else {
             logger.warn("event ignored, server offline");
+        }
+    }
+
+    ///////////////////////////////////////////////////////////////////
+    // HandleCamTriggerEvent
+    //
+    // Handle the camera event trigger action
+
+    private void HandleCamTriggerEvent(String cam, String label, String payload) {
+
+        ArrayList<String> cams = GetCameraList();
+        if (cams.contains(cam)) {
+
+            // the cam is one of ours.
+            // Why do we check the label again, since we already did it in the
+            // cam handler? Well, some muppet may have poked us with this message
+            // manually....
+
+            if (label.matches("^[A-Za-z0-9]+$")) {
+                logger.info("posting: POST '{}'", "/api/events/" + cam + "/" + label + "/create");
+                ReturnStruct r = this.httpHelper.runPost("/api/events/" + cam + "/" + label + "/create", payload);
+                String camTopicPrefix = this.svrState.topicPrefix + "/" + cam + "/" + MQTT_CAMACTIONRESULT;
+                if (r.rc) {
+                    logger.info("event trigger response returned {}", r.message);
+                    ((@NonNull MqttBrokerConnection) MQTTConnection).publish(camTopicPrefix, r.raw, 1, false);
+                } else {
+                    String errFormat = String.format("{\"success\":false,\"message\":\"%s\"}", r.message);
+                    ((@NonNull MqttBrokerConnection) MQTTConnection).publish(camTopicPrefix, errFormat.getBytes(), 1,
+                            false);
+                }
+            }
+        } else {
+            logger.error("message received from camera that is not ours: {}", cam);
+        }
+    }
+
+    ///////////////////////////////////////////////////////////////////
+    // HandleCamGetLastFrame
+    //
+    // Handle the camera action to get the last frame
+
+    private void HandleCamGetLastFrame(String cam, String payload) {
+
+        ArrayList<String> cams = GetCameraList();
+        if (cams.contains(cam)) {
+            logger.info("server: processing camera last frame request for {}", cam);
+            String call = "/api/" + cam + "/latest.jpg";
+            if (!payload.equals("")) {
+                call += "?" + payload;
+            }
+            ReturnStruct r = this.httpHelper.runGet(call);
+            String camTopicPrefix = this.svrState.topicPrefix + "/" + cam + "/" + MQTT_CAMACTIONRESULT;
+            logger.info("publishing state to {}", camTopicPrefix);
+            if (r.rc == true) {
+                String imagePrefix = this.svrState.topicPrefix + "/" + cam + "/lastFrame";
+                logger.info("publishing image to {}", imagePrefix);
+                ((@NonNull MqttBrokerConnection) MQTTConnection).publish(imagePrefix, r.raw, 1, false);
+
+                String errFormat = String.format("{\"success\":true,\"message\":\"%s\"}", r.message);
+                ((@NonNull MqttBrokerConnection) MQTTConnection).publish(camTopicPrefix, errFormat.getBytes(), 1,
+                        false);
+            } else {
+                logger.error("failed call to GetLastFrame: rc message {}", r.message);
+                String errFormat = String.format("{\"success\":false,\"message\":\"%s\"}", r.message);
+                ((@NonNull MqttBrokerConnection) MQTTConnection).publish(camTopicPrefix, errFormat.getBytes(), 1,
+                        false);
+            }
+        } else {
+            logger.error("message received from camera that is not ours: {}", cam);
         }
     }
 
@@ -445,16 +535,7 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
 
         super.processMessage(topic, payload);
 
-        // if a camera comes online, send out our status
-
-        if (topic.equals(this.svrTopicPrefix + "/" + MQTT_ONLINE_SUFFIX)) {
-            ((@NonNull MqttBrokerConnection) this.MQTTConnection).publish(this.svrTopicPrefix + "/status",
-                    this.svrState.GetJsonString().getBytes(), 1, false);
-        }
-
-        // if a camera requests an event trigger, process it
-
-        if (topic.startsWith(this.svrTopicPrefix + "/" + MQTT_EVTTRIGGER_SUFFIX + "/")) {
+        if (topic.startsWith(this.svrTopicPrefix)) {
             HandleEvents(topic, new String(payload));
         }
 

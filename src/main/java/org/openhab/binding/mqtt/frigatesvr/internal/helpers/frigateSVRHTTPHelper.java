@@ -156,7 +156,8 @@ public class frigateSVRHTTPHelper {
                     RawType jsonrq = new RawType(response.getContent(),
                             response.getHeaders().get(HttpHeader.CONTENT_TYPE));
                     r.rc = true;
-                    r.message = new String(jsonrq.getBytes());
+                    r.raw = jsonrq.getBytes();
+                    r.message = "ok";
                 } else {
                     r.message = String.format("HTTP GET failed: %d, %s", response.getStatus(), response.getReason());
                 }
@@ -196,7 +197,8 @@ public class frigateSVRHTTPHelper {
                     RawType jsonrq = new RawType(response.getContent(),
                             response.getHeaders().get(HttpHeader.CONTENT_TYPE));
                     r.rc = true;
-                    r.message = new String(jsonrq.getBytes());
+                    r.raw = jsonrq.getBytes();
+                    r.message = new String("ok");
                 } else {
                     r.message = String.format("HTTP GET failed: %d, %s", response.getStatus(), response.getReason());
                 }

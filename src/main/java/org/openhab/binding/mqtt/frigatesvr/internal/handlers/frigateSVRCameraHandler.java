@@ -65,7 +65,8 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     private boolean firstInit = true;
 
     public static enum camActions {
-        CAMACTION_TRIGGEREVENT
+        CAMACTION_TRIGGEREVENT,
+        CAMACTION_GETLASTFRAME
     }
 
     // makes for easy change if Frigate ever extend the API
@@ -84,7 +85,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
             Map.entry(MQTT_MOTIONTHRESH_GET, CHANNEL_STATE_MOTIONTHRESH),
             Map.entry(MQTT_MOTIONCONTOUR_GET, CHANNEL_STATE_MOTIONCONTOUR),
             Map.entry(MQTT_MOTION, CHANNEL_STATE_MOTIONDETECTED),
-            Map.entry(MQTT_TRIGGEREVENTRESULT, CHANNEL_TRIGGER_EVENT_RESULT));
+            Map.entry(MQTT_CAMACTIONRESULT, CHANNEL_CAM_ACTION_RESULT));
 
     private Map<String, String> JSONEventGettersToPrev = Map.ofEntries(Map.entry("frame_time", CHANNEL_PREV_FRAME_TIME),
             Map.entry("snapshot_time", CHANNEL_PREV_SNAPSHOT_TIME), Map.entry("label", CHANNEL_PREV_LABEL),
@@ -323,8 +324,11 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
                 Map.entry(CHANNEL_STREAM_URL,
                         new frigateSVRChannelState("", frigateSVRChannelState::fromStringMQTT,
                                 frigateSVRChannelState::toStringMQTT, false)),
-                Map.entry(CHANNEL_TRIGGER_EVENT_RESULT, new frigateSVRChannelState("",
-                        frigateSVRChannelState::fromStringMQTT, frigateSVRChannelState::toStringMQTT, false)));
+                Map.entry(CHANNEL_CAM_ACTION_RESULT,
+                        new frigateSVRChannelState("", frigateSVRChannelState::fromStringMQTT,
+                                frigateSVRChannelState::toStringMQTT, false)),
+                Map.entry(CHANNEL_LAST_FRAME, new frigateSVRChannelState("", frigateSVRChannelState::fromNoConversion,
+                        frigateSVRChannelState::toNoConversion, false)));
     }
 
     //
@@ -375,6 +379,8 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
         if (this.getThing().getStatus().equals(ThingStatus.ONLINE)) {
             switch (etype) {
 
+                // Trigger an event for this camera
+
                 case CAMACTION_TRIGGEREVENT:
 
                     // for an event trigger, the label must be the event label
@@ -393,6 +399,19 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
                         rc.put("rc", false);
                         rc.put("desc", "TriggerEvent cancelled; non-alphanumeric label");
                     }
+                    break;
+
+                // Get the last frame that Frigate has finished processing
+
+                case CAMACTION_GETLASTFRAME:
+
+                    String evtString = this.svrTopicPrefix + "/GetLastFrame/" + this.config.cameraName;
+                    logger.info("publishing as '{}'", evtString);
+                    ((@NonNull MqttBrokerConnection) this.MQTTConnection).publish(evtString,
+                            (payload != null) ? payload.getBytes() : new String("").getBytes(), 1, false);
+                    rc.put("rc", true);
+                    rc.put("desc", "event queued");
+
                     break;
 
                 default:
@@ -556,6 +575,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
             // - and then all snapshots intended for this cam.
             conn.subscribe(this.svrState.topicPrefix + "/" + MQTT_STATS_SUFFIX, this);
             conn.subscribe(this.cameraTopicPrefix + "+/snapshot", this);
+            conn.subscribe(this.cameraTopicPrefix + "lastFrame", this);
             this.MQTTGettersToChannels.forEach((m, ch) -> conn.subscribe(this.cameraTopicPrefix + m, this));
         }
     }
@@ -572,6 +592,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
         if (conn != null) {
             // snapshot state
             this.MQTTGettersToChannels.forEach((m, ch) -> conn.unsubscribe(this.cameraTopicPrefix + m, this));
+            conn.unsubscribe(this.cameraTopicPrefix + "lastFrame", this);
             conn.unsubscribe(this.cameraTopicPrefix + "+/snapshot", this);
             conn.unsubscribe(this.svrState.topicPrefix + "/" + MQTT_STATS_SUFFIX, this);
             conn.unsubscribe(this.svrState.topicPrefix + "/events", this);
@@ -751,6 +772,22 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
                                     .toStateFromRaw(payload, "image/jpeg"));
                 }
             }
+
+            // lastFrame
+            //
+            // In response to the lastFrame ThingActions, we update frame channels
+
+            if (topic.endsWith("/lastFrame")) {
+                logger.info("camera: received last frame topic: {}", topic);
+                String[] bits = topic.split("/");
+                if (bits[1].equals(config.cameraName)) {
+                    logger.info("updating state last frame");
+                    this.updateState(CHANNEL_LAST_FRAME,
+                            ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_LAST_FRAME))
+                                    .toStateFromRaw(payload, "image/jpeg"));
+                }
+            }
+
         }
     }
 }

@@ -99,4 +99,42 @@ public class CameraActions implements ThingActions {
             throw new IllegalArgumentException("Instance is not a CameraActions class.");
         }
     }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // GetLastFrame
+    //
+    // Get the last frame that Frigate has finished processing. This is a
+    // full resolution image, returned in the fgLatestImage channel.
+    //
+    // OH architecture does not seem to provide a means for Things to speak
+    // to each other directly (indeed seems to be discouraged). Due to this
+    // omission, the result is that we process the action asynchronously.
+    //
+    // Static member function is provided for older OH variants.
+
+    @RuleAction(label = "GetLastFrame", description = "Get the last processed frame")
+    @ActionOutput(name = "rc", label = "@text/action.GetLastFrame.rc.label", description = "@text/action.GetLastFrame.rc.description", type = "java.util.List<String>")
+    @ActionOutput(name = "desc", label = "@text/action.GetLastFrame.desc.label", description = "@text/action.GetLastFrame.desc.description", type = "java.util.List<String>")
+    public Map<String, Object> GetLastFrame(
+            @ActionInput(name = "eventRequest", label = "@text/action.TriggerEvent.GetLastFrame.label", description = "@text/action.TriggerEvent.GetLastFrame.description") @Nullable String event) {
+        Map<String, Object> rc = new HashMap<>();
+        if (this.handler != null) {
+            logger.debug("Action triggered: GetLastFrame {}", event);
+            this.handler.SendActionEvent(frigateSVRCameraHandler.camActions.CAMACTION_GETLASTFRAME, "", event);
+            rc.put("rc", true);
+            rc.put("desc", new String("event queued"));
+        } else {
+            rc.put("rc", false);
+            rc.put("desc", "action not processed; handler null");
+        }
+        return rc;
+    }
+
+    public static Map<String, Object> GetLastFrame(@Nullable ThingActions actions, @Nullable String event) {
+        if (actions instanceof CameraActions) {
+            return ((CameraActions) actions).GetLastFrame(event);
+        } else {
+            throw new IllegalArgumentException("Instance is not a CameraActions class.");
+        }
+    }
 }

@@ -30,7 +30,7 @@
 			<channel id="fgStreamURL" typeId="fgStreamURL"/>
 			<channel id="fgLastSnapshotObject" typeId="fgLastSnapshotObject"/>
 			<channel id="fgLastSnapshot" typeId="fgLastSnapshot"/>
-			<channel id="fgTriggerEventResult" typeId="fgTriggerEventResult"/>
+			<channel id="fgCamActionResult" typeId="fgCamActionResult"/>
 			<channel id="fgEventJSON" typeId="fgEventJSON"/>
 			<channel id="fgEventType" typeId="fgEventType"/>
 			<channel id="fgEventID" typeId="fgEventID"/>
@@ -75,6 +75,7 @@
 			<channel id="fgCurStationary" typeId="fgCurStationary"/>
 			<channel id="fgCurMotionlessCount" typeId="fgCurMotionlessCount"/>
 			<channel id="fgCurPositionChanges" typeId="fgCurPositionChanges"/>
+			<channel id="fgLastProcessedFrame" typeId="fgLastProcessedFrame"/>
 		</channels>
 		<config-description-ref uri="thing-type:mqtt:Camera"/>
 	</thing-type>
@@ -180,10 +181,10 @@
 		<label>@text/channel.eventClipURL</label>
 		<description>@text/channel.eventClipURL.description</description>
 	</channel-type>
-	<channel-type id="fgTriggerEventResult">
+	<channel-type id="fgCamActionResult">
 		<item-type>String</item-type>
-		<label>@text/channel.triggerEventResult</label>
-		<description>@text/channel.triggerEventResult.description</description>
+		<label>@text/channel.camActionResult</label>
+		<description>@text/channel.camActionResult.description</description>
 	</channel-type>
 	<!-- Event: channels relating to the previous state -->
 
@@ -389,5 +390,10 @@
 		<item-type>Number</item-type>
 		<label>@text/channel.currentPositionChanges</label>
 		<description>@text/channel.currentPositionChanges.description</description>
+	</channel-type>
+	<channel-type id="fgLastProcessedFrame">
+		<item-type>Image</item-type>
+		<label>@text/channel.lastProcessedFrame</label>
+		<description>@text/channel.lastProcessedFrame.description</description>
 	</channel-type>
 </thing:thing-descriptions>

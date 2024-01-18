@@ -21,10 +21,12 @@ package org.openhab.binding.mqtt.frigatesvr.internal.helpers;
 public class ReturnStruct {
     public boolean rc; // return code: false (fail), true (success)
     public String message; // error message (fail) or valid data (success)
+    public byte[] raw;
 
     public ReturnStruct() {
         rc = false;
         message = new String("unspecified error");
+        raw = new byte[0];
     }
 
     public ReturnStruct(boolean rcode, String msg) {

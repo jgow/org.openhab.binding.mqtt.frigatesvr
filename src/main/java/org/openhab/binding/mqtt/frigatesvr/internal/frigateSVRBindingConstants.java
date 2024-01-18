@@ -64,7 +64,8 @@ public class frigateSVRBindingConstants {
 
     public static final String CHANNEL_LAST_SNAPSHOT_OBJECT = "fgLastSnapshotObject";
     public static final String CHANNEL_LAST_SNAPSHOT = "fgLastSnapshot";
-    public static final String CHANNEL_TRIGGER_EVENT_RESULT = "fgTriggerEventResult";
+    public static final String CHANNEL_CAM_ACTION_RESULT = "fgCamActionResult";
+    public static final String CHANNEL_LAST_FRAME = "fgLastProcessedFrame";
 
     public static final String CHANNEL_PREV_FRAME_TIME = "fgPrevFrameTime";
     public static final String CHANNEL_PREV_SNAPSHOT_TIME = "fgPrevSnapshotTime";
@@ -115,6 +116,7 @@ public class frigateSVRBindingConstants {
     public static final String MQTT_AVAILABILITY_SUFFIX = "available";
     public static final String MQTT_ONLINE_SUFFIX = "camOnLine";
     public static final String MQTT_EVTTRIGGER_SUFFIX = "TriggerEvent";
+    public static final String MQTT_GETLASTFRAME_SUFFIX = "GetLastFrame";
     public static final String MQTT_DETECTION_SET = "detect/set";
     public static final String MQTT_DETECTION_GET = "detect/state";
     public static final String MQTT_RECORDING_SET = "recordings/set";
@@ -130,7 +132,7 @@ public class frigateSVRBindingConstants {
     public static final String MQTT_MOTIONCONTOUR_SET = "motion_contour_area/set";
     public static final String MQTT_MOTIONCONTOUR_GET = "motion_contour_area/state";
     public static final String MQTT_MOTION = "motion";
-    public static final String MQTT_TRIGGEREVENTRESULT = "TriggerEventResult";
+    public static final String MQTT_CAMACTIONRESULT = "CameraActionResult";
 
     // config properties
     public static final String CONF_ID_UNIQUE = "uniqueID";
