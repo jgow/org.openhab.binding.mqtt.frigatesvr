@@ -441,14 +441,11 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
                         }
                         break;
 
-                    // ignore our own keepalives.
+                    // ignore our own keepalives or anything else
 
                     case "keepalive":
-                        break;
-
                     default:
-
-                        logger.error("server: unknown event {} passed to server", event);
+                    	break;
                 }
             }
         } else {

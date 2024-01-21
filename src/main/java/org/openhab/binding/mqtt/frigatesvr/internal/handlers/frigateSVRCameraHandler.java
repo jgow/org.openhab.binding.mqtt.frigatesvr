@@ -66,7 +66,8 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
 
     public static enum camActions {
         CAMACTION_TRIGGEREVENT,
-        CAMACTION_GETLASTFRAME
+        CAMACTION_GETLASTFRAME,
+        CAMACTION_GETRECORDINGSUMMARY
     }
 
     // makes for easy change if Frigate ever extend the API

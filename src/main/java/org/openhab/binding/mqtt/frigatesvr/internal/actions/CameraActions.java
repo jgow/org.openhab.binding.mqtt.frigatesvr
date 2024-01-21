@@ -137,4 +137,42 @@ public class CameraActions implements ThingActions {
             throw new IllegalArgumentException("Instance is not a CameraActions class.");
         }
     }
+    
+    ///////////////////////////////////////////////////////////////////////////
+    // GetRecordingSummary
+    //
+    // Get the summary of recordings as a JSON block
+    //
+    // OH architecture does not seem to provide a means for Things to speak
+    // to each other directly (indeed seems to be discouraged). Due to this
+    // omission, the result is that we process the action asynchronously.
+    //
+    // Static member function is provided for older OH variants.
+
+    @RuleAction(label = "GetRecordingSummary", description = "Get the summary of recordings for this camera")
+    @ActionOutput(name = "rc", label = "@text/action.GetRecordingSummary.rc.label", description = "@text/action.GetRecordingSummary.rc.description", type = "java.util.List<String>")
+    @ActionOutput(name = "desc", label = "@text/action.GetRecordingSummary.desc.label", description = "@text/action.GetRecordingSummary.desc.description", type = "java.util.List<String>")
+    public Map<String, Object> GetRecordingSummary(
+            @ActionInput(name = "params", label = "@text/action.TriggerEvent.GetLastFrame.label", description = "@text/action.TriggerEvent.GetRecordingSummary.description") @Nullable String params) {
+        Map<String, Object> rc = new HashMap<>();
+        if (this.handler != null) {
+            logger.debug("Action triggered: GetRecordingSummary {}", params);
+            this.handler.SendActionEvent(frigateSVRCameraHandler.camActions.CAMACTION_GETRECORDINGSUMMARY, "", params);
+            rc.put("rc", true);
+            rc.put("desc", new String("event queued"));
+        } else {
+            rc.put("rc", false);
+            rc.put("desc", "action not processed; handler null");
+        }
+        return rc;
+    }
+
+    public static Map<String, Object> GetRecordingSummary(@Nullable ThingActions actions, @Nullable String params) {
+        if (actions instanceof CameraActions) {
+            return ((CameraActions) actions).GetLastFrame(params);
+        } else {
+            throw new IllegalArgumentException("Instance is not a CameraActions class.");
+        }
+    }
+
 }
