@@ -24,12 +24,15 @@ import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.client.HttpClient;
-import org.openhab.binding.mqtt.frigatesvr.internal.helpers.ReturnStruct;
+import org.openhab.binding.mqtt.frigatesvr.internal.helpers.ResultStruct;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.HTTPHandler;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.DASHStream;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.FrigateAPIForwarder;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.HLSStream;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.MJPEGStream;
+import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIGetLastFrame;
+import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIGetRecordingSummary;
+import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APITriggerEvent;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRChannelState;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRFrigateConfiguration;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRServerConfiguration;
@@ -62,6 +65,10 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
     private String svrTopicPrefix = "";
     private frigateSVRServerState svrState = new frigateSVRServerState();
     private frigateSVRFrigateConfiguration frigateConfig = new frigateSVRFrigateConfiguration();
+
+    private Map<String, Class<?>> cm = Map.ofEntries(Map.entry(MQTT_EVTTRIGGER_SUFFIX, APITriggerEvent.class),
+            Map.entry(MQTT_GETLASTFRAME_SUFFIX, APIGetLastFrame.class),
+            Map.entry(MQTT_GETRECORDINGSUMMARY_SUFFIX, APIGetRecordingSummary.class));
 
     public frigateSVRServerHandler(Thing thing, HttpClient httpClient, HttpService httpService) {
         super(thing, httpClient, httpService);
@@ -156,7 +163,7 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
 
                 // Get the version string.
 
-                ReturnStruct r = this.httpHelper.runGet("/api/version");
+                ResultStruct r = this.httpHelper.runGet("/api/version");
 
                 if (!r.rc) {
                     logger.warn("unable to get version string");
@@ -240,7 +247,7 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
 
                 // Get the version string.
 
-                ReturnStruct r = this.httpHelper.runGet("/api/version");
+                ResultStruct r = this.httpHelper.runGet("/api/version");
 
                 if (!r.rc) {
 
@@ -403,9 +410,20 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
     private void HandleEvents(String topic, String payload) {
 
         String[] bits = topic.split("/");
+
+        // These are for server 'thing' messages, not those originated directly by the Frigate server
+        // itself.
+        //
+        // part 1: 'frigateSVR'
+        // part 2: server thing ID
+        // part 3: message ID
+        // part 4: message specific (usually camera ID if from cameras)
+        // part 5: message specific (if present)
+
         if (this.svrState.status.equals("online")) {
             if (bits.length >= 3) {
-                String event = bits[2];
+                String event = bits[3];
+
                 switch (event) {
 
                     // Camera has reported online, send it the status
@@ -421,7 +439,7 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
                     case MQTT_EVTTRIGGER_SUFFIX:
 
                         if (bits.length == 5) {
-                            String cam = bits[3];
+                            String cam = bits[2];
                             String label = bits[4];
                             HandleCamTriggerEvent(cam, label, payload);
                         } else {
@@ -434,7 +452,7 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
                     case MQTT_GETLASTFRAME_SUFFIX:
 
                         if (bits.length == 4) {
-                            String cam = bits[3];
+                            String cam = bits[2];
                             HandleCamGetLastFrame(cam, payload);
                         } else {
                             logger.error("GetLastFrame event ignored, invalid topic string '{}'", topic);
@@ -445,7 +463,7 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
 
                     case "keepalive":
                     default:
-                    	break;
+                        break;
                 }
             }
         } else {
@@ -470,7 +488,7 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
 
             if (label.matches("^[A-Za-z0-9]+$")) {
                 logger.info("posting: POST '{}'", "/api/events/" + cam + "/" + label + "/create");
-                ReturnStruct r = this.httpHelper.runPost("/api/events/" + cam + "/" + label + "/create", payload);
+                ResultStruct r = this.httpHelper.runPost("/api/events/" + cam + "/" + label + "/create", payload);
                 String camTopicPrefix = this.svrState.topicPrefix + "/" + cam + "/" + MQTT_CAMACTIONRESULT;
                 if (r.rc) {
                     logger.info("event trigger response returned {}", r.message);
@@ -500,7 +518,7 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
             if (!payload.equals("")) {
                 call += "?" + payload;
             }
-            ReturnStruct r = this.httpHelper.runGet(call);
+            ResultStruct r = this.httpHelper.runGet(call);
             String camTopicPrefix = this.svrState.topicPrefix + "/" + cam + "/" + MQTT_CAMACTIONRESULT;
             logger.info("publishing state to {}", camTopicPrefix);
             if (r.rc == true) {

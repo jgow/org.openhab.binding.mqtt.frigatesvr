@@ -12,12 +12,16 @@
  */
 package org.openhab.binding.mqtt.frigatesvr.internal.actions;
 
-import java.util.HashMap;
 import java.util.Map;
 
+import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.mqtt.frigatesvr.internal.handlers.frigateSVRCameraHandler;
+import org.openhab.binding.mqtt.frigatesvr.internal.helpers.ResultStruct;
+import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIGetLastFrame;
+import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIGetRecordingSummary;
+import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APITriggerEvent;
 import org.openhab.core.automation.annotation.ActionInput;
 import org.openhab.core.automation.annotation.ActionOutput;
 import org.openhab.core.automation.annotation.RuleAction;
@@ -68,33 +72,28 @@ public class CameraActions implements ThingActions {
 
     @RuleAction(label = "TriggerEvent", description = "Trigger event on camera")
     @ActionOutput(name = "rc", label = "@text/action.TriggerEvent.rc.label", description = "@text/action.TriggerEvent.rc.description", type = "java.util.List<String>")
-    @ActionOutput(name = "desc", label = "@text/action.TriggerEvent.desc.label", description = "@text/action.TriggerEvent.desc.description", type = "java.util.List<String>")
+    @ActionOutput(name = "message", label = "@text/action.TriggerEvent.desc.label", description = "@text/action.TriggerEvent.desc.description", type = "java.util.List<String>")
     public Map<String, Object> TriggerEvent(
             @ActionInput(name = "eventLabel", label = "@text/action.TriggerEvent.eventLabel.label", description = "@text/action.TriggerEvent.eventLabel.description") @Nullable String eventLabel,
-            @ActionInput(name = "eventRequest", label = "@text/action.TriggerEvent.eventRequest.label", description = "@text/action.TriggerEvent.eventRequest.description") @Nullable String event) {
-        Map<String, Object> rc = new HashMap<>();
+            @ActionInput(name = "eventParams", label = "@text/action.TriggerEvent.eventParams.label", description = "@text/action.TriggerEvent.eventParams.description") @Nullable String eventParams) {
+        ResultStruct rc = new ResultStruct();
         if (this.handler != null) {
             logger.debug("Action triggered: label {}", eventLabel);
             if (eventLabel != null) {
-                this.handler.SendActionEvent(frigateSVRCameraHandler.camActions.CAMACTION_TRIGGEREVENT, eventLabel,
-                        event);
-                rc.put("rc", true);
-                rc.put("desc", new String("event queued"));
+                rc = this.handler.SendActionEvent(new APITriggerEvent((@NonNull String) eventLabel, eventParams));
             } else {
-                rc.put("rc", false);
-                rc.put("desc", "error: event label is null");
+                rc.message = "error: event ID label is null";
             }
         } else {
-            rc.put("rc", false);
-            rc.put("desc", "action not processed; handler null");
+            rc.message = "action not processed; no handler";
         }
-        return rc;
+        return rc.toMap();
     }
 
-    public static Map<String, Object> TriggerEvent(@Nullable ThingActions actions, @Nullable String label,
-            @Nullable String event) {
+    public static Map<String, Object> TriggerEvent(@Nullable ThingActions actions, @Nullable String eventLabel,
+            @Nullable String eventParams) {
         if (actions instanceof CameraActions) {
-            return ((CameraActions) actions).TriggerEvent(label, event);
+            return ((CameraActions) actions).TriggerEvent(eventLabel, eventParams);
         } else {
             throw new IllegalArgumentException("Instance is not a CameraActions class.");
         }
@@ -114,30 +113,27 @@ public class CameraActions implements ThingActions {
 
     @RuleAction(label = "GetLastFrame", description = "Get the last processed frame")
     @ActionOutput(name = "rc", label = "@text/action.GetLastFrame.rc.label", description = "@text/action.GetLastFrame.rc.description", type = "java.util.List<String>")
-    @ActionOutput(name = "desc", label = "@text/action.GetLastFrame.desc.label", description = "@text/action.GetLastFrame.desc.description", type = "java.util.List<String>")
+    @ActionOutput(name = "message", label = "@text/action.GetLastFrame.desc.label", description = "@text/action.GetLastFrame.desc.description", type = "java.util.List<String>")
     public Map<String, Object> GetLastFrame(
-            @ActionInput(name = "eventRequest", label = "@text/action.TriggerEvent.GetLastFrame.label", description = "@text/action.TriggerEvent.GetLastFrame.description") @Nullable String event) {
-        Map<String, Object> rc = new HashMap<>();
+            @ActionInput(name = "eventParams", label = "@text/action.TriggerEvent.GetLastFrame.label", description = "@text/action.TriggerEvent.GetLastFrame.description") @Nullable String eventParams) {
+        ResultStruct rc = new ResultStruct();
         if (this.handler != null) {
-            logger.debug("Action triggered: GetLastFrame {}", event);
-            this.handler.SendActionEvent(frigateSVRCameraHandler.camActions.CAMACTION_GETLASTFRAME, "", event);
-            rc.put("rc", true);
-            rc.put("desc", new String("event queued"));
+            logger.debug("Action triggered: label GetLastFrame: {}", eventParams);
+            rc = this.handler.SendActionEvent(new APIGetLastFrame(eventParams));
         } else {
-            rc.put("rc", false);
-            rc.put("desc", "action not processed; handler null");
+            rc.message = "action not processed; no handler";
         }
-        return rc;
+        return rc.toMap();
     }
 
-    public static Map<String, Object> GetLastFrame(@Nullable ThingActions actions, @Nullable String event) {
+    public static Map<String, Object> GetLastFrame(@Nullable ThingActions actions, @Nullable String params) {
         if (actions instanceof CameraActions) {
-            return ((CameraActions) actions).GetLastFrame(event);
+            return ((CameraActions) actions).GetLastFrame(params);
         } else {
             throw new IllegalArgumentException("Instance is not a CameraActions class.");
         }
     }
-    
+
     ///////////////////////////////////////////////////////////////////////////
     // GetRecordingSummary
     //
@@ -151,28 +147,23 @@ public class CameraActions implements ThingActions {
 
     @RuleAction(label = "GetRecordingSummary", description = "Get the summary of recordings for this camera")
     @ActionOutput(name = "rc", label = "@text/action.GetRecordingSummary.rc.label", description = "@text/action.GetRecordingSummary.rc.description", type = "java.util.List<String>")
-    @ActionOutput(name = "desc", label = "@text/action.GetRecordingSummary.desc.label", description = "@text/action.GetRecordingSummary.desc.description", type = "java.util.List<String>")
-    public Map<String, Object> GetRecordingSummary(
-            @ActionInput(name = "params", label = "@text/action.TriggerEvent.GetLastFrame.label", description = "@text/action.TriggerEvent.GetRecordingSummary.description") @Nullable String params) {
-        Map<String, Object> rc = new HashMap<>();
+    @ActionOutput(name = "message", label = "@text/action.GetRecordingSummary.desc.label", description = "@text/action.GetRecordingSummary.desc.description", type = "java.util.List<String>")
+    public Map<String, Object> GetRecordingSummary() {
+        ResultStruct rc = new ResultStruct();
         if (this.handler != null) {
-            logger.debug("Action triggered: GetRecordingSummary {}", params);
-            this.handler.SendActionEvent(frigateSVRCameraHandler.camActions.CAMACTION_GETRECORDINGSUMMARY, "", params);
-            rc.put("rc", true);
-            rc.put("desc", new String("event queued"));
+            logger.debug("Action triggered: label GetRecordingSummary");
+            rc = this.handler.SendActionEvent(new APIGetRecordingSummary());
         } else {
-            rc.put("rc", false);
-            rc.put("desc", "action not processed; handler null");
+            rc.message = "action not queued; no handler";
         }
-        return rc;
+        return rc.toMap();
     }
 
     public static Map<String, Object> GetRecordingSummary(@Nullable ThingActions actions, @Nullable String params) {
         if (actions instanceof CameraActions) {
-            return ((CameraActions) actions).GetLastFrame(params);
+            return ((CameraActions) actions).GetRecordingSummary();
         } else {
             throw new IllegalArgumentException("Instance is not a CameraActions class.");
         }
     }
-
 }

@@ -117,6 +117,7 @@ public class frigateSVRBindingConstants {
     public static final String MQTT_ONLINE_SUFFIX = "camOnLine";
     public static final String MQTT_EVTTRIGGER_SUFFIX = "TriggerEvent";
     public static final String MQTT_GETLASTFRAME_SUFFIX = "GetLastFrame";
+    public static final String MQTT_GETRECORDINGSUMMARY_SUFFIX = "GetRecordingSummary";
     public static final String MQTT_DETECTION_SET = "detect/set";
     public static final String MQTT_DETECTION_GET = "detect/state";
     public static final String MQTT_RECORDING_SET = "recordings/set";

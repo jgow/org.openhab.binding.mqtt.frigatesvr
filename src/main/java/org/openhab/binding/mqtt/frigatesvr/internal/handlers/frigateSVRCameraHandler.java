@@ -18,18 +18,18 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 
 import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.NonNullByDefault;
-import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.client.HttpClient;
 import org.openhab.binding.mqtt.frigatesvr.internal.actions.CameraActions;
+import org.openhab.binding.mqtt.frigatesvr.internal.helpers.ResultStruct;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.HTTPHandler;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.DASHStream;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.HLSStream;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.MJPEGStream;
+import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIBase;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRCameraConfiguration;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRChannelState;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRServerState;
@@ -63,12 +63,6 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     private String svrTopicPrefix = "frigate/";
     private String cameraTopicPrefix = new String();
     private boolean firstInit = true;
-
-    public static enum camActions {
-        CAMACTION_TRIGGEREVENT,
-        CAMACTION_GETLASTFRAME,
-        CAMACTION_GETRECORDINGSUMMARY
-    }
 
     // makes for easy change if Frigate ever extend the API
     //
@@ -375,54 +369,14 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     // needs to be picked up by the server's HTTP API, but one that is
     // also specific to this camera.
 
-    public Map<String, Object> SendActionEvent(camActions etype, String label, @Nullable String payload) {
-        Map<String, Object> rc = new HashMap<>();
+    public ResultStruct SendActionEvent(APIBase action) {
+        ResultStruct rc = new ResultStruct(false, "camera offline");
         if (this.getThing().getStatus().equals(ThingStatus.ONLINE)) {
-            switch (etype) {
-
-                // Trigger an event for this camera
-
-                case CAMACTION_TRIGGEREVENT:
-
-                    // for an event trigger, the label must be the event label
-                    // and it must be alphanumeric. The payload is the JSON
-                    // string required by Frigate
-
-                    if (label.matches("^[A-Za-z0-9]+$")) {
-                        String evtString = this.svrTopicPrefix + "/TriggerEvent/" + this.config.cameraName + "/"
-                                + label;
-                        logger.info("publishing as '{}'", evtString);
-                        ((@NonNull MqttBrokerConnection) this.MQTTConnection).publish(evtString,
-                                (payload != null) ? payload.getBytes() : new String("").getBytes(), 1, false);
-                        rc.put("rc", true);
-                        rc.put("desc", "event queued");
-                    } else {
-                        rc.put("rc", false);
-                        rc.put("desc", "TriggerEvent cancelled; non-alphanumeric label");
-                    }
-                    break;
-
-                // Get the last frame that Frigate has finished processing
-
-                case CAMACTION_GETLASTFRAME:
-
-                    String evtString = this.svrTopicPrefix + "/GetLastFrame/" + this.config.cameraName;
-                    logger.info("publishing as '{}'", evtString);
-                    ((@NonNull MqttBrokerConnection) this.MQTTConnection).publish(evtString,
-                            (payload != null) ? payload.getBytes() : new String("").getBytes(), 1, false);
-                    rc.put("rc", true);
-                    rc.put("desc", "event queued");
-
-                    break;
-
-                default:
-                    rc.put("rc", false);
-                    rc.put("desc", "Unknown event type in SendActionEvent");
-                    break;
+            rc = action.Validate();
+            if (rc.rc) {
+                rc = action.ResQueueMessageToServer((@NonNull MqttBrokerConnection) this.MQTTConnection,
+                        this.svrTopicPrefix, this.config.cameraName);
             }
-        } else {
-            rc.put("rc", false);
-            rc.put("desc", "camera object offline");
         }
         return rc;
     }

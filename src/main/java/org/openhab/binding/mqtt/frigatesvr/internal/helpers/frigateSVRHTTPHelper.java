@@ -143,8 +143,8 @@ public class frigateSVRHTTPHelper {
     // Synchronous GET call to the Frigate API. To date we only use a couple
     // of different GET calls from within the binding
 
-    public ReturnStruct runGet(String call) {
-        ReturnStruct r = new ReturnStruct();
+    public ResultStruct runGet(String call) {
+        ResultStruct r = new ResultStruct();
         try {
             Request request = ((@NonNull HttpClient) this.client).newRequest(buildURL(call));
             request.method(HttpMethod.GET);
@@ -183,8 +183,8 @@ public class frigateSVRHTTPHelper {
     //
     // Synchronous POST call to the Frigate API.import java.net.URL;
 
-    public ReturnStruct runPost(String call, @Nullable String payload) {
-        ReturnStruct r = new ReturnStruct();
+    public ResultStruct runPost(String call, @Nullable String payload) {
+        ResultStruct r = new ResultStruct();
         try {
             Request request = ((@NonNull HttpClient) this.client).POST(buildURL(call));
             request.timeout(100, TimeUnit.MILLISECONDS);
