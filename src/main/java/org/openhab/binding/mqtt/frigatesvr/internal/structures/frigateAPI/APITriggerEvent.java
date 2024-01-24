@@ -18,6 +18,10 @@ import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.mqtt.frigatesvr.internal.helpers.ResultStruct;
+import org.openhab.binding.mqtt.frigatesvr.internal.helpers.frigateSVRHTTPHelper;
+import org.openhab.core.io.transport.mqtt.MqttBrokerConnection;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
@@ -38,9 +42,52 @@ public class APITriggerEvent extends APIBase {
     @Nullable
     private String label = null;
 
+    private String cam = "";
+
+    private final Logger logger = LoggerFactory.getLogger(APITriggerEvent.class);
+
+    public APITriggerEvent() {
+        super(MQTT_EVTTRIGGER_SUFFIX);
+    }
+
     public APITriggerEvent(String label, @Nullable String payload) {
         super(MQTT_EVTTRIGGER_SUFFIX);
         this.payload = payload;
+    }
+
+    public ResultStruct ParseFromBits(String[] bits, @Nullable String payload) {
+        ResultStruct rc = new ResultStruct();
+        if (bits.length == 5) {
+            this.cam = bits[2];
+            this.label = bits[4];
+            this.payload = payload;
+
+            // Why do we check the label again, since we already did it in the
+            // cam handler? Well, some muppet may have poked us with this message
+            // manually....
+
+            rc = this.Validate();
+        } else {
+            rc.message = "internal communication error";
+        }
+        return rc;
+    }
+
+    public ResultStruct Process(frigateSVRHTTPHelper httpHelper, MqttBrokerConnection connection, String topicPrefix) {
+
+        ResultStruct rc = new ResultStruct();
+        logger.info("posting: POST '{}'", "/api/events/" + cam + "/" + label + "/create");
+        rc = httpHelper.runPost("/api/events/" + cam + "/" + label + "/create", payload);
+
+        String camTopicPrefix = topicPrefix + "/" + cam + "/" + MQTT_CAMACTIONRESULT;
+        if (rc.rc) {
+            logger.info("event trigger response returned {}", rc.message);
+            connection.publish(camTopicPrefix, rc.raw, 1, false);
+        } else {
+            String errFormat = String.format("{\"success\":false,\"message\":\"%s\"}", rc.message);
+            connection.publish(camTopicPrefix, errFormat.getBytes(), 1, false);
+        }
+        return rc;
     }
 
     @SuppressWarnings("null")
@@ -67,10 +114,6 @@ public class APITriggerEvent extends APIBase {
             rc.message = "event label null";
         }
         return rc;
-    }
-
-    protected String BuildURL() {
-        return "";
     }
 
     protected String BuildTopicSuffix() {

@@ -30,6 +30,7 @@ import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.DASHStream;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.FrigateAPIForwarder;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.HLSStream;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.MJPEGStream;
+import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APICamOnline;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIGetLastFrame;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIGetRecordingSummary;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APITriggerEvent;
@@ -414,11 +415,11 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
         // These are for server 'thing' messages, not those originated directly by the Frigate server
         // itself.
         //
-        // part 1: 'frigateSVR'
-        // part 2: server thing ID
-        // part 3: message ID
-        // part 4: message specific (usually camera ID if from cameras)
-        // part 5: message specific (if present)
+        // part 1 (index 0): 'frigateSVR'
+        // part 2 (index 1): server thing ID
+        // part 3 (index 2): cam ID (originator)
+        // part 4 (index 3): event ID
+        // part 5 (index 4): message specific (if present)
 
         if (this.svrState.status.equals("online")) {
             if (bits.length >= 3) {
@@ -428,37 +429,58 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
 
                     // Camera has reported online, send it the status
 
-                    case MQTT_ONLINE_SUFFIX:
-
-                        ((@NonNull MqttBrokerConnection) this.MQTTConnection).publish(this.svrTopicPrefix + "/status",
-                                this.svrState.GetJsonString().getBytes(), 1, false);
-                        break;
-
-                    // Trigger an event
-
-                    case MQTT_EVTTRIGGER_SUFFIX:
-
-                        if (bits.length == 5) {
-                            String cam = bits[2];
-                            String label = bits[4];
-                            HandleCamTriggerEvent(cam, label, payload);
+                    case MQTT_ONLINE_SUFFIX: {
+                        APICamOnline e = new APICamOnline(this.svrState);
+                        ResultStruct rc = e.ParseFromBits(bits, payload);
+                        if (rc.rc) {
+                            rc = e.Process(httpHelper, ((@NonNull MqttBrokerConnection) MQTTConnection),
+                                    this.svrState.topicPrefix);
                         } else {
                             logger.error("Trigger event ignored, invalid topic string '{}'", topic);
                         }
                         break;
+                    }
 
-                    // Get camera last frame
+                    // Trigger an event
 
-                    case MQTT_GETLASTFRAME_SUFFIX:
+                    case MQTT_EVTTRIGGER_SUFFIX: {
 
-                        if (bits.length == 4) {
-                            String cam = bits[2];
-                            HandleCamGetLastFrame(cam, payload);
+                        APITriggerEvent e = new APITriggerEvent();
+                        ResultStruct rc = e.ParseFromBits(bits, payload);
+                        if (rc.rc) {
+                            rc = e.Process(httpHelper, ((@NonNull MqttBrokerConnection) MQTTConnection),
+                                    this.svrState.topicPrefix);
                         } else {
-                            logger.error("GetLastFrame event ignored, invalid topic string '{}'", topic);
+                            logger.error("Trigger event ignored, invalid topic string '{}'", topic);
                         }
                         break;
+                    }
+                    // Get camera last frame
 
+                    case MQTT_GETLASTFRAME_SUFFIX: {
+
+                        APIGetLastFrame e = new APIGetLastFrame();
+                        ResultStruct rc = e.ParseFromBits(bits, payload);
+                        if (rc.rc) {
+                            rc = e.Process(httpHelper, ((@NonNull MqttBrokerConnection) MQTTConnection),
+                                    this.svrState.topicPrefix);
+                        } else {
+                            logger.error("Trigger event ignored, invalid topic string '{}'", topic);
+                        }
+                        break;
+                    }
+
+                    case MQTT_GETRECORDINGSUMMARY_SUFFIX: {
+                        APIGetRecordingSummary e = new APIGetRecordingSummary();
+                        ResultStruct rc = e.ParseFromBits(bits, payload);
+                        if (rc.rc) {
+                            rc = e.Process(httpHelper, ((@NonNull MqttBrokerConnection) MQTTConnection),
+                                    this.svrState.topicPrefix);
+                        } else {
+                            logger.error("Trigger event ignored, invalid topic string '{}'", topic);
+                        }
+                        break;
+                    }
                     // ignore our own keepalives or anything else
 
                     case "keepalive":
@@ -468,75 +490,6 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
             }
         } else {
             logger.warn("event ignored, server offline");
-        }
-    }
-
-    ///////////////////////////////////////////////////////////////////
-    // HandleCamTriggerEvent
-    //
-    // Handle the camera event trigger action
-
-    private void HandleCamTriggerEvent(String cam, String label, String payload) {
-
-        ArrayList<String> cams = GetCameraList();
-        if (cams.contains(cam)) {
-
-            // the cam is one of ours.
-            // Why do we check the label again, since we already did it in the
-            // cam handler? Well, some muppet may have poked us with this message
-            // manually....
-
-            if (label.matches("^[A-Za-z0-9]+$")) {
-                logger.info("posting: POST '{}'", "/api/events/" + cam + "/" + label + "/create");
-                ResultStruct r = this.httpHelper.runPost("/api/events/" + cam + "/" + label + "/create", payload);
-                String camTopicPrefix = this.svrState.topicPrefix + "/" + cam + "/" + MQTT_CAMACTIONRESULT;
-                if (r.rc) {
-                    logger.info("event trigger response returned {}", r.message);
-                    ((@NonNull MqttBrokerConnection) MQTTConnection).publish(camTopicPrefix, r.raw, 1, false);
-                } else {
-                    String errFormat = String.format("{\"success\":false,\"message\":\"%s\"}", r.message);
-                    ((@NonNull MqttBrokerConnection) MQTTConnection).publish(camTopicPrefix, errFormat.getBytes(), 1,
-                            false);
-                }
-            }
-        } else {
-            logger.error("message received from camera that is not ours: {}", cam);
-        }
-    }
-
-    ///////////////////////////////////////////////////////////////////
-    // HandleCamGetLastFrame
-    //
-    // Handle the camera action to get the last frame
-
-    private void HandleCamGetLastFrame(String cam, String payload) {
-
-        ArrayList<String> cams = GetCameraList();
-        if (cams.contains(cam)) {
-            logger.info("server: processing camera last frame request for {}", cam);
-            String call = "/api/" + cam + "/latest.jpg";
-            if (!payload.equals("")) {
-                call += "?" + payload;
-            }
-            ResultStruct r = this.httpHelper.runGet(call);
-            String camTopicPrefix = this.svrState.topicPrefix + "/" + cam + "/" + MQTT_CAMACTIONRESULT;
-            logger.info("publishing state to {}", camTopicPrefix);
-            if (r.rc == true) {
-                String imagePrefix = this.svrState.topicPrefix + "/" + cam + "/lastFrame";
-                logger.info("publishing image to {}", imagePrefix);
-                ((@NonNull MqttBrokerConnection) MQTTConnection).publish(imagePrefix, r.raw, 1, false);
-
-                String errFormat = String.format("{\"success\":true,\"message\":\"%s\"}", r.message);
-                ((@NonNull MqttBrokerConnection) MQTTConnection).publish(camTopicPrefix, errFormat.getBytes(), 1,
-                        false);
-            } else {
-                logger.error("failed call to GetLastFrame: rc message {}", r.message);
-                String errFormat = String.format("{\"success\":false,\"message\":\"%s\"}", r.message);
-                ((@NonNull MqttBrokerConnection) MQTTConnection).publish(camTopicPrefix, errFormat.getBytes(), 1,
-                        false);
-            }
-        } else {
-            logger.error("message received from camera that is not ours: {}", cam);
         }
     }
 

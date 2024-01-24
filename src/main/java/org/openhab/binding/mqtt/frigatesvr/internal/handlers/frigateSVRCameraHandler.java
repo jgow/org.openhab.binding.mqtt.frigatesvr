@@ -404,8 +404,9 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
 
         // tell the server we are going online
 
-        ((@NonNull MqttBrokerConnection) this.MQTTConnection).publish(this.svrTopicPrefix + "/" + MQTT_ONLINE_SUFFIX,
-                this.config.cameraName.getBytes(), 1, false);
+        String onlineTopic = this.svrTopicPrefix + "/" + this.config.cameraName + "/" + MQTT_ONLINE_SUFFIX;
+        ((@NonNull MqttBrokerConnection) this.MQTTConnection).publish(onlineTopic, new String("online").getBytes(), 1,
+                false);
         updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING);
     }
 

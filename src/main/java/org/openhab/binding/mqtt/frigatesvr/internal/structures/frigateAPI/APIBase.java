@@ -15,6 +15,7 @@ package org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.mqtt.frigatesvr.internal.helpers.ResultStruct;
+import org.openhab.binding.mqtt.frigatesvr.internal.helpers.frigateSVRHTTPHelper;
 import org.openhab.core.io.transport.mqtt.MqttBrokerConnection;
 
 /**
@@ -37,13 +38,20 @@ public abstract class APIBase {
         this.eventID = eventID;
     }
 
+    public APIBase(String[] bits, String eventID) {
+        this.eventID = eventID;
+    }
+
     public void SetPayload(@Nullable String payload) {
         this.payload = payload;
     }
 
-    public abstract ResultStruct Validate();
+    public abstract ResultStruct ParseFromBits(String[] bits, @Nullable String payload);
 
-    protected abstract String BuildURL();
+    public abstract ResultStruct Process(frigateSVRHTTPHelper httpHelper, MqttBrokerConnection connection,
+            String topicPrefix);
+
+    public abstract ResultStruct Validate();
 
     protected abstract String BuildTopicSuffix();
 
