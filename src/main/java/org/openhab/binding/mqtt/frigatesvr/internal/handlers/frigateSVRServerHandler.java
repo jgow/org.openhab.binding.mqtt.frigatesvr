@@ -30,6 +30,7 @@ import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.DASHStream;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.FrigateAPIForwarder;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.HLSStream;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.MJPEGStream;
+import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIBase;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APICamOnline;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIGetLastFrame;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIGetRecordingSummary;
@@ -67,9 +68,10 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
     private frigateSVRServerState svrState = new frigateSVRServerState();
     private frigateSVRFrigateConfiguration frigateConfig = new frigateSVRFrigateConfiguration();
 
-    private Map<String, Class<?>> cm = Map.ofEntries(Map.entry(MQTT_EVTTRIGGER_SUFFIX, APITriggerEvent.class),
-            Map.entry(MQTT_GETLASTFRAME_SUFFIX, APIGetLastFrame.class),
-            Map.entry(MQTT_GETRECORDINGSUMMARY_SUFFIX, APIGetRecordingSummary.class));
+    private Map<String, APIBase> cm = Map.ofEntries(Map.entry(MQTT_EVTTRIGGER_SUFFIX, new APITriggerEvent()),
+            Map.entry(MQTT_GETLASTFRAME_SUFFIX, new APIGetLastFrame()),
+            Map.entry(MQTT_GETRECORDINGSUMMARY_SUFFIX, new APIGetRecordingSummary()),
+            Map.entry(MQTT_ONLINE_SUFFIX, new APICamOnline(this.svrState)));
 
     public frigateSVRServerHandler(Thing thing, HttpClient httpClient, HttpService httpService) {
         super(thing, httpClient, httpService);
@@ -422,72 +424,22 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
         // part 5 (index 4): message specific (if present)
 
         if (this.svrState.status.equals("online")) {
-            if (bits.length >= 3) {
+            if (bits.length >= 4) {
                 String event = bits[3];
-
-                switch (event) {
-
-                    // Camera has reported online, send it the status
-
-                    case MQTT_ONLINE_SUFFIX: {
-                        APICamOnline e = new APICamOnline(this.svrState);
-                        ResultStruct rc = e.ParseFromBits(bits, payload);
-                        if (rc.rc) {
-                            rc = e.Process(httpHelper, ((@NonNull MqttBrokerConnection) MQTTConnection),
-                                    this.svrState.topicPrefix);
-                        } else {
-                            logger.error("Trigger event ignored, invalid topic string '{}'", topic);
-                        }
-                        break;
+                if (this.cm.containsKey(event)) {
+                    logger.info("processing event {}", event);
+                    APIBase api = this.cm.get(event);
+                    ResultStruct rc = api.ParseFromBits(bits, payload);
+                    if (rc.rc) {
+                        rc = api.Process(httpHelper, ((@NonNull MqttBrokerConnection) MQTTConnection),
+                                this.svrState.topicPrefix);
+                    } else {
+                        logger.error("Trigger event ignored, invalid topic string '{}'", topic);
                     }
-
-                    // Trigger an event
-
-                    case MQTT_EVTTRIGGER_SUFFIX: {
-
-                        APITriggerEvent e = new APITriggerEvent();
-                        ResultStruct rc = e.ParseFromBits(bits, payload);
-                        if (rc.rc) {
-                            rc = e.Process(httpHelper, ((@NonNull MqttBrokerConnection) MQTTConnection),
-                                    this.svrState.topicPrefix);
-                        } else {
-                            logger.error("Trigger event ignored, invalid topic string '{}'", topic);
-                        }
-                        break;
-                    }
-                    // Get camera last frame
-
-                    case MQTT_GETLASTFRAME_SUFFIX: {
-
-                        APIGetLastFrame e = new APIGetLastFrame();
-                        ResultStruct rc = e.ParseFromBits(bits, payload);
-                        if (rc.rc) {
-                            rc = e.Process(httpHelper, ((@NonNull MqttBrokerConnection) MQTTConnection),
-                                    this.svrState.topicPrefix);
-                        } else {
-                            logger.error("Trigger event ignored, invalid topic string '{}'", topic);
-                        }
-                        break;
-                    }
-
-                    case MQTT_GETRECORDINGSUMMARY_SUFFIX: {
-                        APIGetRecordingSummary e = new APIGetRecordingSummary();
-                        ResultStruct rc = e.ParseFromBits(bits, payload);
-                        if (rc.rc) {
-                            rc = e.Process(httpHelper, ((@NonNull MqttBrokerConnection) MQTTConnection),
-                                    this.svrState.topicPrefix);
-                        } else {
-                            logger.error("Trigger event ignored, invalid topic string '{}'", topic);
-                        }
-                        break;
-                    }
-                    // ignore our own keepalives or anything else
-
-                    case "keepalive":
-                    default:
-                        break;
+                } else {
+                    logger.info("event {} ignored - no handler", event);
                 }
-            }
+            } // else this is a keepalive or a server message: silently ignore it for now.
         } else {
             logger.warn("event ignored, server offline");
         }

@@ -50,20 +50,25 @@ public class APIGetLastFrame extends APIBase {
 
     public ResultStruct ParseFromBits(String[] bits, @Nullable String payload) {
         ResultStruct rc = new ResultStruct();
-        if (bits.length == 5) {
-            this.cam = bits[2];
+        if (bits.length == 4) {
+            if (bits[3].equals(MQTT_GETLASTFRAME_SUFFIX)) {
+                this.cam = bits[2];
 
-            // TODO: the payload will contain a JSON block with the query
-            // arguments. We need to parse this out and use it to build the
-            // query string.
+                // The payload will contain a JSON block with the query
+                // arguments. We need to grab this and later parse it into the
+                // query string
 
-            // this.payload = payload;
+                this.payload = payload;
 
-            // Why do we check the label again, since we already did it in the
-            // cam handler? Well, some muppet may have poked us with this message
-            // manually....
+                // Why do we check the label again, since we already did it in the
+                // cam handler? Well, some muppet may have poked us with this message
+                // manually....
 
-            rc = this.Validate();
+                rc = this.Validate();
+
+            } else {
+                rc.message = "API handler/topic mismatch";
+            }
         } else {
             rc.message = "internal communication error";
         }
@@ -77,9 +82,9 @@ public class APIGetLastFrame extends APIBase {
         String call = "/api/" + cam + "/latest.jpg";
         // ---------
         // TODO: parse out payload
-        if (!payload.equals("")) {
-            call += "?" + payload;
-        }
+        // if (!payload.equals("")) {
+        // call += "?" + payload;
+        // }
         // TODO ---
         // --------
         rc = httpHelper.runGet(call);
@@ -105,12 +110,13 @@ public class APIGetLastFrame extends APIBase {
         ResultStruct rc = new ResultStruct();
         // We just extract our query string from the JSON payload, null is ok.
         try {
-            if (payload != null) {
+            if (payload != null && !payload.isEmpty()) {
                 JsonParser.parseString((@NonNull String) payload);
             }
             rc.rc = true;
             rc.message = "arguments valid";
         } catch (JsonSyntaxException e) {
+            logger.info("parse failed {}", e.getMessage());
             rc.message = e.toString();
         }
         return rc;
