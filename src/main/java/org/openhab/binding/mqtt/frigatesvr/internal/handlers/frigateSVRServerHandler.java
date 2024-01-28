@@ -34,6 +34,7 @@ import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIBas
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APICamOnline;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIGetLastFrame;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIGetRecordingSummary;
+import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIGetThumbnail;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APITriggerEvent;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRChannelState;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRFrigateConfiguration;
@@ -71,7 +72,8 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
     private Map<String, APIBase> cm = Map.ofEntries(Map.entry(MQTT_EVTTRIGGER_SUFFIX, new APITriggerEvent()),
             Map.entry(MQTT_GETLASTFRAME_SUFFIX, new APIGetLastFrame()),
             Map.entry(MQTT_GETRECORDINGSUMMARY_SUFFIX, new APIGetRecordingSummary()),
-            Map.entry(MQTT_ONLINE_SUFFIX, new APICamOnline(this.svrState)));
+            Map.entry(MQTT_ONLINE_SUFFIX, new APICamOnline(this.svrState)),
+            Map.entry(MQTT_GETTHUMBNAIL_SUFFIX, new APIGetThumbnail()));
 
     public frigateSVRServerHandler(Thing thing, HttpClient httpClient, HttpService httpService) {
         super(thing, httpClient, httpService);
@@ -424,22 +426,35 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
         // part 5 (index 4): message specific (if present)
 
         if (this.svrState.status.equals("online")) {
+            MqttBrokerConnection conn = (@NonNull MqttBrokerConnection) MQTTConnection;
             if (bits.length >= 4) {
+
+                String cam = bits[2];
                 String event = bits[3];
-                if (this.cm.containsKey(event)) {
-                    logger.info("processing event {}", event);
-                    APIBase api = this.cm.get(event);
-                    ResultStruct rc = api.ParseFromBits(bits, payload);
-                    if (rc.rc) {
-                        rc = api.Process(httpHelper, ((@NonNull MqttBrokerConnection) MQTTConnection),
-                                this.svrState.topicPrefix);
+
+                // we need to be sure the camera is one of ours.
+                if (this.GetCameraList().contains(cam)) {
+                    ResultStruct rc = new ResultStruct();
+                    if (this.cm.containsKey(event)) {
+                        logger.info("processing camera message {}", event);
+                        APIBase api = this.cm.get(event);
+                        rc = api.Process(httpHelper, conn, this.svrState.topicPrefix, bits, payload);
                     } else {
-                        logger.error("Trigger event ignored, invalid topic string '{}'", topic);
+                        // this can be posted back to the cam as an error, we don't have a
+                        // handler.
+                        rc.rc = false;
+                        rc.message = String.format("event {} ignored - no handler", event);
+                        logger.info("{}", rc.message);
+                        String errFormat = String.format("{\"success\":false,\"message\":\"%s\"}", rc.message);
+                        String camResultTopic = this.svrState.topicPrefix + "/" + cam + "/" + event;
+                        conn.publish(camResultTopic, errFormat.getBytes(), 1, false);
                     }
                 } else {
-                    logger.info("event {} ignored - no handler", event);
+                    // this is just logged as error
+                    logger.error("cam {} is not in our list", cam);
                 }
-            } // else this is a keepalive or a server message: silently ignore it for now.
+            } 
+            // else this is not a cam message, silently ignore
         } else {
             logger.warn("event ignored, server offline");
         }

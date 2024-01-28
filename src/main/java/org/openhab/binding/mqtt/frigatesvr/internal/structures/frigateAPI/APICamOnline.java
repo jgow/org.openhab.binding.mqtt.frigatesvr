@@ -34,7 +34,6 @@ public class APICamOnline extends APIBase {
 
     private final Logger logger = LoggerFactory.getLogger(APICamOnline.class);
 
-    String cam = "";
     frigateSVRServerState svrState;
 
     public APICamOnline(frigateSVRServerState svrState) {
@@ -54,7 +53,11 @@ public class APICamOnline extends APIBase {
         return rc;
     }
 
-    public ResultStruct Process(frigateSVRHTTPHelper httpHelper, MqttBrokerConnection connection, String topicPrefix) {
+    public ResultStruct Process(frigateSVRHTTPHelper httpHelper, MqttBrokerConnection connection, String topicPrefix,
+            String[] bits, String payload) {
+
+        // The online messages are published differently, so we don't use the base class
+        // Publishxxxx members.
 
         connection.publish(topicPrefix + "/status", this.svrState.GetJsonString().getBytes(), 1, false);
         return new ResultStruct(true, "ok");

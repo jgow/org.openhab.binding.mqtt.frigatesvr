@@ -117,6 +117,7 @@ public class frigateSVRBindingConstants {
     public static final String MQTT_ONLINE_SUFFIX = "camOnLine";
     public static final String MQTT_EVTTRIGGER_SUFFIX = "TriggerEvent";
     public static final String MQTT_GETLASTFRAME_SUFFIX = "GetLastFrame";
+    public static final String MQTT_GETTHUMBNAIL_SUFFIX = "GetThumbnail";
     public static final String MQTT_GETRECORDINGSUMMARY_SUFFIX = "GetRecordingSummary";
     public static final String MQTT_DETECTION_SET = "detect/set";
     public static final String MQTT_DETECTION_GET = "detect/state";
@@ -134,6 +135,7 @@ public class frigateSVRBindingConstants {
     public static final String MQTT_MOTIONCONTOUR_GET = "motion_contour_area/state";
     public static final String MQTT_MOTION = "motion";
     public static final String MQTT_CAMACTIONRESULT = "CameraActionResult";
+    public static final String MQTT_CAMIMAGERESULT = "lastFrame";
 
     // config properties
     public static final String CONF_ID_UNIQUE = "uniqueID";

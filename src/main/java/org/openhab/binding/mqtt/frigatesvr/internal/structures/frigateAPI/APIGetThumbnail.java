@@ -29,22 +29,30 @@ import org.slf4j.LoggerFactory;
  * @author J Gow - Initial contribution
  */
 @NonNullByDefault
-public class APIGetRecordingSummary extends APIBase {
+public class APIGetThumbnail extends APIBase {
 
-    private final Logger logger = LoggerFactory.getLogger(APIGetRecordingSummary.class);
+    private String label = "";
 
-    public APIGetRecordingSummary() {
-        super(MQTT_GETRECORDINGSUMMARY_SUFFIX);
+    private final Logger logger = LoggerFactory.getLogger(APIGetThumbnail.class);
+
+    public APIGetThumbnail() {
+        super(MQTT_GETTHUMBNAIL_SUFFIX);
+    }
+
+    public APIGetThumbnail(String label) {
+        super(MQTT_GETTHUMBNAIL_SUFFIX);
+        this.label = label;
     }
 
     public ResultStruct ParseFromBits(String[] bits, @Nullable String payload) {
         ResultStruct rc = new ResultStruct();
-        if (bits.length == 4) {
+        if (bits.length == 5) {
             this.cam = bits[2];
-            // nothing here to validate.
-            rc.rc = true;
+            this.label = bits[4];
+            this.payload = ""; // payload is unused, only use label
+            rc = this.Validate(); // in case the message was sent in from elsewhere
         } else {
-            rc.message = "internal communication error";
+            rc.message = "invalid topic string";
         }
         return rc;
     }
@@ -53,22 +61,33 @@ public class APIGetRecordingSummary extends APIBase {
             String[] bits, String payload) {
 
         ResultStruct rc = ParseFromBits(bits, payload);
-
         if (rc.rc) {
-            String apiCall = "/api/" + cam + "/recordings/summary";
-            logger.info("posting: GET '{}'", apiCall);
-            rc = httpHelper.runGet(apiCall);
+            String call = "/api/" + cam + "/" + label + "/thumbnail.jpg";
+            logger.info("posting: GET '{}'", call);
+            rc = httpHelper.runGet(call);
         }
-        PublishResult(connection, topicPrefix, rc);
+        PublishResultWithImage(connection, topicPrefix, rc);
         return rc;
     }
 
+    @SuppressWarnings("null")
     public ResultStruct Validate() {
-        // nothing to validate on the input side.
-        return new ResultStruct(true, "ok");
+        ResultStruct rc = new ResultStruct();
+        if (label != null) {
+            if (!label.isBlank() && !label.isEmpty() && label.matches("^[A-Za-z0-9]+$")) {
+                // payload is not used
+                rc.rc = true;
+                rc.message = "arguments valid";
+            } else {
+                rc.message = "invalid event label";
+            }
+        } else {
+            rc.message = "event label null";
+        }
+        return rc;
     }
 
     protected String BuildTopicSuffix() {
-        return eventID;
+        return eventID + "/" + label;
     }
 }

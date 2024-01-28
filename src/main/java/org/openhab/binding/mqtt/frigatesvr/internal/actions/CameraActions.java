@@ -21,6 +21,7 @@ import org.openhab.binding.mqtt.frigatesvr.internal.handlers.frigateSVRCameraHan
 import org.openhab.binding.mqtt.frigatesvr.internal.helpers.ResultStruct;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIGetLastFrame;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIGetRecordingSummary;
+import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIGetThumbnail;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APITriggerEvent;
 import org.openhab.core.automation.annotation.ActionInput;
 import org.openhab.core.automation.annotation.ActionOutput;
@@ -70,7 +71,7 @@ public class CameraActions implements ThingActions {
     //
     // Static member function is provided for older OH variants.
 
-    @RuleAction(label = "TriggerEvent", description = "Trigger event on camera")
+    @RuleAction(label = "TriggerEvent", description = "@text/action.TriggerEvent.description")
     @ActionOutput(name = "rc", label = "@text/action.TriggerEvent.rc.label", description = "@text/action.TriggerEvent.rc.description", type = "java.util.List<String>")
     @ActionOutput(name = "message", label = "@text/action.TriggerEvent.desc.label", description = "@text/action.TriggerEvent.desc.description", type = "java.util.List<String>")
     public Map<String, Object> TriggerEvent(
@@ -115,7 +116,7 @@ public class CameraActions implements ThingActions {
     @ActionOutput(name = "rc", label = "@text/action.GetLastFrame.rc.label", description = "@text/action.GetLastFrame.rc.description", type = "java.util.List<String>")
     @ActionOutput(name = "message", label = "@text/action.GetLastFrame.desc.label", description = "@text/action.GetLastFrame.desc.description", type = "java.util.List<String>")
     public Map<String, Object> GetLastFrame(
-            @ActionInput(name = "eventParams", label = "@text/action.TriggerEvent.GetLastFrame.label", description = "@text/action.TriggerEvent.GetLastFrame.description") @Nullable String eventParams) {
+            @ActionInput(name = "eventParams", label = "@text/action.GetLastFrame.eventParams.label", description = "@text/action.GetLastFrame.eventParams.description") @Nullable String eventParams) {
         ResultStruct rc = new ResultStruct();
         if (this.handler != null) {
             logger.debug("Action triggered: label GetLastFrame: {}", eventParams);
@@ -162,6 +163,45 @@ public class CameraActions implements ThingActions {
     public static Map<String, Object> GetRecordingSummary(@Nullable ThingActions actions, @Nullable String params) {
         if (actions instanceof CameraActions) {
             return ((CameraActions) actions).GetRecordingSummary();
+        } else {
+            throw new IllegalArgumentException("Instance is not a CameraActions class.");
+        }
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // GetThumbnail
+    //
+    // Retrieve the thumbnail for this camera from the event label. Use 'any'
+    // as the label to get the latest
+    //
+    // OH architecture does not seem to provide a means for Things to speak
+    // to each other directly (indeed seems to be discouraged). Due to this
+    // omission, the result is that we process the action asynchronously.
+    //
+    // Static member function is provided for older OH variants.
+
+    @RuleAction(label = "GetThumbnail", description = "Get thumbnail for event")
+    @ActionOutput(name = "rc", label = "@text/action.GetThumbnail.rc.label", description = "@text/action.GetThumbnail.rc.description", type = "java.util.List<String>")
+    @ActionOutput(name = "message", label = "@text/action.GetThumbnail.desc.label", description = "@text/action.GetThumbnail.desc.description", type = "java.util.List<String>")
+    public Map<String, Object> GetThumbnail(
+            @ActionInput(name = "eventLabel", label = "@text/action.GetThumbnail.eventLabel.label", description = "@text/action.GetThumbnail.eventLabel.description") @Nullable String eventLabel) {
+        ResultStruct rc = new ResultStruct();
+        if (this.handler != null) {
+            logger.debug("Action triggered: label {}", eventLabel);
+            if (eventLabel != null) {
+                rc = this.handler.SendActionEvent(new APIGetThumbnail(eventLabel));
+            } else {
+                rc.message = "error: event ID label is null";
+            }
+        } else {
+            rc.message = "action not processed; no handler";
+        }
+        return rc.toMap();
+    }
+
+    public static Map<String, Object> GetThumbnail(@Nullable ThingActions actions, @Nullable String eventLabel) {
+        if (actions instanceof CameraActions) {
+            return ((CameraActions) actions).GetThumbnail(eventLabel);
         } else {
             throw new IllegalArgumentException("Instance is not a CameraActions class.");
         }

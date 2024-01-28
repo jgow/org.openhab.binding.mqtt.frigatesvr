@@ -25,8 +25,6 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
 
 /**
  * The {@link mqtt.frigateSVRConfiguration} class contains mappings to the
@@ -37,12 +35,7 @@ import com.google.gson.annotations.SerializedName;
 @NonNullByDefault
 public class APITriggerEvent extends APIBase {
 
-    @Expose
-    @SerializedName("label")
-    @Nullable
-    private String label = null;
-
-    private String cam = "";
+    private String label = "";
 
     private final Logger logger = LoggerFactory.getLogger(APITriggerEvent.class);
 
@@ -52,10 +45,10 @@ public class APITriggerEvent extends APIBase {
 
     public APITriggerEvent(String label, @Nullable String payload) {
         super(MQTT_EVTTRIGGER_SUFFIX);
-        this.payload = payload;
+        this.label = label;
     }
 
-    public ResultStruct ParseFromBits(String[] bits, @Nullable String payload) {
+    public ResultStruct ParseFromBits(String[] bits, String payload) {
         ResultStruct rc = new ResultStruct();
         if (bits.length == 5) {
             this.cam = bits[2];
@@ -73,20 +66,16 @@ public class APITriggerEvent extends APIBase {
         return rc;
     }
 
-    public ResultStruct Process(frigateSVRHTTPHelper httpHelper, MqttBrokerConnection connection, String topicPrefix) {
+    public ResultStruct Process(frigateSVRHTTPHelper httpHelper, MqttBrokerConnection connection, String topicPrefix,
+            String[] bits, String payload) {
 
-        ResultStruct rc = new ResultStruct();
-        logger.info("posting: POST '{}'", "/api/events/" + cam + "/" + label + "/create");
-        rc = httpHelper.runPost("/api/events/" + cam + "/" + label + "/create", payload);
-
-        String camTopicPrefix = topicPrefix + "/" + cam + "/" + MQTT_CAMACTIONRESULT;
+        ResultStruct rc = ParseFromBits(bits, payload);
         if (rc.rc) {
-            logger.info("event trigger response returned {}", rc.message);
-            connection.publish(camTopicPrefix, rc.raw, 1, false);
-        } else {
-            String errFormat = String.format("{\"success\":false,\"message\":\"%s\"}", rc.message);
-            connection.publish(camTopicPrefix, errFormat.getBytes(), 1, false);
+            String call = "/api/events/" + cam + "/" + label + "/create";
+            logger.info("posting: POST '{}'", call);
+            rc = httpHelper.runPost(call, payload);
         }
+        PublishResult(connection, topicPrefix, rc);
         return rc;
     }
 

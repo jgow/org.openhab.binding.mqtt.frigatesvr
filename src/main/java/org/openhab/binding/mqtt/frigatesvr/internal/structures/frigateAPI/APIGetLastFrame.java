@@ -14,7 +14,6 @@ package org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI;
 
 import static org.openhab.binding.mqtt.frigatesvr.internal.frigateSVRBindingConstants.*;
 
-import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.mqtt.frigatesvr.internal.helpers.ResultStruct;
@@ -37,18 +36,18 @@ public class APIGetLastFrame extends APIBase {
 
     private final Logger logger = LoggerFactory.getLogger(APIGetLastFrame.class);
 
-    private String cam = "";
-
     public APIGetLastFrame() {
         super(MQTT_GETLASTFRAME_SUFFIX);
     }
 
     public APIGetLastFrame(@Nullable String payload) {
         super(MQTT_GETLASTFRAME_SUFFIX);
-        this.payload = payload;
+        if (payload != null) {
+            this.payload = payload;
+        }
     }
 
-    public ResultStruct ParseFromBits(String[] bits, @Nullable String payload) {
+    public ResultStruct ParseFromBits(String[] bits, String payload) {
         ResultStruct rc = new ResultStruct();
         if (bits.length == 4) {
             if (bits[3].equals(MQTT_GETLASTFRAME_SUFFIX)) {
@@ -75,33 +74,20 @@ public class APIGetLastFrame extends APIBase {
         return rc;
     }
 
-    public ResultStruct Process(frigateSVRHTTPHelper httpHelper, MqttBrokerConnection connection, String topicPrefix) {
+    public ResultStruct Process(frigateSVRHTTPHelper httpHelper, MqttBrokerConnection connection, String topicPrefix,
+            String[] bits, String payload) {
 
-        ResultStruct rc = new ResultStruct();
-        logger.info("server: processing camera last frame request for {}", cam);
-        String call = "/api/" + cam + "/latest.jpg";
-        // ---------
-        // TODO: parse out payload
-        // if (!payload.equals("")) {
-        // call += "?" + payload;
-        // }
-        // TODO ---
-        // --------
-        rc = httpHelper.runGet(call);
-        String camTopicPrefix = topicPrefix + "/" + cam + "/" + MQTT_CAMACTIONRESULT;
-        logger.info("publishing state to {}", camTopicPrefix);
-        if (rc.rc == true) {
-            String imagePrefix = topicPrefix + "/" + cam + "/lastFrame";
-            logger.info("publishing image to {}", imagePrefix);
-            connection.publish(imagePrefix, rc.raw, 1, false);
+        ResultStruct rc = ParseFromBits(bits, payload);
 
-            String errFormat = String.format("{\"success\":true,\"message\":\"%s\"}", rc.message);
-            connection.publish(camTopicPrefix, errFormat.getBytes(), 1, false);
-        } else {
-            logger.error("failed call to GetLastFrame: rc message {}", rc.message);
-            String errFormat = String.format("{\"success\":false,\"message\":\"%s\"}", rc.message);
-            connection.publish(camTopicPrefix, errFormat.getBytes(), 1, false);
+        if (rc.rc) {
+            logger.info("server: processing camera last frame request for {}", cam);
+            rc = ParseJSONQueryString(payload);
+            if (rc.rc) {
+                String call = "/api/" + cam + "/latest.jpg" + rc.message;
+                rc = httpHelper.runGet(call);
+            }
         }
+        PublishResultWithImage(connection, topicPrefix, rc);
         return rc;
     }
 
@@ -110,8 +96,8 @@ public class APIGetLastFrame extends APIBase {
         ResultStruct rc = new ResultStruct();
         // We just extract our query string from the JSON payload, null is ok.
         try {
-            if (payload != null && !payload.isEmpty()) {
-                JsonParser.parseString((@NonNull String) payload);
+            if (!payload.isEmpty()) {
+                JsonParser.parseString(payload);
             }
             rc.rc = true;
             rc.message = "arguments valid";
