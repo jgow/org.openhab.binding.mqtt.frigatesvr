@@ -73,16 +73,12 @@ public class APIGetThumbnail extends APIBase {
     @SuppressWarnings("null")
     public ResultStruct Validate() {
         ResultStruct rc = new ResultStruct();
-        if (label != null) {
-            if (!label.isBlank() && !label.isEmpty() && label.matches("^[A-Za-z0-9]+$")) {
-                // payload is not used
-                rc.rc = true;
-                rc.message = "arguments valid";
-            } else {
-                rc.message = "invalid event label";
-            }
+        if (!label.isBlank() && !label.isEmpty() && label.matches("^[A-Za-z0-9]+$")) {
+            // payload is not used
+            rc.rc = true;
+            rc.message = "arguments valid";
         } else {
-            rc.message = "event label null";
+            rc.message = "invalid event label";
         }
         return rc;
     }

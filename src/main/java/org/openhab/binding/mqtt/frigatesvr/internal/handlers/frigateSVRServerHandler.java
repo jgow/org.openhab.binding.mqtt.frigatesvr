@@ -438,7 +438,9 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
                     if (this.cm.containsKey(event)) {
                         logger.info("processing camera message {}", event);
                         APIBase api = this.cm.get(event);
-                        rc = api.Process(httpHelper, conn, this.svrState.topicPrefix, bits, payload);
+                        if (api != null) { // should never happen
+                            rc = api.Process(httpHelper, conn, this.svrState.topicPrefix, bits, payload);
+                        }
                     } else {
                         // this can be posted back to the cam as an error, we don't have a
                         // handler.
@@ -453,7 +455,7 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
                     // this is just logged as error
                     logger.error("cam {} is not in our list", cam);
                 }
-            } 
+            }
             // else this is not a cam message, silently ignore
         } else {
             logger.warn("event ignored, server offline");

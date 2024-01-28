@@ -82,25 +82,21 @@ public class APITriggerEvent extends APIBase {
     @SuppressWarnings("null")
     public ResultStruct Validate() {
         ResultStruct rc = new ResultStruct();
-        if (label != null) {
-            if (!label.isBlank() && !label.isEmpty() && label.matches("^[A-Za-z0-9]+$")) {
-                // our parameters are ok, check the JSON provided as payload is also valid. A null or blank
-                // payload is ok. We don't use it, just check it is valid JSON before we fire it off. We let
-                // Frigate do the content checking.
-                try {
-                    if (payload != null) {
-                        JsonParser.parseString((@NonNull String) payload);
-                    }
-                    rc.rc = true;
-                    rc.message = "arguments valid";
-                } catch (JsonSyntaxException e) {
-                    rc.message = e.toString();
+        if (!label.isBlank() && !label.isEmpty() && label.matches("^[A-Za-z0-9]+$")) {
+            // our parameters are ok, check the JSON provided as payload is also valid. A null or blank
+            // payload is ok. We don't use it, just check it is valid JSON before we fire it off. We let
+            // Frigate do the content checking.
+            try {
+                if (payload != null) {
+                    JsonParser.parseString((@NonNull String) payload);
                 }
-            } else {
-                rc.message = "invalid event label";
+                rc.rc = true;
+                rc.message = "arguments valid";
+            } catch (JsonSyntaxException e) {
+                rc.message = e.toString();
             }
         } else {
-            rc.message = "event label null";
+            rc.message = "invalid event label";
         }
         return rc;
     }
