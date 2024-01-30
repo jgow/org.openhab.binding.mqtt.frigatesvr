@@ -106,7 +106,6 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
         }
         this.httpHelper.configure(this.httpClient, baseurl);
 
-        this.svrTopicPrefix = "frigateSVR/" + this.getThing().getUID().getAsString();
         this.svrState.status = "offline";
         this.svrState.topicPrefix = "frigate";
         this.svrState.url = this.httpHelper.getBaseURL();
@@ -114,6 +113,8 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
         this.svrState.Cameras = new ArrayList<>();
         this.svrState.whitelist = config.streamWhitelist;
         this.svrState.ffmpegPath = config.ffmpegLocation;
+        this.svrState.serverThingID = this.getThing().getUID().getAsString();
+        this.svrTopicPrefix = "frigateSVR/" + this.svrState.serverThingID;
 
         updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING);
         super.initialize();
@@ -131,10 +132,6 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
         this.svrState.status = "offline";
         UnsubscribeMQTTTopics(this.MQTTTopicPrefix);
         if (this.MQTTConnection != null) {
-            // ((@NonNull MqttBrokerConnection) this.MQTTConnection)
-            // .unsubscribe(this.svrTopicPrefix + "/" + MQTT_ONLINE_SUFFIX, this);
-            // ((@NonNull MqttBrokerConnection) this.MQTTConnection)
-            // .unsubscribe(this.svrTopicPrefix + "/" + MQTT_EVTTRIGGER_SUFFIX + "/#", this);
             ((@NonNull MqttBrokerConnection) this.MQTTConnection).unsubscribe(this.svrTopicPrefix + "/#", this);
             ((@NonNull MqttBrokerConnection) this.MQTTConnection).publish(this.svrTopicPrefix + "/status",
                     this.svrState.GetJsonString().getBytes(), 1, false);
@@ -233,7 +230,9 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
                 this.StartStream();
 
                 logger.debug("publishing status message on {}/status", this.svrTopicPrefix);
-                ((@NonNull MqttBrokerConnection) MQTTConnection).publish(this.svrTopicPrefix + "/status",
+
+                ((@NonNull MqttBrokerConnection) MQTTConnection).publish(
+                        this.svrTopicPrefix + "/" + this.getThing().getUID().getAsString() + "/status",
                         this.svrState.GetJsonString().getBytes(), 1, false);
 
                 updateState(CHANNEL_API_VERSION,
@@ -263,7 +262,8 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
                     this.httpServlet.StopServer();
                     updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, "@text/error.servercomm");
                     this.svrState.status = "offline";
-                    ((@NonNull MqttBrokerConnection) MQTTConnection).publish(this.svrTopicPrefix + "/status",
+                    ((@NonNull MqttBrokerConnection) MQTTConnection).publish(
+                            this.svrTopicPrefix + "/" + this.getThing().getUID().getAsString() + "/status",
                             this.svrState.GetJsonString().getBytes(), 1, false);
                 } else {
 
@@ -299,8 +299,6 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
         }
         servercheck = scheduler.scheduleWithFixedDelay(this::CheckServerAccessThread, 0, keepalive, TimeUnit.SECONDS);
         logger.debug("subscribing to SVR topics");
-        // connection.subscribe(this.svrTopicPrefix + "/" + MQTT_ONLINE_SUFFIX, this);
-        // connection.subscribe(this.svrTopicPrefix + "/" + MQTT_EVTTRIGGER_SUFFIX + "/#", this);
         connection.subscribe(this.svrTopicPrefix + "/#", this);
         updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING);
     }
@@ -386,9 +384,6 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
         if (this.MQTTConnection != null) {
             ((@NonNull MqttBrokerConnection) this.MQTTConnection).subscribe(prefix + "/" + MQTT_AVAILABILITY_SUFFIX,
                     this);
-            // ((@NonNull MqttBrokerConnection) this.MQTTConnection).subscribe(prefix + "/" + MQTT_EVTTRIGGER_SUFFIX,
-            // this);
-            // ((@NonNull MqttBrokerConnection) this.MQTTConnection).subscribe(this.svrTopicPrefix + "/#", this);
         }
     }
 
@@ -399,8 +394,6 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
 
     private void UnsubscribeMQTTTopics(String prefix) {
         if (this.MQTTConnection != null) {
-            // ((@NonNull MqttBrokerConnection) this.MQTTConnection).unsubscribe(prefix + "/" + MQTT_EVTTRIGGER_SUFFIX,
-            // this);
             ((@NonNull MqttBrokerConnection) this.MQTTConnection).unsubscribe(prefix + "/" + MQTT_AVAILABILITY_SUFFIX,
                     this);
         }

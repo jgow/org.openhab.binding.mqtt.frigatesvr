@@ -56,10 +56,12 @@ public class APICamOnline extends APIBase {
     public ResultStruct Process(frigateSVRHTTPHelper httpHelper, MqttBrokerConnection connection, String topicPrefix,
             String[] bits, String payload) {
 
+        logger.info("topic prefix in process {}", topicPrefix);
         // The online messages are published differently, so we don't use the base class
         // Publishxxxx members.
-
-        connection.publish(topicPrefix + "/status", this.svrState.GetJsonString().getBytes(), 1, false);
+        String topic = "frigateSVR/" + this.svrState.serverThingID + "/" + this.svrState.serverThingID + "/status";
+        connection.publish(topic, this.svrState.GetJsonString().getBytes(), 1, false);
+        logger.info("publishing status to {}", topic);
         return new ResultStruct(true, "ok");
     }
 

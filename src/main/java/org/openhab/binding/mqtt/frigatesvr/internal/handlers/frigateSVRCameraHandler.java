@@ -399,14 +399,16 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
 
     protected void BridgeGoingOnline(MqttBrokerConnection connection) {
 
-        ((@NonNull MqttBrokerConnection) this.MQTTConnection).subscribe(this.svrTopicPrefix + "/status", this);
-        logger.debug("publishing req. for status: {}", this.svrTopicPrefix + "/" + MQTT_ONLINE_SUFFIX);
+        String topic = this.svrTopicPrefix + "/" + this.config.serverID + "/status";
+        ((@NonNull MqttBrokerConnection) this.MQTTConnection).subscribe(topic, this);
 
         // tell the server we are going online
 
         String onlineTopic = this.svrTopicPrefix + "/" + this.config.cameraName + "/" + MQTT_ONLINE_SUFFIX;
+        logger.debug("publishing req. for status: {}", onlineTopic);
         ((@NonNull MqttBrokerConnection) this.MQTTConnection).publish(onlineTopic, new String("online").getBytes(), 1,
                 false);
+
         updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING);
     }
 
@@ -594,8 +596,8 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
         // are offline until the first of these messages arrives and lets us
         // know the server is online
 
-        if (topic.equals(this.svrTopicPrefix + "/status")) {
-            logger.debug("received status update on {}/status", this.svrTopicPrefix);
+        if (topic.equals(this.svrTopicPrefix + "/" + config.serverID + "/status")) {
+            logger.debug("received status update on /status");
             String evtJSON = new String(payload, StandardCharsets.UTF_8);
             frigateSVRServerState newState = new Gson().fromJson(evtJSON, frigateSVRServerState.class);
             this.HandleServerStateChange((@NonNull frigateSVRServerState) newState);

@@ -42,6 +42,8 @@ public class frigateSVRServerState {
     public String whitelist = "DISABLED";
     @SerializedName("ffmpegPath")
     public String ffmpegPath = "/usr/bin/ffmpeg";
+    @SerializedName("serverThingID")
+    public String serverThingID = "";
 
     public String GetJsonString() {
         return new GsonBuilder().create().toJson(this);
