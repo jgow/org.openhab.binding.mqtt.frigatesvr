@@ -34,8 +34,8 @@ public class frigateSVRServerState {
     public String url = ""; // camera name
     @SerializedName("rtspbase")
     public String rtspbase = "";
-    @SerializedName("topicPrefix")
-    public String topicPrefix = "";
+    @SerializedName("pfxSvrMsg")
+    public String pfxSvrMsg = "";
     @SerializedName("Cameras")
     public ArrayList<String> Cameras = new ArrayList<String>();
     @SerializedName("whitelist")

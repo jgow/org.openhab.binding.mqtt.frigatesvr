@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.client.HttpClient;
 import org.openhab.binding.mqtt.frigatesvr.internal.actions.CameraActions;
 import org.openhab.binding.mqtt.frigatesvr.internal.helpers.ResultStruct;
@@ -60,8 +61,13 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     private final Logger logger = LoggerFactory.getLogger(frigateSVRCameraHandler.class);
     private frigateSVRCameraConfiguration config = new frigateSVRCameraConfiguration();
     private frigateSVRServerState svrState = new frigateSVRServerState();
-    private String svrTopicPrefix = "frigate/";
-    private String cameraTopicPrefix = new String();
+    // private String svrTopicPrefix = "frigate/";
+    // private String cameraTopicPrefix = new String();
+    private String camID = "";
+    private String pfxSvrAll = "frigateSVR/";
+    private String pfxCamToSvr = "";
+    private String pfxSvrToCam = "";
+    private String pfxFrigateToCam = "";
     private boolean firstInit = true;
 
     // makes for easy change if Frigate ever extend the API
@@ -341,9 +347,42 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
 
     @Override
     public void initialize() {
+
         config = getConfigAs(frigateSVRCameraConfiguration.class);
-        this.svrTopicPrefix = "frigateSVR/" + config.serverID;
-        logger.debug("marking camera config pending");
+
+        this.camID = this.getThing().getUID().getAsString();
+
+        // MQTT PREFIXES
+        // -------------
+
+        // Prefix for messages originating from the server Thing and intended for all cameras.
+        //
+        // frigateSVR/<serverThingID>/<serverThingID>/
+
+        this.pfxSvrAll = "frigateSVRALL/" + config.serverID + "/" + config.serverID; // messages serverThing->all
+
+        //
+        // Prefix for messages originating from the frigate server itself
+        // This needs to be updated from Frigate server config for multiple
+        // Frigate server configurations
+        //
+        // this is obtained from the server state message when the server
+        // becomes available: this.svrState.pfxSvrMsg = "frigate";
+
+        // Prefix for messages originating from cameras and destined for us. We append
+        // the camera ID:
+        //
+        // frigateSVR/<serverThingID>/<cameraThingID>/
+
+        this.pfxCamToSvr = "frigateSVR/" + config.serverID + "/" + camID;
+
+        // Prefix for messages originating from the server Thing and intended for a specific camera
+        // We can fully construct this here
+        //
+        // frigateSVR/<cameraThingID>/<serverThingID>/
+
+        this.pfxSvrToCam = "frigateSVR/" + camID + "/" + config.serverID;
+
         this.SetOffline();
         updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING);
         super.initialize();
@@ -356,8 +395,8 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     @Override
     public void dispose() {
         if (this.MQTTConnection != null) {
-            UnsubscribeMQTTTopics(this.svrState.topicPrefix);
-            ((@NonNull MqttBrokerConnection) this.MQTTConnection).unsubscribe(this.svrTopicPrefix + "/status", this);
+            UnsubscribeMQTTTopics();
+            ((@NonNull MqttBrokerConnection) this.MQTTConnection).unsubscribe(this.pfxSvrAll + "/#", this);
         }
         super.dispose();
     }
@@ -375,7 +414,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
             rc = action.Validate();
             if (rc.rc) {
                 rc = action.ResQueueMessageToServer((@NonNull MqttBrokerConnection) this.MQTTConnection,
-                        this.svrTopicPrefix, this.config.cameraName);
+                        this.pfxCamToSvr, this.config.cameraName);
             }
         }
         return rc;
@@ -388,6 +427,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     // to update the state here and stop the streaming server
 
     protected void BridgeGoingOffline() {
+        // we won't have an MQTT connection here, so no need to unsub.
         this.httpServlet.StopServer();
         this.svrState.status = "offline";
     }
@@ -399,17 +439,22 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
 
     protected void BridgeGoingOnline(MqttBrokerConnection connection) {
 
-        String topic = this.svrTopicPrefix + "/" + this.config.serverID + "/status";
-        ((@NonNull MqttBrokerConnection) this.MQTTConnection).subscribe(topic, this);
+        @Nullable
+        MqttBrokerConnection conn = this.MQTTConnection;
 
-        // tell the server we are going online
+        if (conn != null) {
+            String topic = this.pfxSvrAll + "/#";
+            conn.subscribe(topic, this);
 
-        String onlineTopic = this.svrTopicPrefix + "/" + this.config.cameraName + "/" + MQTT_ONLINE_SUFFIX;
-        logger.debug("publishing req. for status: {}", onlineTopic);
-        ((@NonNull MqttBrokerConnection) this.MQTTConnection).publish(onlineTopic, new String("online").getBytes(), 1,
-                false);
+            // tell the server we are going online
 
-        updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING);
+            String onlineTopic = this.pfxCamToSvr + "/" + MQTT_ONLINE_SUFFIX;
+            logger.debug("cam going online: requesting status: {}", onlineTopic);
+            conn.publish(onlineTopic, new String("online").getBytes(), 1, false);
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING, "waiting for status");
+        } else {
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, "MQTT broker failure");
+        }
     }
 
     ///////////////////////////////////////////////////////////////////
@@ -453,11 +498,12 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
                     // we are ok.
 
                     this.svrState = newState;
-                    this.cameraTopicPrefix = this.svrState.topicPrefix + "/" + config.cameraName + "/";
+
+                    this.pfxFrigateToCam = this.svrState.pfxSvrMsg + "/" + config.cameraName + "/";
 
                     // subscribe to MQTT, start the camera stream, and flag us online
 
-                    SubscribeMQTTTopics(this.svrState.topicPrefix);
+                    SubscribeMQTTTopics();
                     StartCameraStream();
                     updateStatus(ThingStatus.ONLINE);
                 } else {
@@ -508,11 +554,11 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     ////////////////////////////////////////////////
     // ProcessCommand
     //
-    // Send an MQTT string to the camera.
+    // Send an MQTT string to the Frigate server.
 
     protected void ProcessCommand(String suffix, String command) {
         if (this.MQTTConnection != null) {
-            String topic = this.svrState.topicPrefix + "/" + config.cameraName + "/" + suffix;
+            String topic = this.svrState.pfxSvrMsg + "/" + config.cameraName + "/" + suffix;
             ((@NonNull MqttBrokerConnection) this.MQTTConnection).publish(topic, command.getBytes(), 1, false);
         }
     }
@@ -524,17 +570,14 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     // topics other than the server status messages. In other words,
     // all MQTT messages originating from Frigate
 
-    private void SubscribeMQTTTopics(String prefix) {
+    private void SubscribeMQTTTopics() {
         MqttBrokerConnection conn = this.MQTTConnection;
         if (conn != null) {
-            // - initially the keepalives
-            conn.subscribe(this.svrTopicPrefix + "/" + MQTT_KEEPALIVE_SUFFIX, this);
-            conn.subscribe(this.svrState.topicPrefix + "/events", this);
-            // - and then all snapshots intended for this cam.
-            conn.subscribe(this.svrState.topicPrefix + "/" + MQTT_STATS_SUFFIX, this);
-            conn.subscribe(this.cameraTopicPrefix + "+/snapshot", this);
-            conn.subscribe(this.cameraTopicPrefix + "lastFrame", this);
-            this.MQTTGettersToChannels.forEach((m, ch) -> conn.subscribe(this.cameraTopicPrefix + m, this));
+            conn.subscribe(this.pfxSvrToCam + "/" + "lastFrame", this);
+            conn.subscribe(this.svrState.pfxSvrMsg + "/" + MQTT_EVENTS_SUFFIX, this);
+            conn.subscribe(this.svrState.pfxSvrMsg + "/" + MQTT_STATS_SUFFIX, this);
+            conn.subscribe(this.pfxFrigateToCam + "+/snapshot", this);
+            this.MQTTGettersToChannels.forEach((m, ch) -> conn.subscribe(this.pfxFrigateToCam + "/" + m, this));
         }
     }
 
@@ -544,17 +587,16 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     // Called when offlined to unsubscribe the MQTT topics originating
     // from Frigate itself, rather than from the server Thing.
 
-    private void UnsubscribeMQTTTopics(String prefix) {
+    private void UnsubscribeMQTTTopics() {
 
         MqttBrokerConnection conn = this.MQTTConnection;
         if (conn != null) {
             // snapshot state
-            this.MQTTGettersToChannels.forEach((m, ch) -> conn.unsubscribe(this.cameraTopicPrefix + m, this));
-            conn.unsubscribe(this.cameraTopicPrefix + "lastFrame", this);
-            conn.unsubscribe(this.cameraTopicPrefix + "+/snapshot", this);
-            conn.unsubscribe(this.svrState.topicPrefix + "/" + MQTT_STATS_SUFFIX, this);
-            conn.unsubscribe(this.svrState.topicPrefix + "/events", this);
-            conn.unsubscribe(this.svrTopicPrefix + "/" + MQTT_KEEPALIVE_SUFFIX, this);
+            this.MQTTGettersToChannels.forEach((m, ch) -> conn.unsubscribe(this.pfxFrigateToCam + "/" + m, this));
+            conn.unsubscribe(this.pfxFrigateToCam + "+/snapshot", this);
+            conn.unsubscribe(this.svrState.pfxSvrMsg + "/" + MQTT_STATS_SUFFIX, this);
+            conn.unsubscribe(this.svrState.pfxSvrMsg + "/" + MQTT_EVENTS_SUFFIX, this);
+            conn.unsubscribe(this.pfxSvrToCam + "/lastFrame", this);
         }
     }
 
@@ -570,7 +612,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
         logger.info("camera: SetOffline called, stopping streamer");
         this.httpServlet.StopServer();
         if (!firstInit) {
-            UnsubscribeMQTTTopics(this.svrState.topicPrefix);
+            UnsubscribeMQTTTopics();
         }
         this.svrState.status = "offline";
         logger.debug("offlining device");
@@ -588,164 +630,213 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
 
         String state = new String(payload, StandardCharsets.UTF_8);
 
-        //
-        // Server status messages
-        //
-        // When the Frigate server goes on/offline, we are sent a status message
-        // to enable us to speak both with the server and with our cameras. We
-        // are offline until the first of these messages arrives and lets us
-        // know the server is online
+        do {
 
-        if (topic.equals(this.svrTopicPrefix + "/" + config.serverID + "/status")) {
-            logger.debug("received status update on /status");
-            String evtJSON = new String(payload, StandardCharsets.UTF_8);
-            frigateSVRServerState newState = new Gson().fromJson(evtJSON, frigateSVRServerState.class);
-            this.HandleServerStateChange((@NonNull frigateSVRServerState) newState);
-        }
+            // Common messages from server Things - must be handled whether marked on or offline
 
-        // Keepalives
-        //
-        // We take our keepalive cue from the server keepalive thread.
+            if (topic.startsWith(this.pfxSvrAll + "/")) {
 
-        if (topic.equals(this.svrTopicPrefix + "/" + MQTT_KEEPALIVE_SUFFIX)) {
-            this.httpServlet.PokeMe();
-        }
+                String action = topic.substring(this.pfxSvrAll.length() + 1);
+                logger.debug("Received trimmed server message {}", action);
 
-        // if we are marked offline, do not handle these.
+                //
+                // Server status messages
+                //
+                // When the Frigate server Thing goes on/offline, we are sent a status message
+                // to enable us to speak both with the server and with our cameras. We
+                // are offline until the first of these messages arrives and lets us
+                // know the server is online
 
-        if (this.getThing().getStatus().equals(ThingStatus.ONLINE)) {
-
-            // Camera stats
-            //
-
-            if (topic.equals(this.svrState.topicPrefix + "/" + MQTT_STATS_SUFFIX)) {
-                JsonObject statObj = JsonParser.parseString(state).getAsJsonObject();
-                if (statObj.has(config.cameraName)) {
-                    logger.debug("have status for camera {}", config.cameraName);
-                    JsonObject statusBlock = statObj.get(config.cameraName).getAsJsonObject();
-                    HandleEventPart.accept(JSONStateGetters, statusBlock);
-                } else {
-
-                    // If we don't have the camera listed in the status message, then
-                    // we iterate the status channels and null them out. This avoids
-                    // confusion with 'old' states being left in place if Frigate sends us
-                    // status without the camera in the block
-
-                    for (var ch : JSONStateGetters.entrySet()) {
-                        updateState((@NonNull String) (ch.getValue()),
-                                ((@NonNull frigateSVRChannelState) this.Channels.get(ch.getValue())).toState(null));
-                    }
+                if (action.endsWith("/status")) {
+                    logger.debug("received status update on /status");
+                    String evtJSON = new String(payload, StandardCharsets.UTF_8);
+                    frigateSVRServerState newState = new Gson().fromJson(evtJSON, frigateSVRServerState.class);
+                    this.HandleServerStateChange((@NonNull frigateSVRServerState) newState);
+                    break;
                 }
+
+                // Keepalives
+                //
+                // We take our keepalive cue from the server keepalive thread.
+
+                if (action.endsWith(MQTT_KEEPALIVE_SUFFIX)) {
+                    this.httpServlet.PokeMe();
+                    break;
+                }
+
+                logger.info("unhandled ServerAll message {}", topic);
+                break;
             }
 
-            // Events
-            //
-            // Frigate sends us a complex event consisting of the current state
-            // along with the previous state.
-            //
-            // Note that events do not use the camera prefix in the topic. We get
-            // all events for all cameras, so we have to filter here. It is a shame
-            // that Frigate does not discriminate by camera allowing the topic subscription
-            // to do the filtering for us.
+            // if we are marked offline, do not handle the pfxSvrMsg or pfxSrvToCam messages
 
-            if (topic.equals(this.svrState.topicPrefix + "/" + MQTT_EVENTS_SUFFIX)) {
+            if (this.getThing().getStatus().equals(ThingStatus.ONLINE)) {
 
-                // we are handling an event. The bag of bits is actually a bunch of JSON.
-                // By parsing the JSON, rather than stuffing it into a Java object, we
-                // can make the channel handling more generic.
+                // Messages direct from Frigate server
 
-                JsonObject evtObj = JsonParser.parseString(state).getAsJsonObject();
-                String evtType = evtObj.get("type").getAsString();
-                JsonObject evtPrev = evtObj.get("before").getAsJsonObject();
-                JsonObject evtCur = evtObj.get("after").getAsJsonObject();
+                if (topic.startsWith(this.svrState.pfxSvrMsg + "/")) {
 
-                logger.debug("Event type : {}", evtType);
+                    String action = topic.substring(this.pfxSvrAll.length() + 1);
+                    logger.debug("Received trimmed server message {}", action);
 
-                // first check the camera name
+                    // Camera stats
+                    //
 
-                String cam = evtCur.get("camera").getAsString();
-                if (config.cameraName.equals(cam)) {
+                    if (action.endsWith(MQTT_STATS_SUFFIX)) {
+                        JsonObject statObj = JsonParser.parseString(state).getAsJsonObject();
+                        if (statObj.has(config.cameraName)) {
+                            logger.debug("have status for camera {}", config.cameraName);
+                            JsonObject statusBlock = statObj.get(config.cameraName).getAsJsonObject();
+                            HandleEventPart.accept(JSONStateGetters, statusBlock);
+                        } else {
 
-                    // start with current stuff, then process the previous state
+                            // If we don't have the camera listed in the status message, then
+                            // we iterate the status channels and null them out. This avoids
+                            // confusion with 'old' states being left in place if Frigate sends us
+                            // status without the camera in the block
 
-                    HandleEventPart.accept(JSONEventGettersToCur, evtCur);
-                    HandleEventPart.accept(JSONEventGettersToPrev, evtPrev);
-
-                    // now deal with the id, snapshot URL and finally update the event
-                    // type. We do these manually rather than from the getter map - to
-                    // control sequencing - with the event type last.
-
-                    String id = evtCur.get("id").getAsString();
-                    String hasClip = evtCur.get("has_clip").getAsString();
-
-                    String ecURL = new String();
-                    if ((evtType.equals("end")) && (hasClip.equals("true"))) {
-                        ecURL = this.svrState.url + "events/" + id + "/clip.mp4";
+                            for (var ch : JSONStateGetters.entrySet()) {
+                                updateState((@NonNull String) (ch.getValue()),
+                                        ((@NonNull frigateSVRChannelState) this.Channels.get(ch.getValue()))
+                                                .toState(null));
+                            }
+                        }
+                        break;
                     }
 
-                    // update 'em
+                    // Events
+                    //
 
-                    updateState(CHANNEL_EVENT_CLIP_URL,
-                            ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_EVENT_CLIP_URL))
-                                    .toState(ecURL));
-                    updateState(CHANNEL_EVENT_ID,
-                            ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_EVENT_ID)).toState(id));
-                    updateState(CHANNEL_EVENT_JSON,
-                            ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_EVENT_JSON)).toState(state));
-                    updateState(CHANNEL_EVENT_TYPE,
-                            ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_EVENT_TYPE)).toState(evtType));
+                    if (action.endsWith(MQTT_EVENTS_SUFFIX)) {
+
+                        // Frigate sends us a complex event consisting of the current state
+                        // along with the previous state.
+                        //
+                        // Note that events do not use the camera prefix in the topic. We get
+                        // all events for all cameras, so we have to filter here. It is a shame
+                        // that Frigate does not discriminate by camera allowing the topic subscription
+                        // to do the filtering for us.
+
+                        // we are handling an event. The bag of bits is actually a bunch of JSON.
+                        // By parsing the JSON, rather than stuffing it into a Java object, we
+                        // can make the channel handling more generic.
+
+                        JsonObject evtObj = JsonParser.parseString(state).getAsJsonObject();
+                        String evtType = evtObj.get("type").getAsString();
+                        JsonObject evtPrev = evtObj.get("before").getAsJsonObject();
+                        JsonObject evtCur = evtObj.get("after").getAsJsonObject();
+
+                        logger.debug("Event type : {}", evtType);
+
+                        // first check the camera name
+
+                        String cam = evtCur.get("camera").getAsString();
+                        if (config.cameraName.equals(cam)) {
+
+                            // start with current stuff, then process the previous state
+
+                            HandleEventPart.accept(JSONEventGettersToCur, evtCur);
+                            HandleEventPart.accept(JSONEventGettersToPrev, evtPrev);
+
+                            // now deal with the id, snapshot URL and finally update the event
+                            // type. We do these manually rather than from the getter map - to
+                            // control sequencing - with the event type last.
+
+                            String id = evtCur.get("id").getAsString();
+                            String hasClip = evtCur.get("has_clip").getAsString();
+
+                            String ecURL = new String();
+                            if ((evtType.equals("end")) && (hasClip.equals("true"))) {
+                                ecURL = this.svrState.url + "events/" + id + "/clip.mp4";
+                            }
+
+                            // update 'em
+
+                            updateState(CHANNEL_EVENT_CLIP_URL,
+                                    ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_EVENT_CLIP_URL))
+                                            .toState(ecURL));
+                            updateState(CHANNEL_EVENT_ID,
+                                    ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_EVENT_ID))
+                                            .toState(id));
+                            updateState(CHANNEL_EVENT_JSON,
+                                    ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_EVENT_JSON))
+                                            .toState(state));
+                            updateState(CHANNEL_EVENT_TYPE,
+                                    ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_EVENT_TYPE))
+                                            .toState(evtType));
+                        }
+                        break;
+                    }
+                    break;
                 }
-            }
 
-            // deal with our camera configuration and control info.
+                //
+                // messages between Frigate server direct to cameras
 
-            if (topic.length() > this.cameraTopicPrefix.length()) {
-                String camTopic = topic.substring(this.cameraTopicPrefix.length());
-                logger.debug("Received trimmed camera state topic {}", camTopic);
-                if (this.MQTTGettersToChannels.containsKey(camTopic)) {
-                    String channel = this.MQTTGettersToChannels.get(camTopic);
-                    updateState((@NonNull String) channel,
-                            ((@NonNull frigateSVRChannelState) this.Channels.get(channel)).toState(state));
-                    logger.debug("Received change - channel: {} state: {}", channel, state);
-                } else {
-                    logger.debug("Received topic {} not in map ", camTopic);
+                if (topic.startsWith(this.pfxFrigateToCam + "/")) {
+
+                    String action = topic.substring(this.pfxFrigateToCam.length() + 1);
+                    logger.debug("Received trimmed Frigate server->camera message :{}", action);
+
+                    // MQTT messages pertaining to configuration other than events:
+
+                    if (this.MQTTGettersToChannels.containsKey(action)) {
+                        String channel = this.MQTTGettersToChannels.get(action);
+                        updateState((@NonNull String) channel,
+                                ((@NonNull frigateSVRChannelState) this.Channels.get(channel)).toState(state));
+                        logger.debug("Received change - channel: {} state: {}", channel, state);
+                        break;
+                    }
+
+                    // Snapshots
+                    //
+                    // Frigate sends us snapshots on the topic <pfxSvrMsg>/<camera name>/<object>/snapshots.
+                    // We can wildcard out the object, and filter by camera name. Then we can update two
+                    // channels, one with the detected object type and the other with the image.
+                    // The subscription filters on our camera name.
+
+                    if (action.endsWith("/snapshot")) {
+                        String[] bits = topic.split("/");
+                        if (bits[1].equals(config.cameraName)) {
+                            this.updateState(CHANNEL_LAST_SNAPSHOT_OBJECT,
+                                    ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_LAST_SNAPSHOT_OBJECT))
+                                            .toState(bits[2]));
+                            this.updateState(CHANNEL_LAST_SNAPSHOT,
+                                    ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_LAST_SNAPSHOT))
+                                            .toStateFromRaw(payload, "image/jpeg"));
+                        }
+                        break;
+                    }
+                    break;
                 }
-            }
 
-            // Snapshots
-            //
-            // Frigate sends us snapshots on the topic <prefix>/<camera name>/<object>/snapshots.
-            // We can wildcard out the object, and filter by camera name. Then we can update two
-            // channels, one with the detected object type and the other with the image.
-            // The subscription filters on our camera name.
+                if (topic.startsWith(this.pfxSvrToCam + "/")) {
 
-            if (topic.endsWith("/snapshot")) {
-                String[] bits = topic.split("/");
-                if (bits[1].equals(config.cameraName)) {
-                    this.updateState(CHANNEL_LAST_SNAPSHOT_OBJECT,
-                            ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_LAST_SNAPSHOT_OBJECT))
-                                    .toState(bits[2]));
-                    this.updateState(CHANNEL_LAST_SNAPSHOT,
-                            ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_LAST_SNAPSHOT))
-                                    .toStateFromRaw(payload, "image/jpeg"));
+                    String action = topic.substring(this.pfxSvrToCam.length() + 1);
+                    logger.debug("Received trimmed server Thing->camera Thing message {}", action);
+
+                    // Server-camera messages
+                    //
+                    // In response to the lastFrame ThingActions, we update frame channels.
+
+                    if (action.equals("lastFrame")) {
+                        logger.info("camera: received last frame topic: {}", topic);
+                        String[] bits = topic.split("/");
+                        if (bits[1].equals(config.cameraName)) {
+                            logger.info("updating state last frame");
+                            this.updateState(CHANNEL_LAST_FRAME,
+                                    ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_LAST_FRAME))
+                                            .toStateFromRaw(payload, "image/jpeg"));
+                        }
+                        break;
+                    }
+
+                    // unhandled pfxSvrToCam message
+                    break;
                 }
+
+                logger.debug("unhandled topic {}", topic);
             }
-
-            // lastFrame
-            //
-            // In response to the lastFrame ThingActions, we update frame channels
-
-            if (topic.endsWith("/lastFrame")) {
-                logger.info("camera: received last frame topic: {}", topic);
-                String[] bits = topic.split("/");
-                if (bits[1].equals(config.cameraName)) {
-                    logger.info("updating state last frame");
-                    this.updateState(CHANNEL_LAST_FRAME,
-                            ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_LAST_FRAME))
-                                    .toStateFromRaw(payload, "image/jpeg"));
-                }
-            }
-
-        }
+        } while (false);
     }
 }
