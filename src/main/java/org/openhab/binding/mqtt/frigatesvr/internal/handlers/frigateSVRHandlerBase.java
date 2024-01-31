@@ -12,7 +12,6 @@
  */
 package org.openhab.binding.mqtt.frigatesvr.internal.handlers;
 
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -256,6 +255,6 @@ public class frigateSVRHandlerBase extends BaseThingHandler implements MqttMessa
 
     @Override
     public void processMessage(String topic, byte[] payload) {
-        logger.debug("Received MQTT message:{}:{}", topic, new String(payload, StandardCharsets.UTF_8));
+        logger.info("Received MQTT message topic:{}", topic);
     }
 }

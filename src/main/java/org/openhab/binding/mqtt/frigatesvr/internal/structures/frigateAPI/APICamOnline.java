@@ -57,9 +57,8 @@ public class APICamOnline extends APIBase {
             String[] bits, String payload) {
 
         logger.info("topic prefix in process {}", topicPrefix);
-        // The online messages are published differently, so we don't use the base class
-        // Publishxxxx members.
-        String topic = "frigateSVR/" + this.svrState.serverThingID + "/" + this.svrState.serverThingID + "/status";
+        // we force a re-publish of the status - TODO: improve.
+        String topic = "frigateSVRALL/" + this.svrState.serverThingID + "/status";
         connection.publish(topic, this.svrState.GetJsonString().getBytes(), 1, false);
         logger.info("publishing status to {}", topic);
         return new ResultStruct(true, "ok");

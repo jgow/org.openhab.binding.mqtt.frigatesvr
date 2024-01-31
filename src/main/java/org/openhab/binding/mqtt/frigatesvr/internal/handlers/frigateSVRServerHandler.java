@@ -141,7 +141,7 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
         //
         // frigateSVR/<cameraThingID>/<serverThingID>/
 
-        this.pfxSvrToCam = "frigateSVR/";
+        this.pfxSvrToCam = "frigateSVR";
 
         // Prefix for messages originating from the server Thing and intended for all cameras.
         //
