@@ -115,7 +115,7 @@ public class StreamTypeBase extends HTTPHandler {
             // and that it is available, otherwise we may get browser error
             // messages. Need to have this online before the browser timeouts
             // This can take some time. While this code doesn't actually block,
-            // it could sit in the loop 15 seconds or more in order to get
+            // it could sit in the loop 30 seconds or more in order to get
             // ffmpeg started.
             // To check, we use stream-specific presence of output from ffmpeg,
             // together with a valid frame count.

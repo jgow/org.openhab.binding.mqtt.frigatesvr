@@ -387,7 +387,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
         // this.pfxSvrToCam = "frigateSVR/" + camID + "/" + config.serverID;
         this.pfxSvrToCam = "frigateSVR/" + config.cameraName + "/" + config.serverID;
 
-        this.SetOffline();
+        this.SetOffline(); // do we need this?
         updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING);
         super.initialize();
         firstInit = false;
@@ -400,10 +400,6 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     public void dispose() {
         logger.info("camera {} dispose handler called", config.cameraName);
         this.SetOffline();
-        // if (this.MQTTConnection != null) {
-        // UnsubscribeMQTTTopics();
-        // ((@NonNull MqttBrokerConnection) this.MQTTConnection).unsubscribe(this.pfxSvrAll + "/#", this);
-        // }
         super.dispose();
     }
 
