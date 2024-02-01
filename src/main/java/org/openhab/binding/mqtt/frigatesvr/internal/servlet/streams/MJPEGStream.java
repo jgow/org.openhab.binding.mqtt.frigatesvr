@@ -35,7 +35,6 @@ public class MJPEGStream extends StreamTypeBase {
 
     private final Logger logger = LoggerFactory.getLogger(MJPEGStream.class);
     protected OpenStreams streamList = new OpenStreams();
-    private boolean postFlag = false;
 
     public MJPEGStream(String readerPath, String ffBinary, String URLtoFF, String serverBase,
             frigateSVRCommonConfiguration config) {
@@ -55,7 +54,10 @@ public class MJPEGStream extends StreamTypeBase {
     // as soon as output has been generated.
 
     public boolean CheckStarted() {
-        return postFlag;
+        // ffmpeg may start before the servers. We thus rely only on the frame
+        // detection from the ffmpeg log as the server may not be able to receive
+        // POSTS before ffmpeg is running
+        return true;
     }
 
     /////////////////////////////////////////////////////////////////////////
@@ -65,7 +67,6 @@ public class MJPEGStream extends StreamTypeBase {
 
     public void StopStreams() {
         this.streamList.closeAllStreams();
-        postFlag = false;
         super.StopStreams();
     }
 
@@ -100,7 +101,6 @@ public class MJPEGStream extends StreamTypeBase {
         ServletInputStream snapshotData = req.getInputStream();
         this.streamList.queueFrame(snapshotData.readAllBytes());
         snapshotData.close();
-        postFlag = true;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -116,7 +116,6 @@ public class MJPEGStream extends StreamTypeBase {
 
         synchronized (this) {
             if (!this.isStreamRunning) {
-                this.postFlag = false;
                 // If we fail to start the stream, just return 'not found'
                 this.StartStreams();
                 if (!this.isStreamRunning) {

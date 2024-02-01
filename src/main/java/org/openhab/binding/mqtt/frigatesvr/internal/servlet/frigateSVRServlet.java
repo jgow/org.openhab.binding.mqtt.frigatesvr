@@ -91,13 +91,6 @@ public class frigateSVRServlet extends HttpServlet {
         this.handlers.clear(); // start empty
         this.handlers = handlers;
 
-        // tell our streams that we are serving. We may get async GET requests
-        // as soon as the server is up.
-
-        this.handlers.forEach(strm -> {
-            strm.ServerReady(pathServletBase);
-        });
-
         // The svrMutex serves a different purpose despite use of 'synchronized'. For some reason,
         // on occasion, if two threads in two different 'things' try to create servlets at the
         // same time despite them being at different locations, the creation chokes.
@@ -111,6 +104,7 @@ public class frigateSVRServlet extends HttpServlet {
         try {
             initParameters.put("servlet-name", pathServletBase);
             httpService.registerServlet(pathServletBase, this, initParameters, httpService.createDefaultHttpContext());
+            logger.info("streaming servlet started");
             this.isStarted = true;
         } catch (Exception e) {
             logger.warn("Registering servlet failed:{}", e.getMessage());
@@ -119,9 +113,8 @@ public class frigateSVRServlet extends HttpServlet {
         }
         svrMutex.unlock();
 
-        // if we have succeeded, then start the streams. We do this after the server is
-        // active as mjpeg sequences use POST to detect if the process is running - and
-        // this needs a working server.
+        // if we have succeeded, then start the streams. It actually takes some time for the servlet
+        // to actually start, so we can overlap this with the stream start
 
         if (this.isStarted) {
 
@@ -135,15 +128,6 @@ public class frigateSVRServlet extends HttpServlet {
         } else {
             this.handlers.clear();
         }
-
-        // if we fail, clean up the stream list.
-
-        // if (!this.isStarted) {
-        // this.handlers.forEach(strm -> {
-        // strm.Cleanup();
-        // });
-        // this.handlers.clear();
-        // }
 
         // Once we are running, we should not change handlers dynamically.
         // Should we need to, wrap the code that does so, together with get(), in some

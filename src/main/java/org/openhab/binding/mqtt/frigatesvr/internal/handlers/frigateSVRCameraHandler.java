@@ -767,7 +767,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
                             String id = evtCur.get("id").getAsString();
                             String hasClip = evtCur.get("has_clip").getAsString();
 
-                            String ecURL = new String();
+                            String ecURL = new String("");
                             if ((evtType.equals("end")) && (hasClip.equals("true"))) {
                                 ecURL = this.svrState.url + "events/" + id + "/clip.mp4";
                             }
@@ -818,6 +818,9 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
                     // The subscription filters on our camera name.
 
                     if (action.endsWith("/snapshot")) {
+
+                        // process only snapshots for our camera
+
                         String[] bits = topic.split("/");
                         if (bits[1].equals(config.cameraName)) {
                             this.updateState(CHANNEL_LAST_SNAPSHOT_OBJECT,
@@ -843,19 +846,22 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
 
                     String action = topic.substring(this.pfxSvrToCam.length() + 1);
                     logger.debug("Received trimmed server Thing->camera Thing message {}", action);
-                    
+
                     String[] bits = topic.split("/");
                     if (bits[1].equals(config.cameraName)) {
 
+                        // Results from camera actions that return an image. The image will sit in the
+                        // CHANNEL_LAST_FRAME
+
                         if (action.equals(MQTT_CAMIMAGERESULT)) {
                             logger.info("camera: received last frame topic: {}", topic);
-                                this.updateState(CHANNEL_LAST_FRAME,
-                                        ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_LAST_FRAME))
-                                    .toStateFromRaw(payload, "image/jpeg"));
+                            this.updateState(CHANNEL_LAST_FRAME,
+                                    ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_LAST_FRAME))
+                                            .toStateFromRaw(payload, "image/jpeg"));
                             break;
                         }
 
-                        // MQTT messages pertaining to configuration other than events:
+                        // all other MQTT messages pertaining to configuration other than events:
 
                         if (this.MQTTServerMessageGettersToChannels.containsKey(action)) {
                             String channel = this.MQTTServerMessageGettersToChannels.get(action);
