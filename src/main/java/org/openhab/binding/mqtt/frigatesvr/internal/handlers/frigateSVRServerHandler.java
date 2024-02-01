@@ -69,6 +69,7 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
     private String pfxSvrAll = "";
     private frigateSVRServerState svrState = new frigateSVRServerState();
     private frigateSVRFrigateConfiguration frigateConfig = new frigateSVRFrigateConfiguration();
+    private boolean initialized = false;
 
     private Map<String, APIBase> cm = Map.ofEntries(Map.entry(MQTT_EVTTRIGGER_SUFFIX, new APITriggerEvent()),
             Map.entry(MQTT_GETLASTFRAME_SUFFIX, new APIGetLastFrame()),
@@ -153,6 +154,7 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
 
         updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING);
         super.initialize();
+        this.initialized = true;
     }
 
     //
@@ -171,6 +173,7 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
             ((@NonNull MqttBrokerConnection) this.MQTTConnection).publish(this.pfxSvrAll + "/status",
                     this.svrState.GetJsonString().getBytes(), 1, false);
         }
+        this.initialized = false;
         super.dispose();
     }
 
@@ -525,6 +528,15 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
         super.processMessage(topic, payload);
 
         do {
+
+            // discard any inbounds if we are not initialized
+
+            if (!initialized) {
+                logger.error("server {}: topic {} on uninitialized handler", this.svrState.serverThingID, topic);
+                break;
+            }
+
+            // handle camera->server messages
 
             if (topic.startsWith(this.pfxCamToSvr)) {
                 HandleEvents(topic, new String(payload));

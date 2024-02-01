@@ -61,14 +61,11 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     private final Logger logger = LoggerFactory.getLogger(frigateSVRCameraHandler.class);
     private frigateSVRCameraConfiguration config = new frigateSVRCameraConfiguration();
     private frigateSVRServerState svrState = new frigateSVRServerState();
-    // private String svrTopicPrefix = "frigate/";
-    // private String cameraTopicPrefix = new String();
-    // private String camID = "";
     private String pfxSvrAll = "frigateSVRALL";
     private String pfxCamToSvr = "";
     private String pfxSvrToCam = "";
     private String pfxFrigateToCam = "";
-    private boolean firstInit = true;
+    private boolean initialized = false;
 
     // makes for easy change if Frigate ever extend the API
     //
@@ -85,8 +82,10 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
             Map.entry(MQTT_IMPCONTRAST_GET, CHANNEL_STATE_IMPCONTRAST),
             Map.entry(MQTT_MOTIONTHRESH_GET, CHANNEL_STATE_MOTIONTHRESH),
             Map.entry(MQTT_MOTIONCONTOUR_GET, CHANNEL_STATE_MOTIONCONTOUR),
-            Map.entry(MQTT_MOTION, CHANNEL_STATE_MOTIONDETECTED),
-            Map.entry(MQTT_CAMACTIONRESULT, CHANNEL_CAM_ACTION_RESULT));
+            Map.entry(MQTT_MOTION, CHANNEL_STATE_MOTIONDETECTED));
+
+    private Map<String, String> MQTTServerMessageGettersToChannels = Map
+            .ofEntries(Map.entry(MQTT_CAMACTIONRESULT, CHANNEL_CAM_ACTION_RESULT));
 
     private Map<String, String> JSONEventGettersToPrev = Map.ofEntries(Map.entry("frame_time", CHANNEL_PREV_FRAME_TIME),
             Map.entry("snapshot_time", CHANNEL_PREV_SNAPSHOT_TIME), Map.entry("label", CHANNEL_PREV_LABEL),
@@ -390,7 +389,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
         this.SetOffline(); // do we need this?
         updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING);
         super.initialize();
-        firstInit = false;
+        initialized = true;
     }
 
     //
@@ -400,6 +399,18 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     public void dispose() {
         logger.info("camera {} dispose handler called", config.cameraName);
         this.SetOffline();
+
+        // if we are being disabled/disposed and we still have an MQTT connection,
+        // we must also unsubscribe from the server topics, or
+        // we may well end up accidentally trying to online a disposed handler.
+
+        @Nullable
+        MqttBrokerConnection conn = this.MQTTConnection;
+        if (conn != null) {
+            conn.unsubscribe(this.pfxSvrAll + "/#", this);
+        }
+
+        initialized = false;
         super.dispose();
     }
 
@@ -412,11 +423,11 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
 
     public ResultStruct SendActionEvent(APIBase action) {
         ResultStruct rc = new ResultStruct(false, "camera offline");
-        if (this.getThing().getStatus().equals(ThingStatus.ONLINE)) {
+        MqttBrokerConnection conn = this.MQTTConnection;
+        if (this.getThing().getStatus().equals(ThingStatus.ONLINE) && (conn != null)) {
             rc = action.Validate();
             if (rc.rc) {
-                rc = action.ResQueueMessageToServer((@NonNull MqttBrokerConnection) this.MQTTConnection,
-                        this.pfxCamToSvr, this.config.cameraName);
+                rc = action.ResQueueMessageToServer(conn, this.pfxCamToSvr);
             }
         }
         return rc;
@@ -464,7 +475,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     //
     // Handle changes in the state of the server
 
-    private void HandleServerStateChange(frigateSVRServerState newState) {
+    private synchronized void HandleServerStateChange(frigateSVRServerState newState) {
 
         // Ok, if we don't have an MQTT connection, we will be offlined
         // anyway by the bridge handlers. Then, we will request a new
@@ -474,7 +485,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
         logger.debug("handling server state change - old state: {} new state : {}", this.svrState.status,
                 newState.status);
 
-        if (this.MQTTConnection != null) {
+        if ((this.MQTTConnection != null) && initialized) {
 
             // if we are online, we are looking for changes to offline
 
@@ -492,7 +503,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
                 logger.info("camera {}: server state change: online: Number of cams: {}", config.cameraName,
                         newState.Cameras.size());
 
-                // check that the camera is indeed one of ours:
+                // check that the camera is ours:
                 if (newState.Cameras.contains(this.config.cameraName)) {
                     // we are ok.
 
@@ -504,7 +515,10 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
 
                     updateStatus(ThingStatus.ONLINE);
                     SubscribeMQTTTopics();
-                    StartCameraStream();
+                    scheduler.execute(() -> {
+                        StartCameraStream();
+                    });
+                    logger.info("Camera {} onlining complete", this.config.cameraName);
                 } else {
                     logger.info("Camera {} not found in list", this.config.cameraName);
                 }
@@ -556,9 +570,10 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     // Send an MQTT string to the Frigate server.
 
     protected void ProcessCommand(String suffix, String command) {
-        if (this.MQTTConnection != null) {
+        MqttBrokerConnection conn = this.MQTTConnection;
+        if (conn != null) {
             String topic = this.svrState.pfxSvrMsg + "/" + config.cameraName + "/" + suffix;
-            ((@NonNull MqttBrokerConnection) this.MQTTConnection).publish(topic, command.getBytes(), 1, false);
+            conn.publish(topic, command.getBytes(), 1, false);
         }
     }
 
@@ -572,19 +587,11 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     private void SubscribeMQTTTopics() {
         MqttBrokerConnection conn = this.MQTTConnection;
         if (conn != null) {
-            ((@NonNull MqttBrokerConnection) this.MQTTConnection).subscribe(this.pfxSvrToCam + "/" + "lastFrame", this);
-            logger.error("SUBSCRIBING to {}", this.svrState.pfxSvrMsg + "/" + MQTT_EVENTS_SUFFIX);
-            ((@NonNull MqttBrokerConnection) this.MQTTConnection)
-                    .subscribe(this.svrState.pfxSvrMsg + "/" + MQTT_EVENTS_SUFFIX, this);
-            ((@NonNull MqttBrokerConnection) this.MQTTConnection)
-                    .subscribe(this.svrState.pfxSvrMsg + "/" + MQTT_STATS_SUFFIX, this);
-            ((@NonNull MqttBrokerConnection) this.MQTTConnection).subscribe(this.pfxFrigateToCam + "+/snapshot", this);
-            // conn.subscribe(this.pfxSvrToCam + "/" + "lastFrame", this);
-            // conn.subscribe(this.svrState.pfxSvrMsg + "/" + MQTT_EVENTS_SUFFIX, this);
-            // conn.subscribe(this.svrState.pfxSvrMsg + "/" + MQTT_STATS_SUFFIX, this);
-            // conn.subscribe(this.pfxFrigateToCam + "+/snapshot", this);
-            this.MQTTGettersToChannels.forEach((m, ch) -> ((@NonNull MqttBrokerConnection) this.MQTTConnection)
-                    .subscribe(this.pfxFrigateToCam + "/" + m, this));
+            conn.subscribe(this.pfxSvrToCam + "/#", this);
+            conn.subscribe(this.svrState.pfxSvrMsg + "/" + MQTT_EVENTS_SUFFIX, this);
+            conn.subscribe(this.svrState.pfxSvrMsg + "/" + MQTT_STATS_SUFFIX, this);
+            conn.subscribe(this.pfxFrigateToCam + "+/snapshot", this);
+            this.MQTTGettersToChannels.forEach((m, ch) -> conn.subscribe(this.pfxFrigateToCam + "/" + m, this));
         }
     }
 
@@ -600,19 +607,11 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
         MqttBrokerConnection conn = this.MQTTConnection;
         if (conn != null) {
             // snapshot state
-            this.MQTTGettersToChannels.forEach((m, ch) -> ((@NonNull MqttBrokerConnection) this.MQTTConnection)
-                    .unsubscribe(this.pfxFrigateToCam + "/" + m, this));
-            ((@NonNull MqttBrokerConnection) this.MQTTConnection).unsubscribe(this.pfxFrigateToCam + "+/snapshot",
-                    this);
-            ((@NonNull MqttBrokerConnection) this.MQTTConnection)
-                    .unsubscribe(this.svrState.pfxSvrMsg + "/" + MQTT_STATS_SUFFIX, this);
-            ((@NonNull MqttBrokerConnection) this.MQTTConnection)
-                    .unsubscribe(this.svrState.pfxSvrMsg + "/" + MQTT_EVENTS_SUFFIX, this);
-            ((@NonNull MqttBrokerConnection) this.MQTTConnection).unsubscribe(this.pfxSvrToCam + "/lastFrame", this);
-            // conn.unsubscribe(this.pfxFrigateToCam + "+/snapshot", this);
-            // conn.unsubscribe(this.svrState.pfxSvrMsg + "/" + MQTT_STATS_SUFFIX, this);
-            // conn.unsubscribe(this.svrState.pfxSvrMsg + "/" + MQTT_EVENTS_SUFFIX, this);
-            // conn.unsubscribe(this.pfxSvrToCam + "/lastFrame", this);
+            this.MQTTGettersToChannels.forEach((m, ch) -> conn.unsubscribe(this.pfxFrigateToCam + "/" + m, this));
+            conn.unsubscribe(this.pfxFrigateToCam + "+/snapshot", this);
+            conn.unsubscribe(this.svrState.pfxSvrMsg + "/" + MQTT_STATS_SUFFIX, this);
+            conn.unsubscribe(this.svrState.pfxSvrMsg + "/" + MQTT_EVENTS_SUFFIX, this);
+            conn.unsubscribe(this.pfxSvrToCam + "/#", this);
         } else {
             logger.info("unsubscribe: connection is null");
         }
@@ -628,10 +627,10 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
 
     private void SetOffline() {
         logger.info("camera: SetOffline called, stopping streamer");
-        if (!firstInit) {
-            UnsubscribeMQTTTopics();
-        }
-        this.httpServlet.StopServer();
+        UnsubscribeMQTTTopics();
+        scheduler.execute(() -> {
+            this.httpServlet.StopServer();
+        });
         this.svrState.status = "offline";
         logger.debug("offlining device");
         updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.BRIDGE_OFFLINE);
@@ -651,13 +650,19 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
 
         do {
 
+            // do not process any messages at all if we are not initialized
+
+            if (!initialized) {
+                logger.error("message topic {} on uninitialized handler", topic);
+                break;
+            }
+
             // Common messages from server Things - must be handled whether marked on or offline
 
-            logger.info("received topic {}", topic);
             if (topic.startsWith(this.pfxSvrAll + "/")) {
 
                 String action = topic.substring(this.pfxSvrAll.length() + 1);
-                logger.info("Received trimmed server message {}", action);
+                logger.debug("cam {}: Received trimmed server message {}", config.cameraName, action);
 
                 //
                 // Server status messages
@@ -683,7 +688,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
                     break;
                 }
 
-                logger.info("unhandled ServerAll message {}", topic);
+                logger.info("cam {}: unhandled ServerAll message {}", config.cameraName, topic);
                 break;
             }
 
@@ -696,7 +701,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
                 if (topic.startsWith(this.svrState.pfxSvrMsg + "/")) {
 
                     String action = topic.substring(this.svrState.pfxSvrMsg.length() + 1);
-                    logger.info("Received trimmed server message {}", action);
+                    logger.debug("cam {}: Received trimmed server message {}", config.cameraName, action);
 
                     // Camera stats
                     //
@@ -782,7 +787,6 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
                                     ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_EVENT_TYPE))
                                             .toState(evtType));
                         }
-                        logger.info("event processing complete");
                         break;
                     }
                     break;
@@ -794,7 +798,8 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
                 if (topic.startsWith(this.pfxFrigateToCam + "/")) {
 
                     String action = topic.substring(this.pfxFrigateToCam.length() + 1);
-                    logger.info("Received trimmed Frigate server->camera message :{}", action);
+                    logger.debug("cam {}: Received trimmed Frigate server->camera message :{}", config.cameraName,
+                            action);
 
                     // MQTT messages pertaining to configuration other than events:
 
@@ -802,7 +807,6 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
                         String channel = this.MQTTGettersToChannels.get(action);
                         updateState((@NonNull String) channel,
                                 ((@NonNull frigateSVRChannelState) this.Channels.get(channel)).toState(state));
-                        logger.debug("Received change - channel: {} state: {}", channel, state);
                         break;
                     }
 
@@ -828,25 +832,39 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
                     break;
                 }
 
+                // Server-camera messages
+                //
+                // In response to the lastFrame ThingActions, we update frame channels.
+                // A belts-and-braces check ensures any of these messages that for any reason
+                // arrive here but do not contain our camera name in the topic are rejected
+                // with an error
+
                 if (topic.startsWith(this.pfxSvrToCam + "/")) {
 
                     String action = topic.substring(this.pfxSvrToCam.length() + 1);
-                    logger.info("Received trimmed server Thing->camera Thing message {}", action);
+                    logger.debug("Received trimmed server Thing->camera Thing message {}", action);
+                    
+                    String[] bits = topic.split("/");
+                    if (bits[1].equals(config.cameraName)) {
 
-                    // Server-camera messages
-                    //
-                    // In response to the lastFrame ThingActions, we update frame channels.
-
-                    if (action.equals("lastFrame")) {
-                        logger.info("camera: received last frame topic: {}", topic);
-                        String[] bits = topic.split("/");
-                        if (bits[1].equals(config.cameraName)) {
-                            logger.info("updating state last frame");
-                            this.updateState(CHANNEL_LAST_FRAME,
-                                    ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_LAST_FRAME))
-                                            .toStateFromRaw(payload, "image/jpeg"));
+                        if (action.equals(MQTT_CAMIMAGERESULT)) {
+                            logger.info("camera: received last frame topic: {}", topic);
+                                this.updateState(CHANNEL_LAST_FRAME,
+                                        ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_LAST_FRAME))
+                                    .toStateFromRaw(payload, "image/jpeg"));
+                            break;
                         }
-                        break;
+
+                        // MQTT messages pertaining to configuration other than events:
+
+                        if (this.MQTTServerMessageGettersToChannels.containsKey(action)) {
+                            String channel = this.MQTTServerMessageGettersToChannels.get(action);
+                            updateState((@NonNull String) channel,
+                                    ((@NonNull frigateSVRChannelState) this.Channels.get(channel)).toState(state));
+                            break;
+                        }
+                    } else {
+                        logger.error("cam {}: image topic {} is for different camera", config.cameraName, topic);
                     }
 
                     // unhandled pfxSvrToCam message

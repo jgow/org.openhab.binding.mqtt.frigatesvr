@@ -14,7 +14,6 @@ package org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI;
 
 import static org.openhab.binding.mqtt.frigatesvr.internal.frigateSVRBindingConstants.*;
 
-import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.mqtt.frigatesvr.internal.helpers.ResultStruct;
@@ -88,7 +87,7 @@ public class APITriggerEvent extends APIBase {
             // Frigate do the content checking.
             try {
                 if (payload != null) {
-                    JsonParser.parseString((@NonNull String) payload);
+                    JsonParser.parseString(payload);
                 }
                 rc.rc = true;
                 rc.message = "arguments valid";

@@ -36,7 +36,7 @@ public class HLSStream extends StreamTypeBase {
     public HLSStream(String readerPath, String ffBinary, String URLtoFF, frigateSVRCommonConfiguration config) {
         super(readerPath, ffBinary, URLtoFF, config);
 
-        String fmtCmds = " -f hls -hls_flags delete_segments -hls_time 2 -hls_list_size 6";
+        String fmtCmds = " -f hls -hls_flags delete_segments -hls_time 4 -hls_list_size 6";
         this.pathfromFF = readerPath + ".m3u8";
         logger.info("stream entry point set to {}", this.pathfromFF);
 

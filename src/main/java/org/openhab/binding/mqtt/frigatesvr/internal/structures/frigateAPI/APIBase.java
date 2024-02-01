@@ -99,16 +99,16 @@ public abstract class APIBase {
         return new ResultStruct(true, "message queued");
     }
 
-    public ResultStruct ResQueueMessageToServer(MqttBrokerConnection connection, String topicPrefix, String cam) {
-        return ResQueueMessageToServer(connection, topicPrefix + "/" + cam);
-    }
+    // public ResultStruct ResQueueMessageToServer(MqttBrokerConnection connection, String topicPrefix, String cam) {
+    // return ResQueueMessageToServer(connection, topicPrefix + "/" + cam);
+    // }
 
     protected void PublishResult(MqttBrokerConnection conn, String topicPrefix, ResultStruct rc) {
         // If successful, rc.raw will contain the data passed back from Frigate.
         // If failed. rc.message will contain the reason why. We must massage this such
         // that the message either contains a valid response if the result is ok, or
         // an error string if the result is not ok.
-        String camTopicPrefix = topicPrefix + "/" + cam + "/" + MQTT_CAMACTIONRESULT;
+        String camTopicPrefix = topicPrefix + "/" + MQTT_CAMACTIONRESULT;
 
         String errFormat = String.format("{\"success\":%s,\"message\":\"%s\"}", (rc.rc) ? "true" : "false",
                 (rc.rc) ? new String(rc.raw) : rc.message);
@@ -125,7 +125,7 @@ public abstract class APIBase {
         if (rc.rc) {
             if (rc.raw.length > 0) {
                 // the return is an image - we post this to the camera's image channel
-                String imagePrefix = topicPrefix + "/" + cam + "/" + MQTT_CAMIMAGERESULT;
+                String imagePrefix = topicPrefix + "/" + MQTT_CAMIMAGERESULT;
                 logger.info("publishing image to {}", imagePrefix);
                 conn.publish(imagePrefix, rc.raw, 1, false);
             }
@@ -136,8 +136,9 @@ public abstract class APIBase {
         // In this case, rc.raw will contain an image, we only need to post the
         // message to the result block
 
-        String camTopicPrefix = topicPrefix + "/" + cam + "/" + MQTT_CAMACTIONRESULT;
+        String camTopicPrefix = topicPrefix + "/" + MQTT_CAMACTIONRESULT;
         String errFormat = String.format("{\"success\":%s,\"message\":\"%s\"}", (rc.rc) ? "true" : "false", rc.message);
+        logger.info("server - publishing result block to {}", camTopicPrefix);
         conn.publish(camTopicPrefix, errFormat.getBytes(), 1, false);
     }
 }

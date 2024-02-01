@@ -82,7 +82,7 @@ public class frigateSVRServlet extends HttpServlet {
     // Initialize the server. We only do this once we have an onlined 'thing',
     // whether server or camera.
 
-    public void StartServer(String pathServletBase, ArrayList<HTTPHandler> handlers) {
+    public synchronized void StartServer(String pathServletBase, ArrayList<HTTPHandler> handlers) {
 
         this.pathServletBase = pathServletBase;
 
@@ -98,13 +98,13 @@ public class frigateSVRServlet extends HttpServlet {
             strm.ServerReady(pathServletBase);
         });
 
-        // The svrMutex serves a different purpose. For some reason, on occasion, if
-        // two threads in two different 'things' try to create servlets at the same time despite
-        // them being at different locations, the creation chokes. I do not have the inclination to
-        // grovel through the source code to find out why. The static mutex ensures that
-        // we complete one servlet creation at a time, providing we are in the same context.
-        // A likely possibility is when camera 'things' and server 'things' come online
-        // together. A side-effect is to delay startup if the streams are configured to be
+        // The svrMutex serves a different purpose despite use of 'synchronized'. For some reason,
+        // on occasion, if two threads in two different 'things' try to create servlets at the
+        // same time despite them being at different locations, the creation chokes.
+        // I do not have the inclination to grovel through the source code to find out why.
+        // The static mutex ensures that we complete one servlet creation at a time, providing we
+        // are in the same context. A likely possibility is when camera 'things' and server 'things'
+        // come online together. A side-effect is to delay startup if the streams are configured to be
         // running on startup.
 
         svrMutex.lock();
@@ -119,14 +119,31 @@ public class frigateSVRServlet extends HttpServlet {
         }
         svrMutex.unlock();
 
-        // if we fail, clean up the stream list.
+        // if we have succeeded, then start the streams. We do this after the server is
+        // active as mjpeg sequences use POST to detect if the process is running - and
+        // this needs a working server.
 
-        if (!this.isStarted) {
+        if (this.isStarted) {
+
+            // tell our streams that we are serving. We may get async GET requests
+            // as soon as the server is up.
+
             this.handlers.forEach(strm -> {
-                strm.Cleanup();
+                strm.ServerReady(pathServletBase);
             });
+
+        } else {
             this.handlers.clear();
         }
+
+        // if we fail, clean up the stream list.
+
+        // if (!this.isStarted) {
+        // this.handlers.forEach(strm -> {
+        // strm.Cleanup();
+        // });
+        // this.handlers.clear();
+        // }
 
         // Once we are running, we should not change handlers dynamically.
         // Should we need to, wrap the code that does so, together with get(), in some
@@ -139,7 +156,7 @@ public class frigateSVRServlet extends HttpServlet {
     // Called if the 'thing' is offlined - it allows us to stop all streaming
     // if the Frigate server is shut down, or if we reconfigure the 'thing'
 
-    public void StopServer() {
+    public synchronized void StopServer() {
         logger.info("StopServer called: stopping streaming server");
 
         // serialize threads that destroy servlets
