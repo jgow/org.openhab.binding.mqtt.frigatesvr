@@ -31,6 +31,8 @@ The binding supports:
   - adds full multi-type streaming support
 - Version 1.7
   - adds a channel on cameras containing the latest full JSON event string from Frigate, unmodified, filtered by camera (fgEventJSON)
+- Version 1.8
+  - Numerous fixes to stream handling, added Camera ThingActions to support a wider range of the Frigate API. Added channels to Camera Things to allow direct communication with Frigate API in terms of ThingActions. More ThingActions will be added in later releases.
 
 ## Philosophy
 
@@ -217,6 +219,8 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 | fgStreamURL           | String   | R/O         | URL to local camera streams for UIs (if enabled)              |
 | fgLastSnapshotObject  | String   | R/O         | Type of object detected in last snapshot                      |
 | fgLastSnapshot        | Image    | R/O         | Snapshot of last detected object                              |
+| fgCamActionResult     | String   | R/O         | JSON string containing result of Frigate API call through CameraAction |
+| fgLastProcessedFrame  | Image    | R/O         | If the return from a Camera ThingAction is an image, it will appear here |
 | fgEventJSON           | String   | R/O         | Full JSON string containing the event                         |
 | fgCurrentEventType    | String   | R/O         | Current event type ('new', 'update' or 'end')                 |
 | fgEventClipURL        | String   | R/O         | Full URL to the clip of the current event                     |
@@ -261,6 +265,7 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 | fgCurMotionlessCount  | Number   | R/O         | Current event: Number of motionless frames                    |
 | fgCurPositionChanges  | Number   | R/O         | Current event: Number of position changes                     |
 
+
 #### Notes
 
 - 'Current event' and 'Prior to event' channels are updated with fgCurrentEventType. This ensures consistency of information passed to event handlers - there should be no 'stale' information left in any of the 'Cur' or 'Prev' channels. Note also that some of these values may change to NULL if the value on the Frigate server side is NULL. Thus, rules that wish to interrogate multiple 'cur' or 'prev' channels should trigger on changes to 'fgCurrentEventType' as this channel is updated once all other event channels have been updated.
@@ -277,31 +282,8 @@ To be implemented. This will allow access to the event history, deletion of even
 
 ### Camera ThingActions
 
-1. **TriggerEvent**.
-    - Arguments:
-        - String eventLabel  (label of the event)
-        - String eventRequest (optional JSON formatted string containing Frigate event request)
-    - Returns:
-        - boolean rc  (true: call successful false: call failed)
-        - string desc (message containing nature of error)
-    - Description:
-        - For versions of Frigate >= 0.13.0-beta6, this ThingAction will trigger an event. The event will be created with the label 'eventLabel' and the argument 'eventRequest' should contain the JSON string expected by Frigate. **Note that this call is asynchronous**.
-        - The event call will return a map containing two entries; the 'rc' entry is a boolean return code denoting success or failure. The 'desc' entry will contain a message relating to the nature of the result. Note that this refers to success or failure of the queuing of the call ONLY. The returned JSON from Frigate itself will appear in the channel 'fgTriggerEventResult' once the asynchronous call has completed. This channel will contain the full JSON string from Frigate.
-        - For versions of Frigate that do not support this call, a 404 error will be returned in 'fgTriggerEventResult'.
-        
-#### Using camera ThingActions in a rule - an example
-
-```
-var camActions = actions.thingActions("frigateCamera","mqtt:frigateCamera:122343:locationCam");
-
-if (camActions != null) {
-  var response = camActions.TriggerEvent("thisEvent","{}");
-  console.log("response:rc="+response.rc);
-  console.log("response:payload:"+response.desc);
-} else {
-  console.log("camera actions null");
-}
-```
+The Frigate API can be accessed through ThingActons as well as directly through the HTTP API.
+See separate document doc/CameraActions.md in this repository for details.
 
 ## Writing rules for FrigateSVR cameras
 
