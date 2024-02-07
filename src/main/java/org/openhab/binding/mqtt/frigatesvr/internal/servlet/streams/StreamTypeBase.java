@@ -51,10 +51,10 @@ public class StreamTypeBase extends HTTPHandler {
         {
             put("mpd", "application/dash+xml");
             put("mp4", "video/mp4");
-            put("m4v", "video");
+            put("m4v", "video/mp4");
             put("m4s", "video/iso.segment");
             put("m4a", "audio/mp4");
-            put("m3u8", "application/x-mpegURL");
+            put("m3u8", "application/vnd.apple.mpegurl");
             put("ts", "video/MP2T");
         }
     };
