@@ -99,10 +99,6 @@ public abstract class APIBase {
         return new ResultStruct(true, "message queued");
     }
 
-    // public ResultStruct ResQueueMessageToServer(MqttBrokerConnection connection, String topicPrefix, String cam) {
-    // return ResQueueMessageToServer(connection, topicPrefix + "/" + cam);
-    // }
-
     protected void PublishResult(MqttBrokerConnection conn, String topicPrefix, ResultStruct rc) {
         // If successful, rc.raw will contain the data passed back from Frigate.
         // If failed. rc.message will contain the reason why. We must massage this such

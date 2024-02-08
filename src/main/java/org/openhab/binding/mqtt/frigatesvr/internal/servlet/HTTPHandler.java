@@ -103,7 +103,7 @@ public class HTTPHandler {
     /////////////////////////////////////////////////////////////////////////
     // canPost
     //
-    // Must return true if the post is valid for this stream type
+    // Must return true if the handler can accept the POST request
 
     public boolean canPost(String pathInfo) {
         return false;
@@ -121,7 +121,7 @@ public class HTTPHandler {
     ////////////////////////////////////////////////////////////////////////
     // canDelete
     //
-    // Must return true if the stream can accept the GET request.
+    // Must return true if the stream can accept the DELETE request.
 
     public boolean canDelete(String pathInfo) {
         return false;
