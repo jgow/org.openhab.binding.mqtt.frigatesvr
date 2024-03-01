@@ -509,7 +509,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
 
                     this.svrState = newState;
 
-                    this.pfxFrigateToCam = this.svrState.pfxSvrMsg + "/" + config.cameraName + "/";
+                    this.pfxFrigateToCam = this.svrState.pfxSvrMsg + "/" + config.cameraName;
 
                     // subscribe to MQTT, start the camera stream, and flag us online
 
@@ -590,7 +590,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
             conn.subscribe(this.pfxSvrToCam + "/#", this);
             conn.subscribe(this.svrState.pfxSvrMsg + "/" + MQTT_EVENTS_SUFFIX, this);
             conn.subscribe(this.svrState.pfxSvrMsg + "/" + MQTT_STATS_SUFFIX, this);
-            conn.subscribe(this.pfxFrigateToCam + "+/snapshot", this);
+            conn.subscribe(this.pfxFrigateToCam + "/+/snapshot", this);
             this.MQTTGettersToChannels.forEach((m, ch) -> conn.subscribe(this.pfxFrigateToCam + "/" + m, this));
         }
     }
@@ -608,7 +608,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
         if (conn != null) {
             // snapshot state
             this.MQTTGettersToChannels.forEach((m, ch) -> conn.unsubscribe(this.pfxFrigateToCam + "/" + m, this));
-            conn.unsubscribe(this.pfxFrigateToCam + "+/snapshot", this);
+            conn.unsubscribe(this.pfxFrigateToCam + "/+/snapshot", this);
             conn.unsubscribe(this.svrState.pfxSvrMsg + "/" + MQTT_STATS_SUFFIX, this);
             conn.unsubscribe(this.svrState.pfxSvrMsg + "/" + MQTT_EVENTS_SUFFIX, this);
             conn.unsubscribe(this.pfxSvrToCam + "/#", this);
@@ -662,7 +662,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
             if (topic.startsWith(this.pfxSvrAll + "/")) {
 
                 String action = topic.substring(this.pfxSvrAll.length() + 1);
-                logger.debug("cam {}: Received trimmed server message {}", config.cameraName, action);
+                logger.debug("cam {}: Received trimmed server message {} (pfxSvrAll test)", config.cameraName, action);
 
                 //
                 // Server status messages
@@ -688,7 +688,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
                     break;
                 }
 
-                logger.info("cam {}: unhandled ServerAll message {}", config.cameraName, topic);
+                logger.debug("cam {}: unhandled ServerAll message {}", config.cameraName, topic);
                 break;
             }
 
@@ -701,7 +701,8 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
                 if (topic.startsWith(this.svrState.pfxSvrMsg + "/")) {
 
                     String action = topic.substring(this.svrState.pfxSvrMsg.length() + 1);
-                    logger.debug("cam {}: Received trimmed server message {}", config.cameraName, action);
+                    logger.debug("cam {}: Received trimmed server message {} (pfxSvrMsg test)", config.cameraName,
+                            action);
 
                     // Camera stats
                     //
@@ -789,7 +790,9 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
                         }
                         break;
                     }
-                    break;
+
+                    // we pass through here as frigate server to camera messages
+                    // will be intercepted by the 'frigate' prefix, but not handled
                 }
 
                 //
@@ -822,6 +825,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
                         // process only snapshots for our camera
 
                         String[] bits = topic.split("/");
+                        logger.info("received snapshot for cam {}", bits[1]);
                         if (bits[1].equals(config.cameraName)) {
                             this.updateState(CHANNEL_LAST_SNAPSHOT_OBJECT,
                                     ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_LAST_SNAPSHOT_OBJECT))
