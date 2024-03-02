@@ -33,6 +33,8 @@ The binding supports:
   - adds a channel on cameras containing the latest full JSON event string from Frigate, unmodified, filtered by camera (fgEventJSON)
 - Version 1.8
   - Numerous fixes to stream handling, added Camera ThingActions to support a wider range of the Frigate API. Added channels to Camera Things to allow direct communication with Frigate API in terms of ThingActions. More ThingActions will be added in later releases.
+- Version 1.9
+  - Bugfix release: snapshot update bug in v1.8 is fixed.
 
 ## Philosophy
 

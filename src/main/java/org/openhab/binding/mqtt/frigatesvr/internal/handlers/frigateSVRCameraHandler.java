@@ -791,45 +791,39 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
                         break;
                     }
 
-                    // we pass through here as frigate server to camera messages
-                    // will be intercepted by the 'frigate' prefix, but not handled
-                }
-
-                //
-                // messages between Frigate server direct to cameras
-
-                if (topic.startsWith(this.pfxFrigateToCam + "/")) {
-
-                    String action = topic.substring(this.pfxFrigateToCam.length() + 1);
-                    logger.debug("cam {}: Received trimmed Frigate server->camera message :{}", config.cameraName,
-                            action);
-
-                    // MQTT messages pertaining to configuration other than events:
-
-                    if (this.MQTTGettersToChannels.containsKey(action)) {
-                        String channel = this.MQTTGettersToChannels.get(action);
-                        updateState((@NonNull String) channel,
-                                ((@NonNull frigateSVRChannelState) this.Channels.get(channel)).toState(state));
-                        break;
-                    }
-
-                    // Snapshots
                     //
-                    // Frigate sends us snapshots on the topic <pfxSvrMsg>/<camera name>/<object>/snapshots.
-                    // We can wildcard out the object, and filter by camera name. Then we can update two
-                    // channels, one with the detected object type and the other with the image.
-                    // The subscription filters on our camera name.
+                    // messages between Frigate server direct to cameras
 
-                    if (action.endsWith("/snapshot")) {
+                    if (action.startsWith(config.cameraName + "/")) {
 
-                        // process only snapshots for our camera
+                        String cammsg = topic.substring(this.pfxFrigateToCam.length() + 1);
+                        logger.debug("cam {}: Received trimmed Frigate server->camera message :{}", config.cameraName,
+                                cammsg);
 
-                        String[] bits = topic.split("/");
-                        logger.info("received snapshot for cam {}", bits[1]);
-                        if (bits[1].equals(config.cameraName)) {
+                        // MQTT messages pertaining to configuration other than events:
+
+                        if (this.MQTTGettersToChannels.containsKey(cammsg)) {
+                            String channel = this.MQTTGettersToChannels.get(cammsg);
+                            updateState((@NonNull String) channel,
+                                    ((@NonNull frigateSVRChannelState) this.Channels.get(channel)).toState(state));
+                            break;
+                        }
+
+                        // Snapshots
+                        //
+                        // Frigate sends us snapshots on the topic <pfxSvrMsg>/<camera name>/<object>/snapshots.
+                        // We can wildcard out the object, then update two channels, one with the detected object
+                        // type and the other with the image. We are already filtered on our camera name.
+
+                        if (cammsg.endsWith("/snapshot")) {
+
+                            // process only the snapshots for our camera
+
+                            String[] bits = cammsg.split("/");
+                            logger.info("received snapshot for cam {} object {}", config.cameraName, bits[0]);
                             this.updateState(CHANNEL_LAST_SNAPSHOT_OBJECT,
                                     ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_LAST_SNAPSHOT_OBJECT))
-                                            .toState(bits[2]));
+                                            .toState(bits[0]));
                             this.updateState(CHANNEL_LAST_SNAPSHOT,
                                     ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_LAST_SNAPSHOT))
                                             .toStateFromRaw(payload, "image/jpeg"));
