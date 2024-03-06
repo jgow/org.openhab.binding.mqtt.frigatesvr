@@ -203,7 +203,7 @@ public class frigateSVRHTTPHelper {
                     r.message = String.format("HTTP GET failed: %d, %s", response.getStatus(), response.getReason());
                 }
             } catch (TimeoutException e) {
-                r.message = String.format("TimeoutException: Call to Frigate Server timed out after {} msec", 100);
+                r.message = String.format("TimeoutException: Call to Frigate Server timed out after %d msec", 100);
             } catch (ExecutionException e) {
                 r.message = String.format("ExecutionException: %s", e.getMessage());
             } catch (InterruptedException e) {
