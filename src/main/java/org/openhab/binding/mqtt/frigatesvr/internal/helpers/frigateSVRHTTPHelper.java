@@ -42,6 +42,7 @@ public class frigateSVRHTTPHelper {
     private @Nullable HttpClient client = null;
     private String baseurl = "";
     private final Logger logger = LoggerFactory.getLogger(frigateSVRHTTPHelper.class);
+    private int timeout = 100;
 
     public frigateSVRHTTPHelper() {
     }
@@ -51,9 +52,12 @@ public class frigateSVRHTTPHelper {
     //
     // Configure at initialization
 
-    public void configure(HttpClient httpClient, String address) {
+    public void configure(HttpClient httpClient, String address, int timeout) {
         this.setBaseURL(address);
         this.client = httpClient;
+        if (timeout > 0) {
+            this.timeout = timeout;
+        }
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -148,7 +152,7 @@ public class frigateSVRHTTPHelper {
         try {
             Request request = ((@NonNull HttpClient) this.client).newRequest(buildURL(call));
             request.method(HttpMethod.GET);
-            request.timeout(100, TimeUnit.MILLISECONDS);
+            request.timeout(timeout, TimeUnit.MILLISECONDS);
 
             try {
                 ContentResponse response = request.send();
@@ -162,7 +166,7 @@ public class frigateSVRHTTPHelper {
                     r.message = String.format("HTTP GET failed: %d, %s", response.getStatus(), response.getReason());
                 }
             } catch (TimeoutException e) {
-                r.message = String.format("TimeoutException: Call to Frigate Server timed out after %d msec", 100);
+                r.message = String.format("TimeoutException: Call to Frigate Server timed out after %d msec", timeout);
             } catch (ExecutionException e) {
                 r.message = String.format("ExecutionException: %s", e.getMessage());
             } catch (InterruptedException e) {
@@ -187,7 +191,7 @@ public class frigateSVRHTTPHelper {
         ResultStruct r = new ResultStruct();
         try {
             Request request = ((@NonNull HttpClient) this.client).POST(buildURL(call));
-            request.timeout(100, TimeUnit.MILLISECONDS);
+            request.timeout(timeout, TimeUnit.MILLISECONDS);
             if (payload != null) {
                 request.content(new StringContentProvider(payload));
             }
@@ -203,7 +207,7 @@ public class frigateSVRHTTPHelper {
                     r.message = String.format("HTTP GET failed: %d, %s", response.getStatus(), response.getReason());
                 }
             } catch (TimeoutException e) {
-                r.message = String.format("TimeoutException: Call to Frigate Server timed out after %d msec", 100);
+                r.message = String.format("TimeoutException: Call to Frigate Server timed out after %d msec", timeout);
             } catch (ExecutionException e) {
                 r.message = String.format("ExecutionException: %s", e.getMessage());
             } catch (InterruptedException e) {

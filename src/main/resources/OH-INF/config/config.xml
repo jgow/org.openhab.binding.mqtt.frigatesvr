@@ -110,6 +110,12 @@
 			<description>@text/param.server.serverKeepAlive.description</description>
 			<default>5</default>
 		</parameter>
+		<parameter name="HTTPTimeout" type="integer" required="false" min="100" max="5000" unit="s">
+			<context>keep-alive</context>
+			<label>@text/param.server.HTTPTimeout.label</label>
+			<description>@text/param.server.HTTPTimeout.description</description>
+			<default>100</default>
+		</parameter>
 		<parameter name="enableAPIForwarder" type="boolean" required="true">
 			<context>name</context>
 			<label>@text/param.server.enableAPIForwarder.label</label>

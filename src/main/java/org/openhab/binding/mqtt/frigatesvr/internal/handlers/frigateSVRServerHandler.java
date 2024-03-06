@@ -107,7 +107,7 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
         if (!config.serverClientID.equals("")) {
             baseurl += "/" + config.serverClientID;
         }
-        this.httpHelper.configure(this.httpClient, baseurl);
+        this.httpHelper.configure(this.httpClient, baseurl, config.HTTPTimeout);
 
         // build our server state block. Cameras may need some of this info.
 
