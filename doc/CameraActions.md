@@ -61,6 +61,10 @@ if (camActions != null) {
 }
 ```
 
+The above script will queue the request. Note that response.rc and response.message will determine success or failure of the queuing of the request: if rc is true the request has successfully been queued. This in and of itself does not mean that the request has been completed.
+
+If the request is successfully queued, then an indeterminate time later one or both of the channels 'fgTriggerEventResult' and 'fgLastProcessedFrame' will be updated (and a separate rule can be triggered on changes to these channels, if required). The channel 'fgTriggerEventResult' will contain a text result from the call; these are described under the relevant API headers. The channel 'fgLastProcessedFrame' will be updated to an image, if the API call returns an image.
+
 ## Reference
 
 1. **TriggerEvent(String eventLabel, String eventRequest)**.
