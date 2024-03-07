@@ -375,7 +375,6 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
         //
         // frigateSVR/<serverThingID>/<cameraThingID>/
 
-        // this.pfxCamToSvr = "frigateSVR/" + config.serverID + "/" + camID;
         this.pfxCamToSvr = "frigateSVR/" + config.serverID + "/" + config.cameraName;
 
         // Prefix for messages originating from the server Thing and intended for a specific camera
@@ -383,7 +382,6 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
         //
         // frigateSVR/<cameraThingID>/<serverThingID>/
 
-        // this.pfxSvrToCam = "frigateSVR/" + camID + "/" + config.serverID;
         this.pfxSvrToCam = "frigateSVR/" + config.cameraName + "/" + config.serverID;
 
         this.SetOffline(); // do we need this?
@@ -769,8 +767,10 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
                             String hasClip = evtCur.get("has_clip").getAsString();
 
                             String ecURL = new String("");
-                            if ((evtType.equals("end")) && (hasClip.equals("true"))) {
-                                ecURL = this.svrState.url + "events/" + id + "/clip.mp4";
+                            if (hasClip.equals("true")) {
+                                ecURL = this.svrState.url + "api/events/" + id + "/clip.mp4";
+                            } else {
+                                ecURL = "";
                             }
 
                             // update 'em

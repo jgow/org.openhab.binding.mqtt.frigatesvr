@@ -159,10 +159,8 @@ public class frigateSVRChannelState {
 
     public State toState(@Nullable String s) {
         if (s != null) {
-            logger.debug("Channel - updating state to :{}", s);
             this.state = ConvertToState.fromString(s);
         } else {
-            logger.debug("Channel - updating state to NULL");
             this.state = UnDefType.NULL;
         }
         return this.state;
