@@ -44,7 +44,6 @@ If the call fails, the channel will be updated to:
 ```
 The exact format of the `<returned_JSON_data_from_Frigate>` will depend on the call, and this can be found from the Frigate API documentation
 
-<br/>
 ## Using camera ThingActions in a rule - an example
 
 Note that this does not show the processing of the output channels (fgTriggerEventResult, fgLastProcessedFrame), which would follow normal openHAB practice.
