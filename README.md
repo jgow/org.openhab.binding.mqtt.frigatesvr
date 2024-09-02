@@ -211,7 +211,7 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 | fgCamActionResult     | String   | R/O         | JSON string containing result of Frigate API call through CameraAction |
 | fgLastProcessedFrame  | Image    | R/O         | If the return from a Camera ThingAction is an image, it will appear here |
 | fgEventJSON           | String   | R/O         | Full JSON string containing the event                         |
-| fgCurrentEventType    | String   | R/O         | Current event type ('new', 'update' or 'end')                 |
+| fgEventType           | String   | R/O         | Current event type ('new', 'update' or 'end')                 |
 | fgEventClipURL        | String   | R/O         | Full URL to the clip of the current event                     |
 | fgPrevFrameTime       | DateTime | R/O         | Prior to event: Frame time prior to event                     |
 | fgPrevSnapshotTime    | DateTime | R/O         | Prior to event: Time of snapshot                              |
@@ -257,7 +257,7 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 
 #### Notes
 
-- 'Current event' and 'Prior to event' channels are updated with fgCurrentEventType. This ensures consistency of information passed to event handlers - there should be no 'stale' information left in any of the 'Cur' or 'Prev' channels. Note also that some of these values may change to NULL if the value on the Frigate server side is NULL. Thus, rules that wish to interrogate multiple 'cur' or 'prev' channels should trigger on changes to 'fgCurrentEventType' as this channel is updated once all other event channels have been updated.
+- 'Current event' and 'Prior to event' channels are updated with fgEventType. This ensures consistency of information passed to event handlers - there should be no 'stale' information left in any of the 'Cur' or 'Prev' channels. Note also that some of these values may change to NULL if the value on the Frigate server side is NULL. Thus, rules that wish to interrogate multiple 'cur' or 'prev' channels should trigger on changes to 'fgEventType' as this channel is updated once all other event channels have been updated.
 - the event and control channels follow the Frigate documentation and there should be no surprises here.
 - 'fgStreamURL': if the configuration parameter 'enableStream' is set true, if Frigate is configured to restream cameras and if the stream is on either 'cameraName' or 'ffmpegCameraNameOverride', then 'fgStreamURL' will provide a URL to a locally restreamed feed of the camera. Note that if you select a high resolution stream from Frigate, this could significantly increase CPU and network load as the local instance will have to transcode the stream. Consider using the detection substreams at lower frame rates - these are often sufficient and will result in much lower CPU loads. Multiple stream types are supported: append '.m3u8' for HLS, '.mpd' for DASH, or use the bare URL as it is to access MJPEG. The availability of each type depends if it is enabled.
 
@@ -276,7 +276,7 @@ See separate document doc/CameraActions.md in this repository for details.
 
 ## Writing rules for FrigateSVR cameras
 
-An example of how a rule can be written to use the event information follows. This example updates an item with the number of persons currently present in the field of regard of a Frigate camera, whose Thing ID is 'Camera-Main' and is triggering on the channel fgCurrentEventType, bound to item 'Camera__Main_Current_Event_Type'
+An example of how a rule can be written to use the event information follows. This example updates an item with the number of persons currently present in the field of regard of a Frigate camera, whose Thing ID is 'Camera-Main' and is triggering on the channel fgEventType, bound to item 'Camera__Main_Current_Event_Type'
 
 Note that the detected entity string is supplied by Frigate wrapped in quotes. I may modify the binding later to strip these off.
 
