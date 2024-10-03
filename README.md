@@ -226,8 +226,8 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 | fgPrevArea            | String   | R/O         | Prior to event: Detection box area (given as array [a,b,c,d]) |
 | fgPrevRatio           | Number   | R/O         | Prior to event: Detected ratio                                |
 | fgPrevRegion          | String   | R/O         | Prior to event: Detected regions                              |
-| fgPrevCurrentzone     | String   | R/O         | Prior to event: Detected zones (given as array [..])          |
-| fgPrevEnteredzone     | String   | R/O         | Prior to event: Entered zones (given as array [..])           |
+| fgPrevCurrentZone     | String   | R/O         | Prior to event: Detected zones (given as array [..])          |
+| fgPrevEnteredZone     | String   | R/O         | Prior to event: Entered zones (given as array [..])           |
 | fgPrevHasSnapshot     | Contact  | R/O         | Prior to event: is a snapshot available?                      |
 | fgPrevHasClip         | Contact  | R/O         | Prior to event: is a clip available?                          |
 | fgPrevStationary      | Contact  | R/O         | Prior to event: is object stationary?                         |
@@ -246,8 +246,8 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 | fgCurArea             | String   | R/O         | Current event: Detection box area (given as array [a,b,c,d])  |
 | fgCurRatio            | Number   | R/O         | Current event: Detected ratio                                 |
 | fgCurRegion           | String   | R/O         | Current event: Detected regions                               |
-| fgCurCurrentzone      | String   | R/O         | Current event: Detected zones (given as array [..])           |
-| fgCurEnteredzone      | String   | R/O         | Current event: Entered zones (given as array [..])            |
+| fgCurCurrentZone      | String   | R/O         | Current event: Detected zones (given as array [..])           |
+| fgCurEnteredZone      | String   | R/O         | Current event: Entered zones (given as array [..])            |
 | fgCurHasSnapshot      | Contact  | R/O         | Current event: is a snapshot available?                       |
 | fgCurHasClip          | Contact  | R/O         | Current event: is a clip available?                           |
 | fgCurStationary       | Contact  | R/O         | Current event: is object stationary?                          |
