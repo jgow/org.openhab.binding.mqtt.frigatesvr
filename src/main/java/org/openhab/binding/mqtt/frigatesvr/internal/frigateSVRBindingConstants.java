@@ -80,7 +80,7 @@ public class frigateSVRBindingConstants {
     public static final String CHANNEL_PREV_AREA = "fgPrevArea";
     public static final String CHANNEL_PREV_RATIO = "fgPrevRatio";
     public static final String CHANNEL_PREV_REGION = "fgPrevRegion";
-    public static final String CHANNEL_PREV_CURRENT_ZONE = "fgPrevCurrentzone";
+    public static final String CHANNEL_PREV_CURRENT_ZONE = "fgPrevCurrentZone";
     public static final String CHANNEL_PREV_ENTERED_ZONE = "fgPrevEnteredZone";
     public static final String CHANNEL_PREV_HAS_SNAPSHOT = "fgPrevHasSnapshot";
     public static final String CHANNEL_PREV_HAS_CLIP = "fgPrevHasClip";
@@ -101,7 +101,7 @@ public class frigateSVRBindingConstants {
     public static final String CHANNEL_CUR_AREA = "fgCurArea";
     public static final String CHANNEL_CUR_RATIO = "fgCurRatio";
     public static final String CHANNEL_CUR_REGION = "fgCurRegion";
-    public static final String CHANNEL_CUR_CURRENT_ZONE = "fgCurCurrentzone";
+    public static final String CHANNEL_CUR_CURRENT_ZONE = "fgCurCurrentZone";
     public static final String CHANNEL_CUR_ENTERED_ZONE = "fgCurEnteredZone";
     public static final String CHANNEL_CUR_HAS_SNAPSHOT = "fgCurHasSnapshot";
     public static final String CHANNEL_CUR_HAS_CLIP = "fgCurHasClip";

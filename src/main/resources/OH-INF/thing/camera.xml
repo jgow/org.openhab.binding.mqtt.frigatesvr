@@ -48,7 +48,7 @@
 			<channel id="fgPrevArea" typeId="fgPrevArea"/>
 			<channel id="fgPrevRatio" typeId="fgPrevRatio"/>
 			<channel id="fgPrevRegion" typeId="fgPrevRegion"/>
-			<channel id="fgPrevCurrentzone" typeId="fgPrevCurrentZone"/>
+			<channel id="fgPrevCurrentZone" typeId="fgPrevCurrentZone"/>
 			<channel id="fgPrevEnteredZone" typeId="fgPrevEnteredZone"/>
 			<channel id="fgPrevHasSnapshot" typeId="fgPrevHasSnapshot"/>
 			<channel id="fgPrevHasClip" typeId="fgPrevHasClip"/>
