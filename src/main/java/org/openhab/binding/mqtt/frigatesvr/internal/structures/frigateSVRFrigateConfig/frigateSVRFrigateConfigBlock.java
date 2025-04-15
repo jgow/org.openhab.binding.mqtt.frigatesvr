@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2010-2024 Contributors to the openHAB project
+/*
+ * Copyright (c) 2010-2025 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -52,7 +52,7 @@ public class frigateSVRFrigateConfigBlock {
 
     public ArrayList<String> GetCameraList() {
         ArrayList<String> cameraList = new ArrayList<String>();
-        if (cameras.keySet().size() > 0) {
+        if (!cameras.keySet().isEmpty()) {
             cameras.keySet().forEach(key -> {
                 logger.debug("Adding camera :{}", key);
                 cameraList.add(key);
