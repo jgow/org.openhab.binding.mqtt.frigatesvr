@@ -708,21 +708,24 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
 
                     if (action.endsWith(MQTT_STATS_SUFFIX)) {
                         JsonObject statObj = JsonParser.parseString(state).getAsJsonObject();
-                        if (statObj.has(config.cameraName)) {
-                            logger.debug("have status for camera {}", config.cameraName);
-                            JsonObject statusBlock = statObj.get(config.cameraName).getAsJsonObject();
-                            HandleEventPart.accept(JSONStateGetters, statusBlock);
-                        } else {
+                        if (statObj.has("cameras")) {
+                            statObj = statObj.get("cameras").getAsJsonObject();
+                            if (statObj.has(config.cameraName)) {
+                                logger.debug("have status for camera {}", config.cameraName);
+                                JsonObject statusBlock = statObj.get(config.cameraName).getAsJsonObject();
+                                HandleEventPart.accept(JSONStateGetters, statusBlock);
+                            } else {
 
-                            // If we don't have the camera listed in the status message, then
-                            // we iterate the status channels and null them out. This avoids
-                            // confusion with 'old' states being left in place if Frigate sends us
-                            // status without the camera in the block
+                                // If we don't have the camera listed in the status message, then
+                                // we iterate the status channels and null them out. This avoids
+                                // confusion with 'old' states being left in place if Frigate sends us
+                                // status without the camera in the block
 
-                            for (var ch : JSONStateGetters.entrySet()) {
-                                updateState((@NonNull String) (ch.getValue()),
-                                        ((@NonNull frigateSVRChannelState) this.Channels.get(ch.getValue()))
-                                                .toState(null));
+                                for (var ch : JSONStateGetters.entrySet()) {
+                                    updateState((@NonNull String) (ch.getValue()),
+                                            ((@NonNull frigateSVRChannelState) this.Channels.get(ch.getValue()))
+                                                    .toState(null));
+                                }
                             }
                         }
                         break;
