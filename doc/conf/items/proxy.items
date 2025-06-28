@@ -1,0 +1,7 @@
+// Frigate proxy items
+Switch fgDrivewayEventsPush "Push Frigate events to phone"          {expire="3h,command=OFF"} // Turned on by sunset event each day, turns off 3hrs later
+Switch fgDrivewayAlarmState "Alarm state - forward snaphots"        {expire="1m,command=OFF"} // When an event is received and decides it is alertable, set this to ON so that when the snapshot comes through we can then push the current status to pushover
+Switch fgDrivewayAlarmDebounce "Alarm debounce active"              {expire="1m,command=OFF"} // Don't alarm every few seconds with each new event. When this is ON then silence the pushover alarms
+
+// A custom rule watches this for changes to turn lights off/on (not in this documenation example)
+Switch switch_garden_trigger "Garden Trigger"						{ expire="3m,command=OFF" }			// Hit this to trigger light on
