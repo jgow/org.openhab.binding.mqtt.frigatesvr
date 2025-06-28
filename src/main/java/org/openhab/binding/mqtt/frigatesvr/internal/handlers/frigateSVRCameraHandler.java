@@ -123,7 +123,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     private java.util.function.BiConsumer<Map<String, String>, JsonObject> HandleEventPart = (getter, evtPart) -> {
         for (var ch : getter.entrySet()) {
             if (evtPart.has(ch.getKey())) {
-                logger.debug("Cur: updating channel {}", ch.getKey());
+                logger.debug("updating channel {}", ch.getKey());
                 JsonElement st = evtPart.get(ch.getKey());
                 String chstate = (!st.isJsonNull()) ? st.toString() : null;
                 updateState((@NonNull String) (ch.getValue()),
@@ -132,6 +132,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
                 // if we have a channel that doesn't exist in the
                 // event packet back from the camera, we must null out the
                 // channel.
+                logger.debug("channel {} does not exist; nulling", ch.getKey());
                 updateState((@NonNull String) (ch.getValue()),
                         ((@NonNull frigateSVRChannelState) this.Channels.get(ch.getValue())).toState(null));
             }
