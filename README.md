@@ -272,7 +272,7 @@ To be implemented. This will allow access to the event history, deletion of even
 ### Camera ThingActions
 
 The Frigate API can be accessed through ThingActons as well as directly through the HTTP API.
-See separate document doc/CameraActions.md in this repository for details.
+See [CameraActions.md](./doc/CameraActions.md) for details.
 
 ## Writing rules for FrigateSVR cameras
 
@@ -344,6 +344,10 @@ If you are reading this, then the version in this tree **does** support native v
   config:
       url: =items.frigateSVR_Server_Birdseye_stream_URL.state + ".m3u8"
 ```
+
+## Conf File Configuration Example
+
+See [doc/conf](./doc/conf) folder for a conf based configuration using files, including a rule to send pushover alerts for a `person` label in a specific zone.
 
 # Building
 
