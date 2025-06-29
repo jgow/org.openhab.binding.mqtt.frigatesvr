@@ -98,7 +98,8 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
             Map.entry("entered_zones", CHANNEL_PREV_ENTERED_ZONE), Map.entry("has_snapshot", CHANNEL_PREV_HAS_SNAPSHOT),
             Map.entry("has_clip", CHANNEL_PREV_HAS_CLIP), Map.entry("stationary", CHANNEL_PREV_STATIONARY),
             Map.entry("motionless_count", CHANNEL_PREV_MOTIONLESSCOUNT),
-            Map.entry("position_changes", CHANNEL_PREV_POSITIONCHANGES));
+            Map.entry("position_changes", CHANNEL_PREV_POSITIONCHANGES),
+            Map.entry("max_severity", CHANNEL_PREV_MAXSEVERITY));
 
     private Map<String, String> JSONEventGettersToCur = Map.ofEntries(Map.entry("frame_time", CHANNEL_CUR_FRAME_TIME),
             Map.entry("snapshot_time", CHANNEL_CUR_SNAPSHOT_TIME), Map.entry("label", CHANNEL_CUR_LABEL),
@@ -110,7 +111,8 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
             Map.entry("current_zones", CHANNEL_CUR_CURRENT_ZONE), Map.entry("entered_zones", CHANNEL_CUR_ENTERED_ZONE),
             Map.entry("has_snapshot", CHANNEL_CUR_HAS_SNAPSHOT), Map.entry("has_clip", CHANNEL_CUR_HAS_CLIP),
             Map.entry("stationary", CHANNEL_CUR_STATIONARY), Map.entry("motionless_count", CHANNEL_CUR_MOTIONLESSCOUNT),
-            Map.entry("position_changes", CHANNEL_CUR_POSITIONCHANGES));
+            Map.entry("position_changes", CHANNEL_CUR_POSITIONCHANGES),
+            Map.entry("max_severity", CHANNEL_CUR_MAXSEVERITY));
 
     private Map<String, String> JSONStateGetters = Map.ofEntries(Map.entry("camera_fps", CHANNEL_CAM_CAMFPS),
             Map.entry("process_fps", CHANNEL_CAM_PROCESSFPS), Map.entry("skipped_fps", CHANNEL_CAM_SKIPPEDFPS),
@@ -123,7 +125,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     private java.util.function.BiConsumer<Map<String, String>, JsonObject> HandleEventPart = (getter, evtPart) -> {
         for (var ch : getter.entrySet()) {
             if (evtPart.has(ch.getKey())) {
-                logger.debug("Cur: updating channel {}", ch.getKey());
+                logger.debug("updating channel {}", ch.getKey());
                 JsonElement st = evtPart.get(ch.getKey());
                 String chstate = (!st.isJsonNull()) ? st.toString() : null;
                 updateState((@NonNull String) (ch.getValue()),
@@ -132,6 +134,7 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
                 // if we have a channel that doesn't exist in the
                 // event packet back from the camera, we must null out the
                 // channel.
+                logger.debug("channel {} does not exist; nulling", ch.getKey());
                 updateState((@NonNull String) (ch.getValue()),
                         ((@NonNull frigateSVRChannelState) this.Channels.get(ch.getValue())).toState(null));
             }
@@ -255,6 +258,9 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
                 Map.entry(CHANNEL_PREV_POSITIONCHANGES,
                         new frigateSVRChannelState("position_changes", frigateSVRChannelState::fromNumberMQTT,
                                 frigateSVRChannelState::toNumberMQTT, false)),
+                Map.entry(CHANNEL_PREV_MAXSEVERITY,
+                        new frigateSVRChannelState("max_severity", frigateSVRChannelState::fromStringMQTT,
+                                frigateSVRChannelState::toStringMQTT, false)),
                 Map.entry(CHANNEL_CUR_FRAME_TIME,
                         new frigateSVRChannelState("frame_time", frigateSVRChannelState::fromTimestampMQTT,
                                 frigateSVRChannelState::toTimestampMQTT, false)),
@@ -315,6 +321,9 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
                 Map.entry(CHANNEL_CUR_POSITIONCHANGES,
                         new frigateSVRChannelState("position_changes", frigateSVRChannelState::fromNumberMQTT,
                                 frigateSVRChannelState::toNumberMQTT, false)),
+                Map.entry(CHANNEL_CUR_MAXSEVERITY,
+                        new frigateSVRChannelState("max_severity", frigateSVRChannelState::fromStringMQTT,
+                                frigateSVRChannelState::toStringMQTT, false)),
                 Map.entry(CHANNEL_LAST_SNAPSHOT_OBJECT,
                         new frigateSVRChannelState("", frigateSVRChannelState::fromStringMQTT,
                                 frigateSVRChannelState::toStringMQTT, false)),
