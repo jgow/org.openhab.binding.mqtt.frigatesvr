@@ -1,0 +1,99 @@
+sitemap frigate label="Frigate Camera" {
+    
+    Frame label="Switch States" {
+        Switch item=fgDrivewayDetectionState
+        Switch item=fgDrivewayRecordingState
+        Switch item=fgDrivewaySnapshotState
+        Switch item=fgDrivewayMotionState
+        Switch item=fgDrivewayContrastState
+        Switch item=fgDrivewayMotionDetected
+        Switch item=fgDrivewayEventsPush
+        Switch item=fgDrivewayAlarmState
+        Switch item=fgDrivewayAlarmDebounce
+    }
+
+    Frame label="Current Event" {
+        Text item=fgDrivewayEventID
+        Text item=fgDrivewayEventType
+        Text item=fgDrivewayCurRatio
+        Text item=fgDrivewayCurMotionlessCount
+        Text item=fgDrivewayCurPositionChanges
+
+        Switch item=fgDrivewayCurFalsePositive
+        Switch item=fgDrivewayCurHasSnapshot
+        Switch item=fgDrivewayCurHasClip
+        Switch item=fgDrivewayCurStationary
+
+        
+        Text item=fgDrivewayCurFrameTime
+        Text item=fgDrivewayCurSnapshotTime
+        Text item=fgDrivewayCurStartTime
+        Text item=fgDrivewayCurEndTime
+
+        
+        Text item=fgDrivewayCurLabel
+        Text item=fgDrivewayCurSubLabel
+        Text item=fgDrivewayCurBox
+        Text item=fgDrivewayCurArea
+        Text item=fgDrivewayCurRegion
+        Text item=fgDrivewayCurCurrentZone
+        Text item=fgDrivewayCurEnteredZone
+
+        
+        Text item=fgDrivewayCurTopScore
+        Text item=fgDrivewayCurScore
+        Text item=fgDrivewayCurRatio
+        Text item=fgDrivewayCurMotionlessCount
+        Text item=fgDrivewayCurPositionChanges
+
+    }
+
+    Frame label="Prior Event" {
+
+        Switch item=fgDrivewayPrevFalsePositive
+        Switch item=fgDrivewayPrevHasSnapshot
+        Switch item=fgDrivewayPrevHasClip
+        Switch item=fgDrivewayPrevStationary
+        
+        Text item=fgDrivewayPrevFrameTime
+        Text item=fgDrivewayPrevSnapshotTime
+        Text item=fgDrivewayPrevStartTime
+        Text item=fgDrivewayPrevEndTime
+        
+        Text item=fgDrivewayPrevLabel
+        Text item=fgDrivewayPrevSubLabel
+        Text item=fgDrivewayPrevBox
+        Text item=fgDrivewayPrevArea
+        Text item=fgDrivewayPrevRegion
+        Text item=fgDrivewayPrevCurrentZone
+        Text item=fgDrivewayPrevEnteredZone
+
+        Text item=fgDrivewayPrevTopScore
+        Text item=fgDrivewayPrevScore
+        Text item=fgDrivewayPrevRatio
+        Text item=fgDrivewayPrevMotionlessCount
+        Text item=fgDrivewayPrevPositionChanges
+    }
+        
+    Frame label="✏ Text Items" {
+        Text item=fgDrivewayStreamURL
+        Text item=fgDrivewayLastSnapshotObject
+        Text item=fgDrivewayCamActionResult
+        Text item=fgDrivewayEventJSON
+        Text item=fgDrivewayEventClipURL
+    }
+    
+    Frame label="🔢 Numeric Measurements" {
+        Text item=fgDrivewayCameraFPS
+        Text item=fgDrivewayCameraProcessFPS
+        Text item=fgDrivewayCameraSkippedFPS
+        Text item=fgDrivewayCameraDetectionFPS
+        Text item=fgDrivewayMotionThreshold
+        Text item=fgDrivewayMotionContourArea
+    }
+    
+    Frame label="🖼️ Images" {
+        Image item=fgDrivewayLastSnapshot label="snapshot"
+        //Image item=fgDrivewayLastProcessedFrame
+    }
+}

@@ -1,0 +1,131 @@
+/*
+EventType is the last item to update and so when this changes we know the other values are updated and stable
+*/ 
+rule "Frigate Event"
+when Item fgDrivewayEventType received update
+then
+    var eventType = fgDrivewayEventType.state.toString
+    
+    var id = fgDrivewayEventID.state.toString
+    var zones = fgDrivewayCurEnteredZone.state.toString
+    var label = fgDrivewayCurLabel.state.toString
+    var haveSnapshot = fgDrivewayCurHasSnapshot.state.toString
+
+    logInfo("Frigate", String::format("[eventtype triggered] Frigate EventId: %s, eventType=%s, label=%s, zone=%s, haveSnapshot=%s", id, eventType, label, zones, haveSnapshot));
+    
+    val isAfterSunset =  Sunset_HasOccurred.state == ON
+    var canLightTurnOn = isAfterSunset
+    
+    var isAlertableZone = (zones.contains("MainDriveway") || zones.contains("FrontSteps")) 
+    var isAlertableEvent = (eventType == "new" || eventType == "update") && ((label.contains("person")) || label.contains("car"))
+    var isPushableEvent = fgDrivewayEventsPush.state == ON
+    var isAlreadyAlarmed = fgDrivewayAlarmDebounce.state == ON
+
+    logInfo("FrigateTrigger", String::format(
+            "switch_garden=%s, Sunset.Start=%s, isAfterSunset=%b, canLightTurnOn=%b, isAlertableZone=%b, isAlertableEvent=%b, isPushableEvent=%b, isAlreadyAlarmed=%b"
+            , switch_garden.state
+            , Sunset_Start.state
+            , isAfterSunset
+            , canLightTurnOn
+            , isAlertableZone
+            , isAlertableEvent
+            , isPushableEvent
+            , isAlreadyAlarmed))
+
+    if (isAlertableZone && isAlertableEvent)
+    {
+        logInfo("FrigateTrigger", String::format("Frigate will light garden=%b, isPushableEvent=%b", canLightTurnOn, isPushableEvent))
+        if (canLightTurnOn)
+        {
+            // Use a trigger and not the actual light so we can auto turn off
+            switch_garden_trigger.sendCommand(ON)
+        }
+
+        if (isPushableEvent)
+        {
+            fgDrivewayAlarmState.postUpdate("ON")
+        }
+    }
+
+end
+
+/*
+Only when we have the snapshot do we want to check for sending alerts
+*/
+rule "Frigate fgDrivewayLastSnapshot"
+when Item fgDrivewayLastSnapshot received update
+then
+    var eventType = fgDrivewayLastSnapshot.state.toString
+    logInfo("Frigate", String::format("Frigate fgDrivewayLastSnapshot label: %s, fgDrivewayAlarmDebounce.state=%s, fgDrivewayAlarmState.state=%s", eventType, fgDrivewayAlarmDebounce.state, fgDrivewayAlarmState.state));
+
+    if (fgDrivewayAlarmState.state == ON && fgDrivewayAlarmDebounce.state != ON)
+    {
+        var label = fgDrivewayCurLabel.state.toString().replace("\"", "")                                           // Binding returns it quoted, strip the quote out
+        var zones = fgDrivewayCurEnteredZone.state.toString().replaceAll("[\\[\\]\"]", "").replaceAll("([a-z])([A-Z])", "$1 $2").toLowerCase()   // Turn CamelCase to sentence case, strip quotes
+        var message = String::format("There is a %s in %s", label, zones)
+        val pushover = getActions("pushover", "pushover:pushover-account:account")
+        pushover.sendAttachmentMessage(message, "openHAB", fgDrivewayLastSnapshot.state.toFullString, null)
+        logInfo("Frigate", String::format("Pushover sent: %s", message));
+
+        // We have now sent an alert, silence the pushes until the debounce turns off again
+        fgDrivewayAlarmDebounce.postUpdate("ON")
+    }
+end
+
+// Debug rules
+
+// rule "Frigate Label" 
+// when Item fgDrivewayCurLabel received update
+// then
+//     var label = fgDrivewayCurLabel.state.toString
+//     logInfo("Frigate", String::format("Frigate current label: %s", label));
+// end
+
+// rule "Frigate fgDrivewayCurHasSnapshot"
+// when Item fgDrivewayCurHasSnapshot received update
+// then
+//     var haveSnapshot = fgDrivewayCurHasSnapshot.state.toString
+//     logInfo("Frigate", String::format("Frigate snapshot available: %s", haveSnapshot));
+// end
+
+// rule "Frigate fgDrivewayLastSnapshotObject"
+// when Item fgDrivewayLastSnapshotObject received update
+// then
+//     var eventType = fgDrivewayLastSnapshotObject.state.toString
+//     logInfo("Frigate", String::format("Frigate snapshot label: %s", eventType));
+// end 
+
+
+// rule "Frigate fgDrivewayCurEnteredZone"
+// when Item fgDrivewayCurEnteredZone received update
+// then
+//     var zones = fgDrivewayCurEnteredZone.state.toString
+    
+//     logInfo("Frigate", String::format("Frigate fgDrivewayCurEnteredZone: %s", zones));
+// end
+
+// rule "Frigate fgDrivewayCurArea"
+// when Item fgDrivewayCurArea received update
+// then
+//     var area = fgDrivewayCurArea.state.toString
+    
+//     logInfo("Frigate", String::format("Frigate fgDrivewayCurArea: %s", area));
+// end
+
+// rule "Frigate fgDrivewayEventClipURL"
+// when Item fgDrivewayEventClipURL received update
+// then
+//     var url = fgDrivewayEventClipURL.state.toString
+    
+//     logInfo("Frigate", String::format("Frigate clip url: %s", url));
+// end
+
+// rule "Frigate fgEventId"
+// when Item fgDrivewayEventID received update
+// then
+//     var id = fgDrivewayEventID.state.toString
+//     var zones = fgDrivewayCurEnteredZone.state.toString
+//     var label = fgDrivewayCurLabel.state.toString
+//     var haveSnapshot = fgDrivewayCurHasSnapshot.state.toString
+//     logInfo("Frigate", String::format("Frigate EventId: %s, label=%s, zone=%s, haveSnapshot=%s", id, label, zones, haveSnapshot));
+// end

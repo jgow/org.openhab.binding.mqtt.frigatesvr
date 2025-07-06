@@ -1,0 +1,16 @@
+Bridge mqtt:broker:PiMqttBroker [ host="192.168.20.5", secure=false, username="mqttuser", password="password123"] {
+
+  Thing frigateServer frigate @ "Outdoor" 
+  [ 
+      serverURL="http://192.168.20.5:5000",
+      ffTempDir="/dev/shm"
+  ] 
+ 
+  Thing frigateCamera drivewayCamera @ "Outdoor" 
+  [ 
+      serverID="mqtt:frigateServer:PiMqttBroker:frigate",
+      cameraName="driveway",
+      ffTempDir="/dev/shm"
+  ]  
+
+}
