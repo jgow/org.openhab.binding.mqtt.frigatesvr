@@ -241,7 +241,7 @@
 		<description>@text/channel.previousBoxCoordinates.description</description>
 	</channel-type>
 	<channel-type id="fgPrevArea">
-		<item-type>Number</item-type>
+		<item-type>String</item-type>
 		<label>@text/channel.previousDetectedArea</label>
 		<description>@text/channel.previousDetectedArea.description</description>
 	</channel-type>
@@ -349,7 +349,7 @@
 		<description>@text/channel.currentBoxCoordinates.description</description>
 	</channel-type>
 	<channel-type id="fgCurArea">
-		<item-type>Number</item-type>
+		<item-type>String</item-type>
 		<label>@text/channel.currentDetectedArea</label>
 		<description>@text/channel.currentDetectedArea.description</description>
 	</channel-type>
