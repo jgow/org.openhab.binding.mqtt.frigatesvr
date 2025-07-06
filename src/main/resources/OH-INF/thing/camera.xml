@@ -55,6 +55,7 @@
 			<channel id="fgPrevStationary" typeId="fgPrevStationary"/>
 			<channel id="fgPrevMotionlessCount" typeId="fgPrevMotionlessCount"/>
 			<channel id="fgPrevPositionChanges" typeId="fgPrevPositionChanges"/>
+			<channel id="fgPrevMaxSeverity" typeId="fgPrevMaxSeverity"/>
 			<channel id="fgCurFrameTime" typeId="fgCurFrameTime"/>
 			<channel id="fgCurSnapshotTime" typeId="fgCurSnapshotTime"/>
 			<channel id="fgCurLabel" typeId="fgCurLabel"/>
@@ -75,6 +76,7 @@
 			<channel id="fgCurStationary" typeId="fgCurStationary"/>
 			<channel id="fgCurMotionlessCount" typeId="fgCurMotionlessCount"/>
 			<channel id="fgCurPositionChanges" typeId="fgCurPositionChanges"/>
+			<channel id="fgCurMaxSeverity" typeId="fgCurMaxSeverity"/>
 			<channel id="fgLastProcessedFrame" typeId="fgLastProcessedFrame"/>
 		</channels>
 		<config-description-ref uri="thing-type:mqtt:Camera"/>
@@ -288,6 +290,11 @@
 		<label>@text/channel.previousPositionChanges</label>
 		<description>@text/channel.previousPositionChanges.description</description>
 	</channel-type>
+	<channel-type id="fgPrevMaxSeverity">
+		<item-type>String</item-type>
+		<label>@text/channel.previousMaxSeverity</label>
+		<description>@text/channel.previousMaxSeverity.description</description>
+	</channel-type>
 
 	<!-- Event: channels relating to the current state -->
 
@@ -390,6 +397,11 @@
 		<item-type>Number</item-type>
 		<label>@text/channel.currentPositionChanges</label>
 		<description>@text/channel.currentPositionChanges.description</description>
+	</channel-type>
+	<channel-type id="fgCurMaxSeverity">
+		<item-type>String</item-type>
+		<label>@text/channel.currentMaxSeverity</label>
+		<description>@text/channel.currentMaxSeverity.description</description>
 	</channel-type>
 	<channel-type id="fgLastProcessedFrame">
 		<item-type>Image</item-type>

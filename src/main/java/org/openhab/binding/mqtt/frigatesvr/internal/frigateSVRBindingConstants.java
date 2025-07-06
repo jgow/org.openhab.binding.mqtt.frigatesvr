@@ -87,6 +87,7 @@ public class frigateSVRBindingConstants {
     public static final String CHANNEL_PREV_STATIONARY = "fgPrevStationary";
     public static final String CHANNEL_PREV_MOTIONLESSCOUNT = "fgPrevMotionlessCount";
     public static final String CHANNEL_PREV_POSITIONCHANGES = "fgPrevPositionChanges";
+    public static final String CHANNEL_PREV_MAXSEVERITY = "fgPrevMaxSeverity";
 
     public static final String CHANNEL_CUR_FRAME_TIME = "fgCurFrameTime";
     public static final String CHANNEL_CUR_SNAPSHOT_TIME = "fgCurSnapshotTime";
@@ -108,6 +109,7 @@ public class frigateSVRBindingConstants {
     public static final String CHANNEL_CUR_STATIONARY = "fgCurStationary";
     public static final String CHANNEL_CUR_MOTIONLESSCOUNT = "fgCurMotionlessCount";
     public static final String CHANNEL_CUR_POSITIONCHANGES = "fgCurPositionChanges";
+    public static final String CHANNEL_CUR_MAXSEVERITY = "fgCurMaxSeverity";
 
     // MQTT topic suffixes
     public static final String MQTT_EVENTS_SUFFIX = "events";
