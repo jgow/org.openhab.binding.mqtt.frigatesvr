@@ -274,9 +274,11 @@ To be implemented. This will allow access to the event history, deletion of even
 The Frigate API can be accessed through ThingActons as well as directly through the HTTP API.
 See [CameraActions.md](./doc/CameraActions.md) for details.
 
-## Writing rules for FrigateSVR cameras
+# Examples
 
-An example of how a rule can be written to use the event information follows. This example updates an item with the number of persons currently present in the field of regard of a Frigate camera, whose Thing ID is 'Camera-Main' and is triggering on the channel fgEventType, bound to item 'Camera__Main_Current_Event_Type'
+## YAML Style DSL Rule Example
+
+An example of how a rule can be written to use the event information follows. This example updates an item with the number of persons currently present in the field of regard of a Frigate camera, whose Thing ID is 'Camera-Main' and is triggering on the channel fgEventType, bound to item `Camera__Main_Current_Event_Type`
 
 Note that the detected entity string is supplied by Frigate wrapped in quotes. I may modify the binding later to strip these off.
 
@@ -319,12 +321,12 @@ actions:
     type: script.ScriptAction
 ```
 
-## Displaying Frigate camera video streams on OpenHAB UI - an example
+## Displaying Frigate camera video streams in OpenHAB UI Example
 
 Versions of this binding prior to 1.5 do not handle video - but these older versions could be used with the 'ipcamera' binding to transcode restreamed video from Frigate. This was not satisfactory as it required installation of a lot of additional 'stuff' just to get the video proxy.
-If you are reading this, then the version in this tree **does** support native video and should do so with the minimum of configuration without requiring ipcamera to be installed:
+Latest versions of this binding **do** support native video and should do so with the minimum of configuration without requiring ipcamera to be installed:
 
-- Ensure you have a version of ffmpeg installed on your OpenHAB box that has access to the appropriate codecs (e.g. h264) - for example I use openSuSE, so had to install the 'Packman' version of ffmpeg in order to get the necessary codecs. There should be a similar source of codecs for your distribution of choice. Note the path of ffmpeg (usually /usr/bin/ffmpeg under Linux).
+- Ensure you have a version of ffmpeg installed on your OpenHAB host that has access to the appropriate codecs (e.g. h264) - for example I use openSuSE, so had to install the 'Packman' version of ffmpeg in order to get the necessary codecs. There should be a similar source of codecs for your distribution of choice. Note the path of ffmpeg (usually /usr/bin/ffmpeg under Linux).
 - For cameras:
     - Frigate exports RTSP streams for each camera on `http://<frigate-server>:8554/<stream-name>` The binding will by default look for a stream where <stream-NAME> is equal to the cameraName. If the Frigate configuration differs, ensure the desired Frigate `<stream-name>` is inserted in the 'ffmpegCameraNameOverride' parameter on the camera 'thing'.
     - Ensure that the streaming is turned on using the 'enableStream' parameter on the camera 'thing'.
@@ -345,9 +347,13 @@ If you are reading this, then the version in this tree **does** support native v
       url: =items.frigateSVR_Server_Birdseye_stream_URL.state + ".m3u8"
 ```
 
-## Conf File Configuration Example
+## Rules DSL Example
 
-See [doc/conf](./doc/conf) folder for a conf based configuration using files, including a rule to send pushover alerts for a `person` label in a specific zone.
+See [doc/conf](./doc/conf) folder for a conf based configuration using files, including a rule to send [Pushover](https://www.openhab.org/addons/bindings/pushover/) alerts for a `person` label in a specific zone.
+
+## JSR223 Example
+
+Using the items as seen in the Rules DSL above, see the [jsr223](./doc/jsr223) and [html](./doc/conf/html) folders. The `frigate-events.html`  shows how to render thumbnails of Frigate alerts in an OpenHAB sitemap.
 
 # Building
 
