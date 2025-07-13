@@ -353,7 +353,7 @@ See [doc/conf](./doc/conf) folder for a conf based configuration using files, in
 
 ## JSR223 Example
 
-Using the items as seen in the Rules DSL above, see the [jsr223](./doc/jsr223) and [html](./doc/conf/html) folders. The `frigate-events.html`  shows how to render thumbnails of Frigate alerts in an OpenHAB sitemap.
+Using the items as seen in the Rules DSL above, see the [jsr223](./doc/conf/jsr223) and [html](./doc/conf/html) folders. The `frigate-events.html`  shows how to render thumbnails of Frigate alerts in an OpenHAB sitemap.
 
 # Building
 
