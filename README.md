@@ -1,6 +1,6 @@
-# OpenHAB Frigate SVR Binding
+# OpenHAB Frigate NVR Binding
 
-This is a comprehensive binding for the Frigate SVR system (https://docs.frigate.video/). It allows access to all configured
+This is a comprehensive binding for the Frigate NVR system (https://docs.frigate.video/). It allows access to all configured
 cameras, and realtime event information from the cameras can be used in rules. It tracks Frigate server status and can alert
 if the Frigate server goes offline.
 
@@ -222,12 +222,12 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 | fgPrevStartTime       | DateTime | R/O         | Prior to event: Event start time                              |
 | fgPrevEndTime         | DateTime | R/O         | Prior to event: Event end time                                |
 | fgPrevScore           | Number   | R/O         | Prior to event: Score                                         |
-| fgPrevBox             | String   | R/O         | Prior to event: Detection box coords (given as array [..])    |
-| fgPrevArea            | String   | R/O         | Prior to event: Detection box area (given as array [a,b,c,d]) |
+| fgPrevBox             | String   | R/O         | Prior to event: Detection box coords (JSON array)             |
+| fgPrevArea            | String   | R/O         | Prior to event: Detection box area (JSON array)               |
 | fgPrevRatio           | Number   | R/O         | Prior to event: Detected ratio                                |
 | fgPrevRegion          | String   | R/O         | Prior to event: Detected regions                              |
-| fgPrevCurrentZone     | String   | R/O         | Prior to event: Detected zones (given as array [..])          |
-| fgPrevEnteredZone     | String   | R/O         | Prior to event: Entered zones (given as array [..])           |
+| fgPrevCurrentZone     | String   | R/O         | Prior to event: Detected zones (JSON array)                   |
+| fgPrevEnteredZone     | String   | R/O         | Prior to event: Entered zones (JSON array)                    |
 | fgPrevHasSnapshot     | Contact  | R/O         | Prior to event: is a snapshot available?                      |
 | fgPrevHasClip         | Contact  | R/O         | Prior to event: is a clip available?                          |
 | fgPrevStationary      | Contact  | R/O         | Prior to event: is object stationary?                         |
@@ -243,12 +243,12 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 | fgCurStartTime        | DateTime | R/O         | Current event: Event start time                               |
 | fgCurEndTime          | DateTime | R/O         | Current event: Event end time                                 |
 | fgCurScore            | Number   | R/O         | Current event: Score                                          |
-| fgCurBox              | String   | R/O         | Current event: Detection box coords (given as array [..])     |
-| fgCurArea             | String   | R/O         | Current event: Detection box area (given as array [a,b,c,d])  |
+| fgCurBox              | String   | R/O         | Current event: Detection box coords (JSON array)              |
+| fgCurArea             | String   | R/O         | Current event: Detection box area (JSON array)                |
 | fgCurRatio            | Number   | R/O         | Current event: Detected ratio                                 |
 | fgCurRegion           | String   | R/O         | Current event: Detected regions                               |
-| fgCurCurrentZone      | String   | R/O         | Current event: Detected zones (given as array [..])           |
-| fgCurEnteredZone      | String   | R/O         | Current event: Entered zones (given as array [..])            |
+| fgCurCurrentZone      | String   | R/O         | Current event: Detected zones (JSON array)                    |
+| fgCurEnteredZone      | String   | R/O         | Current event: Entered zones (JSON array)                     |
 | fgCurHasSnapshot      | Contact  | R/O         | Current event: is a snapshot available?                       |
 | fgCurHasClip          | Contact  | R/O         | Current event: is a clip available?                           |
 | fgCurStationary       | Contact  | R/O         | Current event: is object stationary?                          |
@@ -259,9 +259,9 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 
 #### Notes
 
-- 'Current event' and 'Prior to event' channels are updated with fgEventType. This ensures consistency of information passed to event handlers - there should be no 'stale' information left in any of the 'Cur' or 'Prev' channels. Note also that some of these values may change to NULL if the value on the Frigate server side is NULL. Thus, rules that wish to interrogate multiple 'cur' or 'prev' channels should trigger on changes to 'fgEventType' as this channel is updated once all other event channels have been updated.
-- the event and control channels follow the Frigate documentation and there should be no surprises here.
-- 'fgStreamURL': if the configuration parameter 'enableStream' is set true, if Frigate is configured to restream cameras and if the stream is on either 'cameraName' or 'ffmpegCameraNameOverride', then 'fgStreamURL' will provide a URL to a locally restreamed feed of the camera. Note that if you select a high resolution stream from Frigate, this could significantly increase CPU and network load as the local instance will have to transcode the stream. Consider using the detection substreams at lower frame rates - these are often sufficient and will result in much lower CPU loads. Multiple stream types are supported: append '.m3u8' for HLS, '.mpd' for DASH, or use the bare URL as it is to access MJPEG. The availability of each type depends if it is enabled.
+- 'Current event' and 'Prior to event' channels are updated with `fgEventType`. This ensures consistency of information passed to event handlers - there should be no 'stale' information left in any of the 'Cur' or 'Prev' channels. Note also that some of these values may change to NULL if the value on the Frigate server side is NULL. Thus, rules that wish to interrogate multiple 'cur' or 'prev' channels should trigger on changes to 'fgEventType' as this channel is updated once all other event channels have been updated.
+- The event and control channels follow the Frigate documentation and there should be no surprises here.
+- `fgStreamURL`: if the configuration parameter `enableStream` is set true, if Frigate is configured to restream cameras and if the stream is on either `cameraName` or `ffmpegCameraNameOverride`, then `fgStreamURL` will provide a URL to a locally restreamed feed of the camera. Note that if you select a high resolution stream from Frigate, this could significantly increase CPU and network load as the local instance will have to transcode the stream. Consider using the detection substreams at lower frame rates - these are often sufficient and will result in much lower CPU loads. Multiple stream types are supported: append '.m3u8' for HLS, '.mpd' for DASH, or use the bare URL as it is to access MJPEG. The availability of each type depends if it is enabled.
 
 ## ThingActions
 
