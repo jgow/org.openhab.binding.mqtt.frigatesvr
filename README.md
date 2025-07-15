@@ -233,6 +233,7 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 | fgPrevStationary      | Contact  | R/O         | Prior to event: is object stationary?                         |
 | fgPrevMotionlessCount | Number   | R/O         | Prior to event: Number of motionless frames                   |
 | fgPrevPositionChanges | Number   | R/O         | Prior to event: Number of position changes                    |
+| fgPrevMaxSeverity     | String   | R/O         | Prior to event: ('alert' or 'detection')                      |
 | fgCurFrameTime        | DateTime | R/O         | Current event: Frame time prior to event                      |
 | fgCurSnapshotTime     | DateTime | R/O         | Current event: Time of snapshot                               |
 | fgCurLabel            | String   | R/O         | Current event: Detected entity                                |
@@ -253,6 +254,7 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 | fgCurStationary       | Contact  | R/O         | Current event: is object stationary?                          |
 | fgCurMotionlessCount  | Number   | R/O         | Current event: Number of motionless frames                    |
 | fgCurPositionChanges  | Number   | R/O         | Current event: Number of position changes                     |
+| fgCurMaxSeverity      | String   | R/O         | Current event: ('alert' or 'detection')                       |
 
 
 #### Notes
