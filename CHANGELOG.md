@@ -23,3 +23,9 @@
     - channel typos fixed; JSON event string now available
     - documentation update
     - error in URL strings corrected.
+- Version 2.1
+  - Bugfix release:
+    - channels carrying camera stats such as FPS should now update properly.
+- Version 2.2
+  - Channel updates
+  - Documentation updates.
