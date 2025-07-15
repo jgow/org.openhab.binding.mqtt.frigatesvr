@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<!--
+Designed to be linked via an OpenHAB sitemap
+eg:
+
+ Frame
+    {        
+        Webview label="Frigate Alerts" icon="camera" url="/static/frigate-events.html" height=500
+    }
+
+It reads a JSON file of recent frigate events which is updated via the jsr233 frigateRule.js
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Frigate Events</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap CSS CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+  .gallery-card img {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-top-left-radius: 0.375rem;
+    border-top-right-radius: 0.375rem;
+    cursor: pointer;
+  }
+
+  .gallery-card {
+    font-size: 0.8rem;
+  }
+
+  .caption {
+    font-size: 0.75rem;
+    color: #555;
+  }
+
+  /* Optional: reduce card spacing */
+  .col-md-4 {
+    flex: 0 0 auto;
+    width: 30%;
+  }
+
+.custom-modal {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.9);
+  display: none;
+  z-index: 9999;
+  justify-content: center;
+  align-items: center;
+}
+
+.custom-modal-image {
+  max-width: 90vw;
+  max-height: 90vh;
+  margin: auto;
+  display: block;
+  box-shadow: 0 0 15px #000;
+  border-radius: 4px;
+  cursor: pointer;
+}
+</style>
+
+</head>
+<body>
+
+  <div class="container py-5">
+    <!--h1 class="mb-4 text-center">Frigate Alerts Gallery</h1-->
+    <div id="gallery" class="row g-4">
+      <!-- Filtered alert events will go here -->
+    </div>
+  </div>
+
+<div id="customModal" class="custom-modal" onclick="closeModal(event)">
+  <img id="customModalImage" class="custom-modal-image" src="" alt="Full Size">
+</div>
+
+  <!-- Bootstrap JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+function openModal(src) {
+  const modal = document.getElementById('customModal');
+  const modalImg = document.getElementById('customModalImage');
+  modalImg.src = src;
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden'; // prevent background scroll
+}
+
+function closeModal(event) {
+  if (event.target.id === 'customModal') {
+    document.getElementById('customModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+  }
+}
+
+    // The cache buster param is required to stop OpenHAB cache headers causing the browser to not request a fresh JSON file
+    fetch(`./data/frigate-events.json?cacheBuster=${Date.now()}`)
+      .then(response => response.json())
+      .then(data => {
+        const gallery = document.getElementById('gallery');
+
+        // Filter only events with severity "alert"
+        const alertEvents = data
+                                .filter(event => event.severity === 'alert')
+                                .sort((a, b) => new Date(b.time) - new Date(a.time));
+
+        alertEvents.forEach(event => {
+          const col = document.createElement('div');
+          col.className = 'col-md-4';
+
+          const card = document.createElement('div');
+            card.className = 'card gallery-card';
+            card.setAttribute('data-bs-toggle', 'tooltip');
+            card.setAttribute('title', `EventId: ${event.eventId}`);
+
+          const img = document.createElement('img');
+          img.src = `/static/camera/${event.eventId}.jpg`;
+          img.className = 'card-img-top';
+          img.alt = event.label;
+
+          img.addEventListener('click', () => {
+            openModal(`/static/camera/${event.eventId}.jpg`);
+          });
+
+          const body = document.createElement('div');
+          body.className = 'card-body';
+
+           // Format the time to dd-MM-yyyy HH:mm
+          const date = new Date(event.time);
+          const formattedTime = new Intl.DateTimeFormat('en-GB', {
+         //   year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            day: '2-digit',
+            month: 'short',
+            hour12: false
+          }).format(date);
+
+          const caption = document.createElement('p');
+          caption.className = 'caption mb-0';
+          var zonesText = event.zones.map(zone => zone.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase()).join(', ');
+          caption.innerHTML = `${formattedTime} ${event.label}`;
+
+          body.appendChild(caption);
+          card.appendChild(img);
+          card.appendChild(body);
+          col.appendChild(card);
+          gallery.appendChild(col);
+        });
+
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.forEach(el => new bootstrap.Tooltip(el));
+
+      })
+      .catch(err => {
+        console.error('Failed to load event data:', err);
+      });
+  </script>
+
+  
+</body>
+</html>
