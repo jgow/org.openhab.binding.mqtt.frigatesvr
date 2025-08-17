@@ -58,6 +58,7 @@ public class FrigateAPIForwarder extends HTTPHandler {
     //
     // We can post from anything in our prefix
 
+    @Override
     public boolean canPost(String pathInfo) {
         logger.debug("canPost: pathInfo: {} prefix: {}", pathInfo, this.prefix);
         return pathInfo.startsWith(this.prefix);
@@ -68,6 +69,7 @@ public class FrigateAPIForwarder extends HTTPHandler {
     //
     // We accept anything that starts with our prefix.
 
+    @Override
     public boolean canAccept(String pathInfo) {
         logger.debug("canAccept: pathInfo: {} prefix: {}", pathInfo, this.prefix);
         return pathInfo.startsWith(this.prefix);
@@ -78,6 +80,7 @@ public class FrigateAPIForwarder extends HTTPHandler {
     //
     // We accept anything that starts with our prefix.
 
+    @Override
     public boolean canDelete(String pathInfo) {
         logger.debug("canDelete: pathInfo: {} prefix: {}", pathInfo, this.prefix);
         return pathInfo.startsWith(this.prefix);
@@ -88,6 +91,7 @@ public class FrigateAPIForwarder extends HTTPHandler {
     //
     // Callback in response to a valid POST response sent to this endpoint
 
+    @Override
     @SuppressWarnings("null")
     public void Poster(HttpServletRequest req, HttpServletResponse resp, String pathInfo) throws IOException {
 
@@ -134,7 +138,7 @@ public class FrigateAPIForwarder extends HTTPHandler {
             is.transferTo(resp.getOutputStream());
 
             resp.setStatus(response.getStatus());
-            logger.info("response: {} {}", response.getStatus(), response.getReason());
+            logger.debug("response: {} {}", response.getStatus(), response.getReason());
 
         } catch (Exception e) {
             resp.setStatus(500);
@@ -148,6 +152,7 @@ public class FrigateAPIForwarder extends HTTPHandler {
     //
     // Forward GET requests to server
 
+    @Override
     @SuppressWarnings("null")
     public void Getter(HttpServletRequest req, HttpServletResponse resp, String pathInfo) throws IOException {
 
@@ -190,7 +195,7 @@ public class FrigateAPIForwarder extends HTTPHandler {
             is.transferTo(resp.getOutputStream());
 
             resp.setStatus(response.getStatus());
-            logger.info("response: {} {}", response.getStatus(), response.getReason());
+            logger.debug("response: {} {}", response.getStatus(), response.getReason());
 
         } catch (Exception e) {
             resp.setStatus(500);
@@ -204,6 +209,7 @@ public class FrigateAPIForwarder extends HTTPHandler {
     //
     // Forward DELETE requests to server
 
+    @Override
     @SuppressWarnings("null")
     public void Deleter(HttpServletRequest req, HttpServletResponse resp, String pathInfo) throws IOException {
 
@@ -252,7 +258,7 @@ public class FrigateAPIForwarder extends HTTPHandler {
             is.transferTo(resp.getOutputStream());
 
             resp.setStatus(response.getStatus());
-            logger.info("response: {} {}", response.getStatus(), response.getReason());
+            logger.debug("response: {} {}", response.getStatus(), response.getReason());
 
         } catch (Exception e) {
             resp.setStatus(500);
@@ -266,7 +272,7 @@ public class FrigateAPIForwarder extends HTTPHandler {
         if (req.getQueryString() != null) {
             urlString += "?" + req.getQueryString();
         }
-        logger.info("API call {}", urlString);
+        logger.debug("API call {}", urlString);
         return urlString;
     }
 }

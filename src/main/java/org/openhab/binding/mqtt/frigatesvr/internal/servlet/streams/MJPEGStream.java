@@ -53,6 +53,7 @@ public class MJPEGStream extends StreamTypeBase {
     // This member function is overloaded per stream type to return true
     // as soon as output has been generated.
 
+    @Override
     public boolean CheckStarted() {
         // ffmpeg may start before the servers. We thus rely only on the frame
         // detection from the ffmpeg log as the server may not be able to receive
@@ -65,6 +66,7 @@ public class MJPEGStream extends StreamTypeBase {
     //
     // Called by the servlet to ensure the stream is stopped and cleaned up.
 
+    @Override
     public void StopStreams() {
         this.streamList.closeAllStreams();
         super.StopStreams();
@@ -75,6 +77,7 @@ public class MJPEGStream extends StreamTypeBase {
     //
     // FFmpeg must be able to post to us.
 
+    @Override
     public boolean canPost(String pathInfo) {
         return (pathInfo.equals(this.pathfromFF)) ? true : false;
     }
@@ -84,6 +87,7 @@ public class MJPEGStream extends StreamTypeBase {
     //
     // Must return true if the stream can accept the GET request.
 
+    @Override
     public boolean canAccept(String pathInfo) {
         return (pathInfo.equals(this.readerPath)) ? true : false;
     }
@@ -97,6 +101,7 @@ public class MJPEGStream extends StreamTypeBase {
     // these stream types, we can leave the ffmpeg process running in the
     // background.
 
+    @Override
     public void Poster(HttpServletRequest req, HttpServletResponse resp, String pathInfo) throws IOException {
         ServletInputStream snapshotData = req.getInputStream();
         this.streamList.queueFrame(snapshotData.readAllBytes());
@@ -108,9 +113,10 @@ public class MJPEGStream extends StreamTypeBase {
     //
     // We process this by dequeuing and sending each frame at a time.
 
+    @Override
     public void Getter(HttpServletRequest req, HttpServletResponse resp, String pathInfo) throws IOException {
 
-        logger.info("getter processing request");
+        logger.debug("getter processing request");
 
         StreamOutput output = new StreamOutput(resp, "video/x-motion-jpeg");
 
@@ -146,7 +152,7 @@ public class MJPEGStream extends StreamTypeBase {
 
                 if (this.streamList.isEmpty()) {
                     this.StopStreams();
-                    logger.info("all MJPEG reader streams have stopped.");
+                    logger.debug("all MJPEG reader streams have stopped.");
                 }
 
                 return;

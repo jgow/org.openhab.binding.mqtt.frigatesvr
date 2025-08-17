@@ -24,6 +24,7 @@ import org.openhab.binding.mqtt.frigatesvr.internal.handlers.frigateSVRCameraHan
 import org.openhab.binding.mqtt.frigatesvr.internal.handlers.frigateSVRServerHandler;
 import org.openhab.core.config.discovery.DiscoveryService;
 import org.openhab.core.io.net.http.HttpClientFactory;
+import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingTypeUID;
 import org.openhab.core.thing.binding.BaseThingHandlerFactory;
@@ -79,8 +80,8 @@ public class frigateSVRHandlerFactory extends BaseThingHandlerFactory {
     protected @Nullable ThingHandler createHandler(Thing thing) {
         ThingTypeUID thingTypeUID = thing.getThingTypeUID();
         if (thingTypeUID.equals(THING_TYPE_SERVER)) {
-            frigateSVRServerHandler handler = new frigateSVRServerHandler(thing, frigateSVRHandlerFactory.httpClient,
-                    httpService);
+            frigateSVRServerHandler handler = new frigateSVRServerHandler((Bridge) thing,
+                    frigateSVRHandlerFactory.httpClient, httpService);
             registerCameraDiscoveryService(handler);
             return handler;
         }

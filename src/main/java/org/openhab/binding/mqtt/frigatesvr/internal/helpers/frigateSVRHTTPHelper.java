@@ -177,7 +177,7 @@ public class frigateSVRHTTPHelper {
             r.message = new String("HTTP helper called in unconfigured state");
         }
         if (!r.rc) {
-            logger.error("{}", r.message);
+            logger.debug("{}", r.message);
         }
         return r;
     }

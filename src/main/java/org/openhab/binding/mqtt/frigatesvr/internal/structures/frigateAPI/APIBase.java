@@ -58,6 +58,10 @@ public abstract class APIBase {
         this.payload = payload;
     }
 
+    public String getPayload() {
+        return this.payload;
+    }
+
     public abstract ResultStruct ParseFromBits(String[] bits, String payload);
 
     public abstract ResultStruct Process(frigateSVRHTTPHelper httpHelper, MqttBrokerConnection connection,
@@ -79,7 +83,7 @@ public abstract class APIBase {
                     JsonElement v = o.get(q);
                     msg += q + "=" + v.getAsString();
                 } catch (Exception e) {
-                    logger.info("ignoring query element {}", q);
+                    logger.debug("ignoring query element {}", q);
                 }
                 if (members.hasNext()) {
                     msg += "&";
@@ -122,7 +126,7 @@ public abstract class APIBase {
             if (rc.raw.length > 0) {
                 // the return is an image - we post this to the camera's image channel
                 String imagePrefix = topicPrefix + "/" + MQTT_CAMIMAGERESULT;
-                logger.info("publishing image to {}", imagePrefix);
+                logger.debug("publishing image to {}", imagePrefix);
                 conn.publish(imagePrefix, rc.raw, 1, false);
             }
         } else {
@@ -134,7 +138,7 @@ public abstract class APIBase {
 
         String camTopicPrefix = topicPrefix + "/" + MQTT_CAMACTIONRESULT;
         String errFormat = String.format("{\"success\":%s,\"message\":\"%s\"}", (rc.rc) ? "true" : "false", rc.message);
-        logger.info("server - publishing result block to {}", camTopicPrefix);
+        logger.debug("server - publishing result block to {}", camTopicPrefix);
         conn.publish(camTopicPrefix, errFormat.getBytes(), 1, false);
     }
 }

@@ -38,7 +38,7 @@ public class HLSStream extends StreamTypeBase {
 
         String fmtCmds = " -f hls -hls_flags delete_segments -hls_time 4 -hls_list_size 6";
         this.pathfromFF = readerPath + ".m3u8";
-        logger.info("stream entry point set to {}", this.pathfromFF);
+        logger.debug("stream entry point set to {}", this.pathfromFF);
 
         this.startOnLoad = config.ffHLSStartProducerOnLoad;
 
@@ -54,6 +54,7 @@ public class HLSStream extends StreamTypeBase {
     // This member function is overloaded per stream type to return true
     // as soon as output has been generated.
 
+    @Override
     public boolean CheckStarted() {
         File f = new File(this.ffHelper.GetDestinationPath() + "/" + this.pathfromFF);
         return (f.exists() && f.isFile());
@@ -68,6 +69,7 @@ public class HLSStream extends StreamTypeBase {
     // has been accessed at least once (not yet implemented except where
     // stream is started dynamically
 
+    @Override
     public boolean canAccept(String pathInfo) {
         String pattern = this.readerPath + "((\\d+\\.ts)|(\\.m3u8))";
         logger.debug("Pattern to match: |{}| against |{}|", pattern, pathInfo);
@@ -97,6 +99,7 @@ public class HLSStream extends StreamTypeBase {
     // serialized access, and will do nothing if the ffmpeg producer
     // is already running
 
+    @Override
     public void Getter(HttpServletRequest req, HttpServletResponse resp, String pathInfo) throws IOException {
 
         logger.debug("processing HLS get request");
