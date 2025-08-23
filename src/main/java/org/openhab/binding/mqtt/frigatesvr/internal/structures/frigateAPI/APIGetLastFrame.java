@@ -12,7 +12,7 @@
  */
 package org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI;
 
-import static org.openhab.binding.mqtt.frigatesvr.internal.frigateSVRBindingConstants.*;
+import static org.openhab.binding.mqtt.frigatesvr.internal.frigateSVRBindingConstants.MQTT_GETLASTFRAME_SUFFIX;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
@@ -47,11 +47,12 @@ public class APIGetLastFrame extends APIBase {
         }
     }
 
+    @Override
     public ResultStruct ParseFromBits(String[] bits, String payload) {
         ResultStruct rc = new ResultStruct();
-        if (bits.length == 4) {
-            if (bits[3].equals(MQTT_GETLASTFRAME_SUFFIX)) {
-                this.cam = bits[2];
+        if (bits.length == 3) {
+            if (bits[2].equals(MQTT_GETLASTFRAME_SUFFIX)) {
+                this.cam = bits[1];
 
                 // The payload will contain a JSON block with the query
                 // arguments. We need to grab this and later parse it into the
@@ -74,13 +75,14 @@ public class APIGetLastFrame extends APIBase {
         return rc;
     }
 
+    @Override
     public ResultStruct Process(frigateSVRHTTPHelper httpHelper, MqttBrokerConnection connection, String topicPrefix,
             String[] bits, String payload) {
 
         ResultStruct rc = ParseFromBits(bits, payload);
 
         if (rc.rc) {
-            logger.info("server: processing camera last frame request for {}", cam);
+            logger.debug("server: processing camera last frame request for {}", cam);
             rc = ParseJSONQueryString(payload);
             if (rc.rc) {
                 String call = "/api/" + cam + "/latest.jpg" + rc.message;
@@ -91,6 +93,7 @@ public class APIGetLastFrame extends APIBase {
         return rc;
     }
 
+    @Override
     @SuppressWarnings("null")
     public ResultStruct Validate() {
         ResultStruct rc = new ResultStruct();
@@ -102,12 +105,13 @@ public class APIGetLastFrame extends APIBase {
             rc.rc = true;
             rc.message = "arguments valid";
         } catch (JsonSyntaxException e) {
-            logger.info("parse failed {}", e.getMessage());
+            logger.debug("parse failed {}", e.getMessage());
             rc.message = e.toString();
         }
         return rc;
     }
 
+    @Override
     protected String BuildTopicSuffix() {
         return eventID;
     }

@@ -12,7 +12,7 @@
  */
 package org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI;
 
-import static org.openhab.binding.mqtt.frigatesvr.internal.frigateSVRBindingConstants.*;
+import static org.openhab.binding.mqtt.frigatesvr.internal.frigateSVRBindingConstants.MQTT_GETRECORDINGSUMMARY_SUFFIX;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
@@ -37,10 +37,11 @@ public class APIGetRecordingSummary extends APIBase {
         super(MQTT_GETRECORDINGSUMMARY_SUFFIX);
     }
 
+    @Override
     public ResultStruct ParseFromBits(String[] bits, @Nullable String payload) {
         ResultStruct rc = new ResultStruct();
-        if (bits.length == 4) {
-            this.cam = bits[2];
+        if (bits.length == 3) {
+            this.cam = bits[1];
             // nothing here to validate.
             rc.rc = true;
         } else {
@@ -49,6 +50,7 @@ public class APIGetRecordingSummary extends APIBase {
         return rc;
     }
 
+    @Override
     public ResultStruct Process(frigateSVRHTTPHelper httpHelper, MqttBrokerConnection connection, String topicPrefix,
             String[] bits, String payload) {
 
@@ -63,11 +65,13 @@ public class APIGetRecordingSummary extends APIBase {
         return rc;
     }
 
+    @Override
     public ResultStruct Validate() {
         // nothing to validate on the input side.
         return new ResultStruct(true, "ok");
     }
 
+    @Override
     protected String BuildTopicSuffix() {
         return eventID;
     }

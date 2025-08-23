@@ -12,7 +12,7 @@
  */
 package org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI;
 
-import static org.openhab.binding.mqtt.frigatesvr.internal.frigateSVRBindingConstants.*;
+import static org.openhab.binding.mqtt.frigatesvr.internal.frigateSVRBindingConstants.MQTT_ONLINE_SUFFIX;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
@@ -41,11 +41,12 @@ public class APICamOnline extends APIBase {
         this.svrState = svrState;
     }
 
+    @Override
     public ResultStruct ParseFromBits(String[] bits, @Nullable String payload) {
 
         ResultStruct rc = new ResultStruct();
-        if (bits.length == 4) {
-            this.cam = bits[2];
+        if (bits.length == 3) {
+            this.cam = bits[1];
             logger.info("camera {} reports online", this.cam);
         } else {
             rc.message = "internal communication error";
@@ -53,6 +54,7 @@ public class APICamOnline extends APIBase {
         return rc;
     }
 
+    @Override
     public ResultStruct Process(frigateSVRHTTPHelper httpHelper, MqttBrokerConnection connection, String topicPrefix,
             String[] bits, String payload) {
 
@@ -64,11 +66,13 @@ public class APICamOnline extends APIBase {
         return new ResultStruct(true, "ok");
     }
 
+    @Override
     public ResultStruct Validate() {
         // nothing to validate on the input side.
         return new ResultStruct(true, "ok");
     }
 
+    @Override
     protected String BuildTopicSuffix() {
         return "";
     }

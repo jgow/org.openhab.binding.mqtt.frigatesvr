@@ -46,7 +46,7 @@ public class DASHStream extends StreamTypeBase {
         String fmtCmds = " -f dash -window_size 30 -remove_at_exit 1 " + config.ffDASHPackagingCommands;
 
         this.pathfromFF = readerPath + ".mpd";
-        logger.info("sending stream to {}", this.pathfromFF);
+        logger.debug("sending stream to {}", this.pathfromFF);
 
         this.startOnLoad = config.ffDASHStartProducerOnLoad;
 
@@ -62,6 +62,7 @@ public class DASHStream extends StreamTypeBase {
     // This member function is overloaded per stream type to return true
     // as soon as output has been generated.
 
+    @Override
     public boolean CheckStarted() {
         File f = new File(this.ffHelper.GetDestinationPath() + "/" + this.pathfromFF);
         logger.debug("Checking stream started: path {}", this.ffHelper.GetDestinationPath() + "/" + this.pathfromFF);

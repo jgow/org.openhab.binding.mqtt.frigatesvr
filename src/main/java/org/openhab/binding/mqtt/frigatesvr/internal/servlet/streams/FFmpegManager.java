@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
  * The {@link mqtt.frigateSVRFFmpegHelper} is a helper class allowing ffmpeg to re-stream
  * the H264 streams coming from Frigate to MJPEG, in order that they can be displayed on
  * openHAB UIs
- * 
+ *
  * @author Dr J Gow - Initial contribution
  */
 @NonNullByDefault
@@ -86,10 +86,10 @@ public class FFmpegManager {
                 } catch (IOException e) {
                     logger.warn("exception in log-eater: {}", e.getMessage());
                 }
-                logger.info("no further output from ffmpeg");
+                logger.debug("no further output from ffmpeg");
             }
         }
-        logger.info("log-eater process exiting");
+        logger.debug("log-eater process exiting");
     };
 
     ////////////////////////////////////////////////////////////
@@ -214,7 +214,7 @@ public class FFmpegManager {
                 }
             }
             // we must restart
-            logger.info("keepalive: forcing restart");
+            logger.debug("keepalive: forcing restart");
             process = null;
             StartStream();
         } while (false);
@@ -259,7 +259,7 @@ public class FFmpegManager {
             try {
                 this.tmpDir = Files.createTempDirectory(pathPrefix, "STM");
                 this.tmpDir.toFile().deleteOnExit();
-                logger.info("created working path {}", this.tmpDir.toString());
+                logger.debug("created working path {}", this.tmpDir.toString());
             } catch (IOException e) {
                 logger.warn("can not create tmpdir on prefix {} - attempting to create tmpdir in current working area",
                         prefix);
@@ -267,7 +267,7 @@ public class FFmpegManager {
                     pathPrefix = Paths.get("");
                     this.tmpDir = Files.createTempDirectory(pathPrefix, "STM");
                     this.tmpDir.toFile().deleteOnExit();
-                    logger.info("created working path {}", this.tmpDir.toString());
+                    logger.debug("created working path {}", this.tmpDir.toString());
                 } catch (IOException e2) {
                     logger.warn("could not create temporary dir in working area");
                     this.tmpDir = Paths.get("");
@@ -288,7 +288,7 @@ public class FFmpegManager {
         StopStream();
         DeleteStreamFiles();
         if (!this.tmpDir.toString().equals("")) {
-            logger.info("cleaning up temporary dir {}", this.tmpDir.toString());
+            logger.debug("cleaning up temporary dir {}", this.tmpDir.toString());
             try {
                 Files.delete(this.tmpDir);
             } catch (IOException e) {
@@ -309,6 +309,7 @@ public class FFmpegManager {
             File path = this.tmpDir.toFile();
             if (path.isDirectory()) {
                 File[] deleteMe = path.listFiles(new FileFilter() {
+                    @Override
                     public boolean accept(@Nullable File file) {
                         if (file != null) {
                             if (file.isFile()) {
@@ -320,11 +321,11 @@ public class FFmpegManager {
                 });
 
                 for (File del : deleteMe) {
-                    logger.info("deleted {}", del.getPath().toString());
+                    logger.debug("deleted {}", del.getPath().toString());
                     del.delete();
                 }
             } else {
-                logger.info("stream file dir not present");
+                logger.debug("stream file dir not present");
             }
         }
     }

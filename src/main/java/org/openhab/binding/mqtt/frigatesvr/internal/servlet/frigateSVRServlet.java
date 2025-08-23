@@ -23,7 +23,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.mqtt.frigatesvr.internal.helpers.frigateSVRMiscHelper;
@@ -86,7 +85,7 @@ public class frigateSVRServlet extends HttpServlet {
 
         this.pathServletBase = pathServletBase;
 
-        logger.info("Starting server at {}", pathServletBase);
+        logger.debug("Starting server at {}", pathServletBase);
 
         this.handlers.clear(); // start empty
         this.handlers = handlers;
@@ -104,7 +103,7 @@ public class frigateSVRServlet extends HttpServlet {
         try {
             initParameters.put("servlet-name", pathServletBase);
             httpService.registerServlet(pathServletBase, this, initParameters, httpService.createDefaultHttpContext());
-            logger.info("streaming servlet started");
+            logger.debug("streaming servlet started");
             this.isStarted = true;
         } catch (Exception e) {
             logger.warn("Registering servlet failed:{}", e.getMessage());
@@ -141,14 +140,14 @@ public class frigateSVRServlet extends HttpServlet {
     // if the Frigate server is shut down, or if we reconfigure the 'thing'
 
     public synchronized void StopServer() {
-        logger.info("StopServer called: stopping streaming server");
+        logger.debug("StopServer called: stopping streaming server");
 
         // serialize threads that destroy servlets
 
         svrMutex.lock();
         if (isStarted) {
             try {
-                logger.info("Stopping and unregistering server");
+                logger.debug("Stopping and unregistering server");
                 httpService.unregister(pathServletBase);
                 isStarted = false;
             } catch (IllegalArgumentException e) {
@@ -178,13 +177,13 @@ public class frigateSVRServlet extends HttpServlet {
 
     @SuppressWarnings("null")
     @Override
-    protected void doPost(@Nullable HttpServletRequest req, @Nullable HttpServletResponse resp) throws IOException {
+    protected void doPost(@Nullable HttpServletRequest req, HttpServletResponse resp) throws IOException {
         if (CheckRequest(req, resp) == true) {
             String relPath = frigateSVRMiscHelper.StripLeadingSlash(req.getPathInfo());
             handlers.forEach(strm -> {
                 if (strm.canPost(relPath)) {
                     try {
-                        strm.Poster((@NonNull HttpServletRequest) req, (@NonNull HttpServletResponse) resp, relPath);
+                        strm.Poster(req, resp, relPath);
                     } catch (IOException e) {
                         logger.warn("POST from ffmpeg failed: stream path: {}", strm.pathfromFF);
                     }
@@ -199,18 +198,16 @@ public class frigateSVRServlet extends HttpServlet {
     // Connections from UI elements wishing to display the streams from
     // the Frigate server or the cameras
 
-    @SuppressWarnings("null")
     @Override
-    protected void doGet(@Nullable HttpServletRequest req, @Nullable HttpServletResponse resp) throws IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
         if (CheckRequest(req, resp) == true) {
 
-            String relPath = frigateSVRMiscHelper
-                    .StripLeadingSlash((@NonNull String) (((@NonNull HttpServletRequest) req).getPathInfo()));
+            String relPath = frigateSVRMiscHelper.StripLeadingSlash((req.getPathInfo()));
             handlers.forEach(strm -> {
                 if (strm.canAccept(relPath)) {
                     try {
-                        strm.Getter((@NonNull HttpServletRequest) req, (@NonNull HttpServletResponse) resp, relPath);
+                        strm.Getter(req, resp, relPath);
                     } catch (IOException e) {
                         logger.warn("getter failed for stream at path: {}", strm.pathfromFF);
                     }
@@ -224,17 +221,15 @@ public class frigateSVRServlet extends HttpServlet {
     //
     // Handle the DELETE method - used for the Frigate API forwarder
 
-    @SuppressWarnings("null")
     @Override
-    protected void doDelete(@Nullable HttpServletRequest req, @Nullable HttpServletResponse resp) throws IOException {
+    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         if (CheckRequest(req, resp) == true) {
 
-            String relPath = frigateSVRMiscHelper
-                    .StripLeadingSlash((@NonNull String) (((@NonNull HttpServletRequest) req).getPathInfo()));
+            String relPath = frigateSVRMiscHelper.StripLeadingSlash((req.getPathInfo()));
             handlers.forEach(strm -> {
                 if (strm.canDelete(relPath)) {
                     try {
-                        strm.Deleter((@NonNull HttpServletRequest) req, (@NonNull HttpServletResponse) resp, relPath);
+                        strm.Deleter(req, resp, relPath);
                     } catch (IOException e) {
                         logger.warn("deleter failed for stream at path: {}", strm.pathfromFF);
                     }

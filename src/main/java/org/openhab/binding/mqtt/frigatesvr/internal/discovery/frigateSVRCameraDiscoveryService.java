@@ -19,7 +19,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
-import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.mqtt.frigatesvr.internal.handlers.frigateSVRServerHandler;
 import org.openhab.core.config.discovery.AbstractDiscoveryService;
 import org.openhab.core.config.discovery.DiscoveryResult;
@@ -58,19 +57,18 @@ public class frigateSVRCameraDiscoveryService extends AbstractDiscoveryService {
 
                 // grab the MQTT bridge ID - the new devices will need this
 
-                ThingUID bridgeID = serverHandler.GetBridgeUID();
+                ThingUID bridgeID = serverHandler.getThing().getUID();
 
                 if (bridgeID != null) {
                     // build a new ThingID for the discovered cameras
 
                     String camUIDstring = cam + "-" + serverHandler.GetHostAndPort();
-                    ThingUID newThing = new ThingUID(THING_TYPE_CAMERA, (@Nullable ThingUID) bridgeID, camUIDstring);
+                    ThingUID newThing = new ThingUID(THING_TYPE_CAMERA, bridgeID, camUIDstring);
 
                     // build the config block
 
                     String unique = String.format("%s@%s", cam, serverURL);
                     Map<String, Object> properties = new HashMap<>();
-                    properties.put(CONF_ID_SERVERID, serverHandler.getThing().getUID().getAsString());
                     properties.put(CONF_ID_CAMNAME, cam);
                     properties.put(CONF_ID_UNIQUE, unique);
 

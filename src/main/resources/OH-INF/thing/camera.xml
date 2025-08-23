@@ -8,7 +8,7 @@
 	<thing-type id="frigateCamera">
 
 		<supported-bridge-type-refs>
-			<bridge-type-ref id="broker"/>
+			<bridge-type-ref id="frigateServer"/>
 		</supported-bridge-type-refs>
 
 		<label>@text/thing.label.camera</label>

@@ -5,7 +5,7 @@
 	xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description-1.0.0.xsd">
 
 	<!-- Frigate server 'thing' -->
-	<thing-type id="frigateServer">
+	<bridge-type id="frigateServer">
 
 		<supported-bridge-type-refs>
 			<bridge-type-ref id="broker"/>
@@ -21,7 +21,7 @@
 			<channel id="fgBirdseyeURL" typeId="fgBirdseyeURL"/>
 		</channels>
 		<config-description-ref uri="thing-type:mqtt:Server"/>
-	</thing-type>
+	</bridge-type>
 
 	<channel-type id="fgAPIVersion">
 		<item-type>String</item-type>
