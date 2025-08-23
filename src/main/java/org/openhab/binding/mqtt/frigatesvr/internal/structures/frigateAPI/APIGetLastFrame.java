@@ -50,9 +50,9 @@ public class APIGetLastFrame extends APIBase {
     @Override
     public ResultStruct ParseFromBits(String[] bits, String payload) {
         ResultStruct rc = new ResultStruct();
-        if (bits.length == 4) {
-            if (bits[3].equals(MQTT_GETLASTFRAME_SUFFIX)) {
-                this.cam = bits[2];
+        if (bits.length == 3) {
+            if (bits[2].equals(MQTT_GETLASTFRAME_SUFFIX)) {
+                this.cam = bits[1];
 
                 // The payload will contain a JSON block with the query
                 // arguments. We need to grab this and later parse it into the

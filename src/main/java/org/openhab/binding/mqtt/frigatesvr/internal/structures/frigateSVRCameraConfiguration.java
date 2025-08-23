@@ -21,7 +21,6 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
  */
 @NonNullByDefault
 public class frigateSVRCameraConfiguration extends frigateSVRCommonConfiguration {
-    public String serverID = "";
     public String cameraName = "";
     public boolean enableStream = true;
     public String ffmpegCameraNameOverride = "";

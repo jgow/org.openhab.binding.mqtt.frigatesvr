@@ -483,17 +483,16 @@ public class frigateSVRServerHandler extends BaseBridgeHandler implements MqttMe
         // itself.
         //
         // part 1 (index 0): 'frigateSVR'
-        // part 2 (index 1): server thing ID
-        // part 3 (index 2): cam ID (originator)
-        // part 4 (index 3): event ID
-        // part 5 (index 4): message specific (if present)
+        // part 2 (index 1): cam ID (originator)
+        // part 3 (index 2): event ID
+        // part 4 (index 3): message specific (if present)
 
         // if (this.svrState.status.equals("online")) {
         MqttBrokerConnection conn = (@NonNull MqttBrokerConnection) MQTTConnection;
-        if (bits.length >= 4) {
+        if (bits.length >= 3) {
 
-            String cam = bits[2];
-            String event = bits[3];
+            String cam = bits[1];
+            String event = bits[2];
             String topicPrefix = this.pfxSvrToCam + "/" + cam + "/" + this.svrState.serverThingID;
 
             // we need to be sure the camera is one of ours.

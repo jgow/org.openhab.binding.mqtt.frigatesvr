@@ -69,7 +69,6 @@ public class frigateSVRCameraDiscoveryService extends AbstractDiscoveryService {
 
                     String unique = String.format("%s@%s", cam, serverURL);
                     Map<String, Object> properties = new HashMap<>();
-                    properties.put(CONF_ID_SERVERID, serverHandler.getThing().getUID().getAsString());
                     properties.put(CONF_ID_CAMNAME, cam);
                     properties.put(CONF_ID_UNIQUE, unique);
 

@@ -398,7 +398,7 @@ public class frigateSVRCameraHandler extends BaseThingHandler implements MqttMes
         //
         // frigateSVR/<serverThingID>/<cameraThingID>/
 
-        this.pfxCamToSvr = "frigateSVR/" + config.serverID + "/" + config.cameraName;
+        this.pfxCamToSvr = "frigateSVR/" + config.cameraName;
 
         updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING);
         Bridge bridge = getBridge();

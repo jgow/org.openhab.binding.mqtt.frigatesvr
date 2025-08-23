@@ -12,7 +12,7 @@
  */
 package org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI;
 
-import static org.openhab.binding.mqtt.frigatesvr.internal.frigateSVRBindingConstants.*;
+import static org.openhab.binding.mqtt.frigatesvr.internal.frigateSVRBindingConstants.MQTT_GETTHUMBNAIL_SUFFIX;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
@@ -44,11 +44,12 @@ public class APIGetThumbnail extends APIBase {
         this.label = label;
     }
 
+    @Override
     public ResultStruct ParseFromBits(String[] bits, @Nullable String payload) {
         ResultStruct rc = new ResultStruct();
-        if (bits.length == 5) {
-            this.cam = bits[2];
-            this.label = bits[4];
+        if (bits.length == 4) {
+            this.cam = bits[1];
+            this.label = bits[3];
             this.payload = ""; // payload is unused, only use label
             rc = this.Validate(); // in case the message was sent in from elsewhere
         } else {
@@ -57,6 +58,7 @@ public class APIGetThumbnail extends APIBase {
         return rc;
     }
 
+    @Override
     public ResultStruct Process(frigateSVRHTTPHelper httpHelper, MqttBrokerConnection connection, String topicPrefix,
             String[] bits, String payload) {
 
@@ -70,6 +72,7 @@ public class APIGetThumbnail extends APIBase {
         return rc;
     }
 
+    @Override
     @SuppressWarnings("null")
     public ResultStruct Validate() {
         ResultStruct rc = new ResultStruct();
@@ -83,6 +86,7 @@ public class APIGetThumbnail extends APIBase {
         return rc;
     }
 
+    @Override
     protected String BuildTopicSuffix() {
         return eventID + "/" + label;
     }

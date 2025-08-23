@@ -5,11 +5,6 @@
 	xsi:schemaLocation="https://openhab.org/schemas/config-description/v1.0.0 https://openhab.org/schemas/config-description-1.0.0.xsd">
 
 	<config-description uri="thing-type:mqtt:Camera">
-		<parameter name="serverID" type="text" required="true">
-			<context>ThingID</context>
-			<label>@text/param.camera.thingID.label</label>
-			<description>@text/param.camera.thingID.description</description>
-		</parameter>
 		<parameter name="cameraName" type="text" required="true">
 			<context>name</context>
 			<label>@text/param.camera.cameraName.label</label>
