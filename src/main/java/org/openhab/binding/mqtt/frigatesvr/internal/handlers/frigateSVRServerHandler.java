@@ -36,16 +36,16 @@ import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.DASHStream;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.FrigateAPIForwarder;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.HLSStream;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.MJPEGStream;
-import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRChannelState;
-import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRFrigateConfiguration;
-import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRServerConfiguration;
-import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRServerState;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIBase;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APICamOnline;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIGetLastFrame;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIGetRecordingSummary;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIGetThumbnail;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APITriggerEvent;
+import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRChannelState;
+import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRFrigateConfiguration;
+import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRServerConfiguration;
+import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRServerState;
 import org.openhab.binding.mqtt.handler.AbstractBrokerHandler;
 import org.openhab.core.io.transport.mqtt.MqttBrokerConnection;
 import org.openhab.core.io.transport.mqtt.MqttMessageSubscriber;
@@ -163,7 +163,6 @@ public class frigateSVRServerHandler extends BaseBridgeHandler implements MqttMe
         ThingStatusInfo bridgeStatus = bridge != null ? bridge.getStatusInfo()
                 : new ThingStatusInfo(ThingStatus.OFFLINE, ThingStatusDetail.NONE, null);
         this.bridgeStatusChanged(bridgeStatus);
-
     }
 
     //
@@ -179,8 +178,23 @@ public class frigateSVRServerHandler extends BaseBridgeHandler implements MqttMe
         super.dispose();
     }
 
+    ///////////////////////////////////////////////////////////////////
+    // getFrigateConfig
+    //
+    // Return the frigate configuration
+
     public frigateSVRFrigateConfiguration getFrigateConfig() {
         return this.frigateConfig;
+    }
+
+    ///////////////////////////////////////////////////////////////////
+    // GetServerState
+    //
+    // Return the current server state
+    //
+
+    public frigateSVRServerState GetServerState() {
+        return this.svrState;
     }
 
     ///////////////////////////////////////////////////////////////////

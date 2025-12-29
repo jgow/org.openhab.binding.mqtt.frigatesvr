@@ -39,7 +39,7 @@ public class frigateSVRServerState {
     @SerializedName("Cameras")
     public ArrayList<String> Cameras = new ArrayList<String>();
     @SerializedName("whitelist")
-    public String whitelist = "DISABLED";
+    public String whitelist = "DISABLE";
     @SerializedName("ffmpegPath")
     public String ffmpegPath = "/usr/bin/ffmpeg";
     @SerializedName("serverThingID")

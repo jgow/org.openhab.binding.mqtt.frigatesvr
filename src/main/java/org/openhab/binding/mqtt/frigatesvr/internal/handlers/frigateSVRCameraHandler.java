@@ -34,11 +34,11 @@ import org.openhab.binding.mqtt.frigatesvr.internal.servlet.frigateSVRServlet;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.DASHStream;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.HLSStream;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.MJPEGStream;
+import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIBase;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRCameraConfiguration;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRChannelState;
-import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRServerState;
-import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIBase;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRFrigateConfig.frigateSVRFrigateConfigBlock;
+import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRServerState;
 import org.openhab.core.io.transport.mqtt.MqttBrokerConnection;
 import org.openhab.core.io.transport.mqtt.MqttMessageSubscriber;
 import org.openhab.core.library.types.DecimalType;
@@ -563,6 +563,11 @@ public class frigateSVRCameraHandler extends BaseThingHandler implements MqttMes
                 logger.debug("Set camera topic to {}", this.pfxFrigateToCam);
 
                 this.MQTTConnection = fb.getMQTTConnection();
+
+                // We can retrieve the server state directly from the
+                // upstream bridge.
+
+                this.svrState = fb.GetServerState();
             }
         }
 
