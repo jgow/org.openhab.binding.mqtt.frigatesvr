@@ -17,6 +17,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Scanner;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -129,19 +130,81 @@ public class StreamTypeBase extends HTTPHandler {
                 } catch (InterruptedException e) {
                     break;
                 }
-                String s = this.ffHelper.GetStats("frame");
-                int frm = 0;
-                if (!s.isBlank()) {
+
+                // Update. Later ffmpegs seem not to publish FPS
+                // in their stats line. They do yield 'speed' and
+                // 'time'. So if we find that 'frame' is blank, we
+                // get 'time' and speed instead. This should indicate
+                // starting of the stream
+
+                boolean haveFPS = false;
+                boolean haveSpeed = false;
+                boolean haveTime = false;
+
+                String sFPS = this.ffHelper.GetStats("frame");
+                int fps = 0;
+                String sSpeed = this.ffHelper.GetStats("speed");
+                double speed = 0;
+                String sTime = this.ffHelper.GetStats("time");
+                int seconds = 0;
+
+                if (!sFPS.isBlank()) {
                     try {
-                        frm = Integer.valueOf(s);
+                        fps = Integer.valueOf(sFPS);
+                        logger.debug("fps established {}", fps);
+                        haveFPS = true;
                     } catch (NumberFormatException e) {
-                        frm = 0;
+                        fps = 0;
+                        logger.debug("have fps {} but can not parse", sFPS);
                     }
+                } else {
+                    logger.warn("FPS not available");
                 }
 
-                if (this.CheckStarted() && ((!s.equals("")) && frm >= this.config.ffMinFramesToStart)) {
-                    logger.debug("ffmpeg stream confirmed started; frame count {} fps {}", s,
-                            this.ffHelper.GetStats("fps"));
+                if (!sSpeed.isBlank()) {
+                    // remove the trailing 'x'
+                    try {
+                        Scanner scan = new Scanner(sSpeed);
+                        scan.useDelimiter("[x\s]");
+                        speed = scan.nextDouble();
+                        scan.close();
+                        logger.debug("speed established {}", speed);
+                        haveSpeed = true;
+                    } catch (Exception e) {
+                        speed = 0;
+                        logger.warn("have speed {} but can not parse", sSpeed);
+                    }
+                } else {
+                    logger.warn("speed not available");
+                }
+
+                if (!sTime.isBlank()) {
+                    try {
+                        Scanner scan = new Scanner(sTime);
+                        scan.useDelimiter("[\\.:\s]");
+                        int h = scan.nextInt();
+                        int m = scan.nextInt();
+                        int s = scan.nextInt();
+                        scan.close();
+                        // ignore less than seconds
+                        seconds = s + 60 * m + 60 * 60 * h;
+                        logger.debug("time established {} seconds", seconds);
+                        haveTime = true;
+                    } catch (Exception e) {
+                        seconds = 0;
+                        logger.warn("have time {} but can not parse", sTime);
+                    }
+                } else {
+                    logger.warn("time not available");
+                }
+
+                // To confirm ffmpeg started, we use the output of CheckStarted. We
+                // must also have a valid speed, and either a valid time or fps
+
+                if (this.CheckStarted()
+                        && ((haveFPS && (fps >= this.config.ffMinFramesToStart)) || (haveTime && (seconds > 2)))) {
+
+                    logger.debug("ffmpeg stream confirmed started; fps {}, time {}, speed {}", fps, seconds, speed);
 
                     // guarantees we always wait one timeout interval
                     // once the stream is marked 'running'
@@ -151,7 +214,7 @@ public class StreamTypeBase extends HTTPHandler {
 
                     break;
                 } else {
-                    logger.debug("waiting for ffmpeg; frame count {} fps {} checkstarted {} minFrames {}", s,
+                    logger.debug("waiting for ffmpeg; frame count {} fps {} checkstarted {} minFrames {}", fps,
                             this.ffHelper.GetStats("fps"), (this.CheckStarted()) ? "true" : "false",
                             this.config.ffMinFramesToStart);
                     if (count++ == 30) {

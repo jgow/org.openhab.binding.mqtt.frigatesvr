@@ -58,8 +58,6 @@ public class FFmpegManager {
 
     public FFmpegManager() {
         this.tmpDir = Paths.get("");
-        this.ffmpegStats.put("frame", "");
-        this.ffmpegStats.put("fps", "");
     }
 
     ////////////////////////////////////////////////////////////////////////
@@ -98,15 +96,11 @@ public class FFmpegManager {
     // Extract key information from the ffmpeg log.
 
     private void ParseLog(String str) {
-        if (str.startsWith("frame=")) {
-            Pattern rx = Pattern.compile("(\\S+)\\s*=\\s*(\\S+)");
-            Matcher m = rx.matcher(str);
-            while (m.find()) {
-                synchronized (this) {
-                    if (ffmpegStats.containsKey(m.group(1))) {
-                        ffmpegStats.put(m.group(1), m.group(2));
-                    }
-                }
+        Pattern rx = Pattern.compile("(\\S+)\\s*=\\s*(\\S+)");
+        Matcher m = rx.matcher(str);
+        while (m.find()) {
+            synchronized (this) {
+                ffmpegStats.put(m.group(1).trim(), m.group(2).trim());
             }
         }
     }
