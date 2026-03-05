@@ -17,6 +17,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Scanner;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -123,25 +124,87 @@ public class StreamTypeBase extends HTTPHandler {
 
             int count = 0;
             do {
-                logger.info("waiting 1000ms for stream to appear");
+                logger.debug("waiting 1000ms for stream to appear");
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
                     break;
                 }
-                String s = this.ffHelper.GetStats("frame");
-                int frm = 0;
-                if (!s.isBlank()) {
+
+                // Update. Later ffmpegs seem not to publish FPS
+                // in their stats line. They do yield 'speed' and
+                // 'time'. So if we find that 'frame' is blank, we
+                // get 'time' and speed instead. This should indicate
+                // starting of the stream
+
+                boolean haveFPS = false;
+                boolean haveSpeed = false;
+                boolean haveTime = false;
+
+                String sFPS = this.ffHelper.GetStats("frame");
+                int fps = 0;
+                String sSpeed = this.ffHelper.GetStats("speed");
+                double speed = 0;
+                String sTime = this.ffHelper.GetStats("time");
+                int seconds = 0;
+
+                if (!sFPS.isBlank()) {
                     try {
-                        frm = Integer.valueOf(s);
+                        fps = Integer.valueOf(sFPS);
+                        logger.debug("fps established {}", fps);
+                        haveFPS = true;
                     } catch (NumberFormatException e) {
-                        frm = 0;
+                        fps = 0;
+                        logger.debug("have fps {} but can not parse", sFPS);
                     }
+                } else {
+                    logger.warn("FPS not available");
                 }
 
-                if (this.CheckStarted() && ((!s.equals("")) && frm >= this.config.ffMinFramesToStart)) {
-                    logger.info("ffmpeg stream confirmed started; frame count {} fps {}", s,
-                            this.ffHelper.GetStats("fps"));
+                if (!sSpeed.isBlank()) {
+                    // remove the trailing 'x'
+                    try {
+                        Scanner scan = new Scanner(sSpeed);
+                        scan.useDelimiter("[x\s]");
+                        speed = scan.nextDouble();
+                        scan.close();
+                        logger.debug("speed established {}", speed);
+                        haveSpeed = true;
+                    } catch (Exception e) {
+                        speed = 0;
+                        logger.warn("have speed {} but can not parse", sSpeed);
+                    }
+                } else {
+                    logger.warn("speed not available");
+                }
+
+                if (!sTime.isBlank()) {
+                    try {
+                        Scanner scan = new Scanner(sTime);
+                        scan.useDelimiter("[\\.:\s]");
+                        int h = scan.nextInt();
+                        int m = scan.nextInt();
+                        int s = scan.nextInt();
+                        scan.close();
+                        // ignore less than seconds
+                        seconds = s + 60 * m + 60 * 60 * h;
+                        logger.debug("time established {} seconds", seconds);
+                        haveTime = true;
+                    } catch (Exception e) {
+                        seconds = 0;
+                        logger.warn("have time {} but can not parse", sTime);
+                    }
+                } else {
+                    logger.warn("time not available");
+                }
+
+                // To confirm ffmpeg started, we use the output of CheckStarted. We
+                // must also have a valid speed, and either a valid time or fps
+
+                if (this.CheckStarted()
+                        && ((haveFPS && (fps >= this.config.ffMinFramesToStart)) || (haveTime && (seconds > 2)))) {
+
+                    logger.debug("ffmpeg stream confirmed started; fps {}, time {}, speed {}", fps, seconds, speed);
 
                     // guarantees we always wait one timeout interval
                     // once the stream is marked 'running'
@@ -151,7 +214,7 @@ public class StreamTypeBase extends HTTPHandler {
 
                     break;
                 } else {
-                    logger.info("waiting for ffmpeg; frame count {} fps {} checkstarted {} minFrames {}", s,
+                    logger.debug("waiting for ffmpeg; frame count {} fps {} checkstarted {} minFrames {}", fps,
                             this.ffHelper.GetStats("fps"), (this.CheckStarted()) ? "true" : "false",
                             this.config.ffMinFramesToStart);
                     if (count++ == 30) {
@@ -180,7 +243,7 @@ public class StreamTypeBase extends HTTPHandler {
     // Called by the servlet to ensure the stream is stopped and cleaned up.
 
     public synchronized void StopStreams() {
-        logger.info("StopStreams called");
+        logger.debug("StopStreams called");
         isStreamRunning = false;
         this.ffHelper.StopStream();
     }
@@ -190,6 +253,7 @@ public class StreamTypeBase extends HTTPHandler {
     //
     // Called by the servlet to remove stream environments.
 
+    @Override
     public synchronized void Cleanup() {
         this.StopStreams();
         this.ffHelper.Cleanup();
@@ -204,18 +268,19 @@ public class StreamTypeBase extends HTTPHandler {
     // do not check the hit count unless the ffmpeg process has written
     // the playlist.
 
+    @Override
     public synchronized void PokeMe() {
         this.ffHelper.PokeMe();
         if ((this.isStreamRunning == true) && !startOnLoad) {
             if (--keepalive_delay == 0) {
-                logger.info("stream is running ({})", this.getClass().getSimpleName());
+                logger.debug("stream is running ({})", this.getClass().getSimpleName());
                 // no-one has requested the stream between now and the last
                 // keepalive. Assume we're not wanted, so go and eat worms.
                 if (hitCount == 0) {
-                    logger.info("no further requestors; shutting down stream");
+                    logger.debug("no further requestors; shutting down stream");
                     StopStreams();
                 } else {
-                    logger.info("hitcount = {}, stream continuing", hitCount);
+                    logger.debug("hitcount = {}, stream continuing", hitCount);
                 }
                 keepalive_delay = config.ffKeepalivesBeforeExit;
             }
@@ -228,6 +293,7 @@ public class StreamTypeBase extends HTTPHandler {
     //
     // Send a file in response.
 
+    @Override
     protected void SendFile(HttpServletResponse response, String filename, String contentType) throws IOException {
 
         String mimeType;
@@ -242,7 +308,7 @@ public class StreamTypeBase extends HTTPHandler {
         File file = new File(filename);
         if (!file.exists()) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
-            logger.info("file {} not found", filename);
+            logger.debug("file {} not found", filename);
             return;
         }
 
