@@ -81,7 +81,13 @@
 		<parameter name="ffKeepalivesBeforeExit" type="integer" required="true">
 			<label>@text/param.common.ffKeepalivesBeforeExit.label</label>
 			<description>@text/param.common.ffKeepalivesBeforeExit.description</description>
-			<default>2</default>
+			<default>20</default>
+			<advanced>true</advanced>
+		</parameter>
+		<parameter name="ffStartCheckSeconds" type="integer" required="true">
+			<label>@text/param.common.ffStartCheckSeconds.label</label>
+			<description>@text/param.common.ffStartCheckSeconds.description</description>
+			<default>30</default>
 			<advanced>true</advanced>
 		</parameter>
 		<parameter name="ffTempDir" type="text" required="false">
@@ -195,6 +201,12 @@
 			<label>@text/param.common.ffKeepalivesBeforeExit.label</label>
 			<description>@text/param.common.ffKeepalivesBeforeExit.description</description>
 			<default>2</default>
+			<advanced>true</advanced>
+		</parameter>
+		<parameter name="ffStartCheckSeconds" type="integer" required="true">
+			<label>@text/param.common.ffStartCheckSeconds.label</label>
+			<description>@text/param.common.ffStartCheckSeconds.description</description>
+			<default>30</default>
 			<advanced>true</advanced>
 		</parameter>
 		<parameter name="ffTempDir" type="text" required="false">

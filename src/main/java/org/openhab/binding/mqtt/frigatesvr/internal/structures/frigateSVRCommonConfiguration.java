@@ -31,5 +31,6 @@ public class frigateSVRCommonConfiguration {
     public String ffDASHPackagingCommands = "";
     public int ffMinFramesToStart = 10;
     public int ffKeepalivesBeforeExit = 2;
+    public int ffStartCheckSeconds = 40;
     public String ffTempDir = "";
 }

@@ -217,7 +217,7 @@ public class StreamTypeBase extends HTTPHandler {
                     logger.debug("waiting for ffmpeg; frame count {} fps {} checkstarted {} minFrames {} loopcount {}",
                             fps, this.ffHelper.GetStats("fps"), (this.CheckStarted()) ? "true" : "false",
                             this.config.ffMinFramesToStart, count);
-                    if (count++ == 50) {
+                    if (count++ == config.ffStartCheckSeconds) {
                         logger.warn("ffmpeg start failed");
                         this.StopStreams();
                         break;
