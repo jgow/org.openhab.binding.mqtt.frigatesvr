@@ -55,7 +55,9 @@ public class HLSStream extends StreamTypeBase {
     // as soon as output has been generated.
 
     public boolean CheckStarted() {
-        File f = new File(this.ffHelper.GetDestinationPath() + "/" + this.pathfromFF);
+        String path = this.ffHelper.GetDestinationPath() + "/" + this.pathfromFF;
+        logger.debug("checking for file at {}", path);
+        File f = new File(path);
         return (f.exists() && f.isFile());
     }
 
@@ -126,6 +128,7 @@ public class HLSStream extends StreamTypeBase {
             this.SendFile(resp, this.ffHelper.GetDestinationPath() + "/" + pathInfo, "");
         } else {
             resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+            logger.debug("HLS file not found; isStreamRunning is false");
         }
     }
 }
