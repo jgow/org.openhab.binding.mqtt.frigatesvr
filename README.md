@@ -2,6 +2,7 @@
 
 $${\color{red}WARNING - This \space is \space a \space development \space branch. \space It \space is \space unstable. \space It \space may \space not \space build,}$$
 $${\color{red}and \space even \space if \space it \space does \space it \space should \space not \space be \space used \space in \space production \space environments}$$
+$${\color{red}However, PRs welcome.}$$
 
 This is a comprehensive binding for the Frigate NVR system (https://docs.frigate.video/). It allows access to all configured
 cameras, and realtime event information from the cameras can be used in rules. It tracks Frigate server status and can alert
