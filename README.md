@@ -116,7 +116,8 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 | ffDASHTranscodeCommands        | text    | Commands for ffmpeg transcode section for DASH streams                | -acodec copy -vcodec copy              | yes      | yes      |
 | ffDASHPackageCommands          | text    | Commands for ffmpeg stream package section for DASH                   | -seg_duration 1 -streaming 1           | yes      | yes      |
 | ffMinFramesToStart             | integer | Minimum number of frames processed by ffmpeg to indicate stream start | 10                                     | yes      | yes      |
-| ffKeepalivesBeforeExit         | integer | Number of keepalives to wait before terminating ffmpeg                | 2                                      | yes      | yes      |
+| ffKeepalivesBeforeExit         | integer | Number of keepalives to wait before terminating ffmpeg                | 20                                     | yes      | yes      |
+| ffStartCheckSeconds            | integer | No. of seconds to wait for ffmpeg to come alive                       | 30                                     | yes      | yes      |
 | ffTempDir                      | text    | Working directory for stream data                                     | openHAB user data area                 | no       | yes      |
 
 #### Notes:
@@ -151,7 +152,8 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 | ffDASHTranscodeCommands        | text    | Commands for ffmpeg transcode section for DASH streams                | -acodec copy -vcodec copy              | yes      | yes      |
 | ffDASHPackageCommands          | text    | Commands for ffmpeg stream package section for DASH                   | -seg_duration 1 -streaming 1           | yes      | yes      |
 | ffMinFramesToStart             | integer | Minimum number of frames processed by ffmpeg to indicate stream start | 10                                     | yes      | yes      |
-| ffKeepalivesBeforeExit         | integer | Number of keepalives to wait before terminating ffmpeg                | 2                                      | yes      | yes      |
+| ffKeepalivesBeforeExit         | integer | Number of keepalives to wait before terminating ffmpeg                | 20                                      | yes      | yes      |
+| ffStartCheckSeconds            | integer | No. of seconds to wait for ffmpeg to come alive                       | 30                                     | yes      | yes      |
 | ffTempDir                      | text    | Working directory for stream data                                     | openHAB user data area                 | yes      | yes      |
 
 #### Notes:
