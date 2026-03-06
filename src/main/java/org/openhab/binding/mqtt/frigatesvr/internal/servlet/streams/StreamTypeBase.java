@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 Contributors to the openHAB project
+ * Copyright (c) 2010-2026 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -214,10 +214,10 @@ public class StreamTypeBase extends HTTPHandler {
 
                     break;
                 } else {
-                    logger.debug("waiting for ffmpeg; frame count {} fps {} checkstarted {} minFrames {}", fps,
-                            this.ffHelper.GetStats("fps"), (this.CheckStarted()) ? "true" : "false",
-                            this.config.ffMinFramesToStart);
-                    if (count++ == 30) {
+                    logger.debug("waiting for ffmpeg; frame count {} fps {} checkstarted {} minFrames {} loopcount {}",
+                            fps, this.ffHelper.GetStats("fps"), (this.CheckStarted()) ? "true" : "false",
+                            this.config.ffMinFramesToStart, count);
+                    if (count++ == this.config.ffStartCheckSeconds) {
                         logger.warn("ffmpeg start failed");
                         this.StopStreams();
                         break;

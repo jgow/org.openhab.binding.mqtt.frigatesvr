@@ -29,3 +29,6 @@
 - Version 2.2
   - Channel updates
   - Documentation updates.
+
+- V3.x development branch (UNSTABLE)
+  - In work.
