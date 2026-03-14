@@ -12,7 +12,7 @@
  */
 package org.openhab.binding.mqtt.frigatesvr.internal.helpers;
 
-import java.net.URL;
+import java.net.URI;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -94,7 +94,7 @@ public class frigateSVRHTTPHelper {
 
     public String getHostAndPort() {
         try {
-            URL url = new URL(baseurl);
+            URI url = new URI(baseurl);
             String s = url.getHost() + url.getPort();
             return s.replace(".", "-");
         } catch (Exception e) {
@@ -109,7 +109,7 @@ public class frigateSVRHTTPHelper {
 
     public String getHost() {
         try {
-            URL url = new URL(baseurl);
+            URI url = new URI(baseurl);
             return url.getHost();
         } catch (Exception e) {
             return new String("");
@@ -153,6 +153,8 @@ public class frigateSVRHTTPHelper {
             Request request = ((@NonNull HttpClient) this.client).newRequest(buildURL(call));
             request.method(HttpMethod.GET);
             request.timeout(timeout, TimeUnit.MILLISECONDS);
+            // request.header(HttpHeader.AUTHORIZATION, "Bearer " + jwtToken); TODO
+            // 401 response if token wrong
 
             try {
                 ContentResponse response = request.send();
@@ -185,13 +187,14 @@ public class frigateSVRHTTPHelper {
     ////////////////////////////////////////////////////////////////////////////
     // runPost
     //
-    // Synchronous POST call to the Frigate API.import java.net.URL;
+    // Synchronous POST call to the Frigate API.
 
     public ResultStruct runPost(String call, @Nullable String payload) {
         ResultStruct r = new ResultStruct();
         try {
             Request request = ((@NonNull HttpClient) this.client).POST(buildURL(call));
             request.timeout(timeout, TimeUnit.MILLISECONDS);
+            // request.header(HttpHeader.AUTHORIZATION, "Bearer " + jwtToken); TODO
             if (payload != null) {
                 request.content(new StringContentProvider(payload));
             }
