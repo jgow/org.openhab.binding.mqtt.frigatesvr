@@ -99,6 +99,16 @@
 			<label>@text/param.server.serverURL.label</label>
 			<description>@text/param.server.serverURL.description</description>
 		</parameter>
+		<parameter name="uname" type="text" required="false">
+			<context>username</context>
+			<label>@text/param.server.username.label</label>
+			<description>@text/param.server.username.description</description>
+		</parameter>
+		<parameter name="password" type="text" required="false">
+			<context>password</context>
+			<label>@text/param.server.password.label</label>
+			<description>@text/param.server.password.description</description>
+		</parameter>
 		<parameter name="serverClientID" type="text" required="false">
 			<context>client-id</context>
 			<label>@text/param.server.serverClientID.label</label>
