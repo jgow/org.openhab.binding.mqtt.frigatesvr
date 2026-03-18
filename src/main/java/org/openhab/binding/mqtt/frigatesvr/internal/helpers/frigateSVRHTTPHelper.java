@@ -255,27 +255,47 @@ public class frigateSVRHTTPHelper {
                     request.header(HttpHeader.AUTHORIZATION, "Bearer " + this.authtok);
                 }
                 request.timeout(timeout, TimeUnit.MILLISECONDS);
-
-                try {
-                    ContentResponse response = request.send();
-                    if (response.getStatus() == HttpStatus.OK_200) {
-                        RawType jsonrq = new RawType(response.getContent(),
-                                response.getHeaders().get(HttpHeader.CONTENT_TYPE));
-                        r.rc = true;
-                        r.raw = jsonrq.getBytes();
-                        r.message = "ok";
-                    } else {
-                        r.message = String.format("HTTP GET failed: %d, %s", response.getStatus(),
-                                response.getReason());
+                for (int idx = 0; idx < 2; idx++) {
+                    try {
+                        ContentResponse response = request.send();
+                        if (response.getStatus() == HttpStatus.OK_200) {
+                            RawType jsonrq = new RawType(response.getContent(),
+                                    response.getHeaders().get(HttpHeader.CONTENT_TYPE));
+                            r.rc = true;
+                            r.raw = jsonrq.getBytes();
+                            r.message = "ok";
+                            break;
+                        } else {
+                            if ((response.getStatus() == HttpStatus.UNAUTHORIZED_401)) {
+                                if (this.authNeeded) {
+                                    // we try again if we can refresh the auth token. Invalidate it first
+                                    this.authTokValid = false;
+                                    if (!this.CheckAuthState()) {
+                                        logger.error("reauth failed");
+                                        break;
+                                    }
+                                } else {
+                                    logger.error("server returned 401 but credentials not supplied");
+                                    break;
+                                }
+                            } else {
+                                r.message = String.format("HTTP GET failed: %d, %s", response.getStatus(),
+                                        response.getReason());
+                                break;
+                            }
+                        }
+                    } catch (TimeoutException e) {
+                        r.message = String.format("TimeoutException: Call to Frigate Server timed out after %d msec",
+                                timeout);
+                        break;
+                    } catch (ExecutionException e) {
+                        r.message = String.format("ExecutionException: %s", e.getMessage());
+                        break;
+                    } catch (InterruptedException e) {
+                        r.message = String.format("InterruptedException: %s", e.getMessage());
+                        Thread.currentThread().interrupt();
+                        break;
                     }
-                } catch (TimeoutException e) {
-                    r.message = String.format("TimeoutException: Call to Frigate Server timed out after %d msec",
-                            timeout);
-                } catch (ExecutionException e) {
-                    r.message = String.format("ExecutionException: %s", e.getMessage());
-                } catch (InterruptedException e) {
-                    r.message = String.format("InterruptedException: %s", e.getMessage());
-                    Thread.currentThread().interrupt();
                 }
             } catch (Exception e) {
                 r.message = new String("HTTP helper called in unconfigured state");
@@ -306,26 +326,46 @@ public class frigateSVRHTTPHelper {
                 if (payload != null) {
                     request.content(new StringContentProvider(payload));
                 }
-                try {
-                    ContentResponse response = request.send();
-                    if (response.getStatus() == HttpStatus.OK_200) {
-                        RawType jsonrq = new RawType(response.getContent(),
-                                response.getHeaders().get(HttpHeader.CONTENT_TYPE));
-                        r.rc = true;
-                        r.raw = jsonrq.getBytes();
-                        r.message = new String("ok");
-                    } else {
-                        r.message = String.format("HTTP GET failed: %d, %s", response.getStatus(),
-                                response.getReason());
+                for (int idx = 0; idx < 2; idx++) {
+                    try {
+                        ContentResponse response = request.send();
+                        if (response.getStatus() == HttpStatus.OK_200) {
+                            RawType jsonrq = new RawType(response.getContent(),
+                                    response.getHeaders().get(HttpHeader.CONTENT_TYPE));
+                            r.rc = true;
+                            r.raw = jsonrq.getBytes();
+                            r.message = new String("ok");
+                        } else {
+                            if ((response.getStatus() == HttpStatus.UNAUTHORIZED_401)) {
+                                if (this.authNeeded) {
+                                    // we try again if we can refresh the auth token. Invalidate it first
+                                    this.authTokValid = false;
+                                    if (!this.CheckAuthState()) {
+                                        logger.error("reauth failed");
+                                        break;
+                                    }
+                                } else {
+                                    logger.error("server returned 401 but credentials not supplied");
+                                    break;
+                                }
+                            } else {
+                                r.message = String.format("HTTP POST failed: %d, %s", response.getStatus(),
+                                        response.getReason());
+                                break;
+                            }
+                        }
+                    } catch (TimeoutException e) {
+                        r.message = String.format("TimeoutException: Call to Frigate Server timed out after %d msec",
+                                timeout);
+                        break;
+                    } catch (ExecutionException e) {
+                        r.message = String.format("ExecutionException: %s", e.getMessage());
+                        break;
+                    } catch (InterruptedException e) {
+                        r.message = String.format("InterruptedException: %s", e.getMessage());
+                        Thread.currentThread().interrupt();
+                        break;
                     }
-                } catch (TimeoutException e) {
-                    r.message = String.format("TimeoutException: Call to Frigate Server timed out after %d msec",
-                            timeout);
-                } catch (ExecutionException e) {
-                    r.message = String.format("ExecutionException: %s", e.getMessage());
-                } catch (InterruptedException e) {
-                    r.message = String.format("InterruptedException: %s", e.getMessage());
-                    Thread.currentThread().interrupt();
                 }
             } catch (Exception e) {
                 r.message = new String("HTTP helper POST called in unconfigured state");
