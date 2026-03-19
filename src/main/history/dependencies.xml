@@ -6,6 +6,7 @@
         <feature>wrap</feature>
         <bundle>mvn:org.openhab.addons.bundles/org.openhab.binding.mqtt.frigatesvr/5.2.0-SNAPSHOT</bundle>
         <bundle>mvn:org.openhab.addons.bundles/org.openhab.binding.mqtt/5.2.0-SNAPSHOT</bundle>
+        <bundle>wrap:mvn:com.auth0/java-jwt/4.5.1</bundle>
         <bundle>wrap:mvn:org.lastnpe.eea/eea-all/2.4.0</bundle>
     </feature>
 </features>

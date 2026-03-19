@@ -12,7 +12,7 @@
  */
 package org.openhab.binding.mqtt.frigatesvr.internal.helpers;
 
-import java.net.URL;
+import java.net.URI;
 import java.util.Date;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -29,6 +29,7 @@ import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.http.MimeTypes;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.openhab.core.library.types.RawType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,12 +67,33 @@ public class frigateSVRHTTPHelper {
     //
     // Configure at initialization
 
-    public void configure(HttpClient httpClient, String address, int timeout, String username, String password) {
+    public void configure(HttpClient httpClient, String address, int timeout, String username, String password,
+            boolean selfsigned) {
         this.setBaseURL(address);
+
+        // Modifications to support SSL involve no longer using the
+        // common client.
+
         this.username = username;
         this.password = password;
         this.tokExp = new Date();
-        this.client = httpClient;
+
+        if (selfsigned) {
+            // disable host verification; encryption only.
+            SslContextFactory.Client sslContextFactory = new SslContextFactory.Client();
+            sslContextFactory.setTrustAll(true);
+            sslContextFactory.setEndpointIdentificationAlgorithm(null);
+            this.client = new HttpClient(sslContextFactory);
+        } else {
+            this.client = new HttpClient();
+        }
+        try {
+            this.client.start();
+        } catch (Exception e) {
+            logger.error("Failed to start HTTP client: {}", e.getMessage());
+        }
+        // no longer use single client
+        // this.client = httpClient;
         if (timeout > 0) {
             this.timeout = timeout;
         }
@@ -111,8 +133,8 @@ public class frigateSVRHTTPHelper {
 
     public String getHostAndPort() {
         try {
-            URL url = new URL(baseurl);
-            String s = url.getHost() + url.getPort();
+            URI uri = new URI(baseurl);
+            String s = uri.getHost() + uri.getPort();
             return s.replace(".", "-");
         } catch (Exception e) {
             return new String("");
@@ -126,8 +148,8 @@ public class frigateSVRHTTPHelper {
 
     public String getHost() {
         try {
-            URL url = new URL(baseurl);
-            return url.getHost();
+            URI uri = new URI(baseurl);
+            return uri.getHost();
         } catch (Exception e) {
             return new String("");
         }

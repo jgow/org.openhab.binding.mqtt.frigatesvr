@@ -24,6 +24,7 @@ public class frigateSVRServerConfiguration extends frigateSVRCommonConfiguration
     public String serverURL = "";
     public String username = "";
     public String password = "";
+    public boolean allowSelfSigned = false;
     public String serverClientID = "";
     public int serverKeepAlive = 5;
     public int HTTPTimeout = 100;

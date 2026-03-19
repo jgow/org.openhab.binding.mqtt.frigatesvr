@@ -125,7 +125,8 @@ public class frigateSVRServerHandler extends BaseBridgeHandler implements MqttMe
         if (!config.serverClientID.equals("")) {
             baseurl += "/" + config.serverClientID;
         }
-        this.httpHelper.configure(this.httpClient, baseurl, config.HTTPTimeout, config.username, config.password);
+        this.httpHelper.configure(this.httpClient, baseurl, config.HTTPTimeout, config.username, config.password,
+                config.allowSelfSigned);
 
         // build our server state block. Cameras may need some of this info.
 
