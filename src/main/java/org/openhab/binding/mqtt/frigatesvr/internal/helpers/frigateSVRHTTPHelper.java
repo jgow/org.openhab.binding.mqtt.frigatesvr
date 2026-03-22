@@ -12,8 +12,10 @@
  */
 package org.openhab.binding.mqtt.frigatesvr.internal.helpers;
 
+import java.net.HttpCookie;
 import java.net.URI;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -37,8 +39,6 @@ import org.slf4j.LoggerFactory;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 
 /**
  * The {@link mqtt.frigateSVRHTTPHelper} is a helper class providing access to HTTP services
@@ -55,7 +55,7 @@ public class frigateSVRHTTPHelper {
     private String authtok = "";
     private String username = "";
     private String password = "";
-    private boolean authNeeded = !password.trim().isBlank();
+    private boolean authNeeded = false;
     private boolean authTokValid = false; // token is valid
     private Date tokExp = new Date();
 
@@ -69,6 +69,7 @@ public class frigateSVRHTTPHelper {
 
     public void configure(HttpClient httpClient, String address, int timeout, String username, String password,
             boolean selfsigned) {
+
         this.setBaseURL(address);
 
         // Modifications to support SSL involve no longer using the
@@ -76,17 +77,25 @@ public class frigateSVRHTTPHelper {
 
         this.username = username;
         this.password = password;
+        logger.debug("username {} password {}", this.username, this.password);
         this.tokExp = new Date();
+        this.authNeeded = !(password.trim().isBlank());
+        this.authTokValid = false;
+        this.authtok = "";
+
+        logger.debug("configuring: username {} addr {}", username, address);
+        logger.debug("auth needed: {}", (this.authNeeded) ? "yes" : "no");
+
+        SslContextFactory.Client sslContextFactory = new SslContextFactory.Client();
 
         if (selfsigned) {
             // disable host verification; encryption only.
-            SslContextFactory.Client sslContextFactory = new SslContextFactory.Client();
             sslContextFactory.setTrustAll(true);
             sslContextFactory.setEndpointIdentificationAlgorithm(null);
-            this.client = new HttpClient(sslContextFactory);
-        } else {
-            this.client = new HttpClient();
         }
+
+        this.client = new HttpClient(sslContextFactory);
+
         try {
             this.client.start();
         } catch (Exception e) {
@@ -172,31 +181,42 @@ public class frigateSVRHTTPHelper {
 
     private boolean getAuth() {
         boolean rc = false;
+        this.authTokValid = false;
         try {
-            Request request = ((@NonNull HttpClient) this.client).POST(buildURL("/auth"));
+            Request request = ((@NonNull HttpClient) this.client).POST(buildURL("api/login"));
             request.timeout(timeout, TimeUnit.MILLISECONDS);
             request.header(HttpHeader.CONTENT_TYPE, MimeTypes.Type.APPLICATION_JSON.asString());
             request.content(new StringContentProvider(
-                    String.format("{\"username\":\"%s\",\"password\":\"%s\"}", username, password)));
+                    String.format("{\"user\":\"%s\",\"password\":\"%s\"}", this.username, this.password)));
+            logger.debug("Content:{}",
+                    String.format("{\"user\":\"%s\",\"password\":\"%s\"}", this.username, this.password));
             try {
                 ContentResponse response = request.send();
                 if (response.getStatus() == HttpStatus.OK_200) {
-                    RawType jsonrq = new RawType(response.getContent(),
-                            response.getHeaders().get(HttpHeader.CONTENT_TYPE));
 
-                    // todo: this is JSON and will need parsing; find 'token'
-                    JsonObject json = new Gson().fromJson(jsonrq.toString(), JsonObject.class);
-                    this.authtok = json.get("token").toString();
-                    // if rc is true, we must have a new authtok. Decode to get the exp. date
-
+                    // we need the set-cookie header
                     try {
-                        DecodedJWT token = JWT.decode(this.authtok);
-                        this.tokExp = token.getExpiresAt();
-                        rc = true;
-                        logger.info("have auth token");
-                    } catch (JWTDecodeException k) {
-                        // we don't have a valid token anyway; return false
-                        logger.error("auth: token can not be decoded");
+                        List<HttpCookie> cookies = HttpCookie.parse(response.getHeaders().get("set-cookie"));
+                        if (!cookies.isEmpty()) {
+                            HttpCookie first = cookies.getFirst();
+                            if (first.getName().equals("frigate_token")) {
+                                this.authtok = first.getValue();
+                                logger.debug("obtained auth token: {}", this.authtok);
+
+                                try {
+                                    DecodedJWT token = JWT.decode(this.authtok);
+                                    this.tokExp = token.getExpiresAt();
+                                    logger.debug("auth token is valid (exp {})", this.tokExp.toString());
+                                    this.authTokValid = true;
+                                    rc = true;
+                                } catch (JWTDecodeException k) {
+                                    // we don't have a valid token anyway; return false
+                                    logger.error("auth: token can not be decoded");
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        logger.error("Auth failed - header parse {}", e.getMessage());
                     }
                 } else {
                     logger.error("Auth failed; return status {}", response.getStatus());
@@ -210,7 +230,7 @@ public class frigateSVRHTTPHelper {
                 Thread.currentThread().interrupt();
             }
         } catch (Exception e) {
-            logger.error("auth: HTTP helper POST called in unconfigured state");
+            logger.error("auth: HTTP helper POST called in unconfigured state (message {})", e.getMessage());
         }
         return rc;
     }
@@ -233,14 +253,18 @@ public class frigateSVRHTTPHelper {
         // and renew it.
 
         if (this.authNeeded) {
-
-            if (!this.authTokValid || this.tokExp.after(new Date())) {
+            logger.info("Auth required");
+            if (!this.authTokValid || this.tokExp.before(new Date())) {
+                logger.info("getting auth");
+                ;
                 rc = this.getAuth();
             } else {
+                logger.info("authtok valid and not expired");
                 rc = true; // valid and not expired
             }
 
         } else {
+            logger.info("auth not required");
             rc = true;
         }
         return rc;
