@@ -67,19 +67,23 @@ public class frigateSVRHTTPHelper {
     //
     // Configure at initialization
 
-    public void configure(HttpClient httpClient, String address, int timeout, String username, String password,
-            boolean selfsigned) {
+    public void configure(HttpClient httpClient, String address, int timeout, boolean requireAuth, String username,
+            String password, boolean selfsigned) {
 
         this.setBaseURL(address);
 
         // Modifications to support SSL involve no longer using the
         // common client.
 
-        this.username = username;
-        this.password = password;
-        logger.debug("username {} password {}", this.username, this.password);
+        this.authNeeded = requireAuth;
+        if (this.authNeeded) {
+            this.username = username;
+            this.password = password;
+        } else {
+            this.username = "";
+            this.password = "";
+        }
         this.tokExp = new Date();
-        this.authNeeded = !(password.trim().isBlank());
         this.authTokValid = false;
         this.authtok = "";
 

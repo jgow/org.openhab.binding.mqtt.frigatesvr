@@ -106,9 +106,13 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 | Name                           | Type    | Description                                                           | Default                                | Required | Advanced |
 |--------------------------------|---------|-----------------------------------------------------------------------|----------------------------------------|----------|----------|
 | serverURL                      | text    | URL to the running Frigate server                                     | N/A                                    | yes      | no       |
+| requireAuth                    | boolean | Frigate server requires authentication (username/password)            | false                                  | yes      | no       |
+| username                       | text    | Username for account on Frigate server (used if requireAuth is true)  | ""                                     | no       | no       |
+| password                       | text    | Password for account on Frigate server (used if requireAuth is true)  | ""                                     | no       | no       |
+| allowSelfSigned                | boolean | Disable host verification for TLS connections to the Frigate server   | false                                  | yes      | no       |  
 | serverClientID                 | text    | 'clientID' parameter in Frigate config                                | N/A                                    | no       | no       |
 | serverKeepAlive                | integer | Interval the device is polled in sec.                                 | 5                                      | yes      | no       |
-| HTTPTimeout                    | integer | Timeout of HTTP requests to the Frigate API                           |                    100                                    | yes      | no       |
+| HTTPTimeout                    | integer | Timeout of HTTP requests to the Frigate API                           | 100                                    | yes      | no       |
 | enableAPIForwarder             | boolean | Enable the Frigate API forwarder                                      | true                                   | yes      | no       |
 | enableStream                   | boolean | Enable the internal stream server                                     | true                                   | yes      | no       |
 | streamWhitelist                | text    | List of IPs allowed to connect                                        | DISABLE                                | no       | yes      |    

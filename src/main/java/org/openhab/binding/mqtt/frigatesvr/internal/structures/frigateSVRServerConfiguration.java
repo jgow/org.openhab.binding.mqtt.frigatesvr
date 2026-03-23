@@ -22,6 +22,7 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 @NonNullByDefault
 public class frigateSVRServerConfiguration extends frigateSVRCommonConfiguration {
     public String serverURL = "";
+    public boolean requireAuth = false;
     public String username = "";
     public String password = "";
     public boolean allowSelfSigned = false;
