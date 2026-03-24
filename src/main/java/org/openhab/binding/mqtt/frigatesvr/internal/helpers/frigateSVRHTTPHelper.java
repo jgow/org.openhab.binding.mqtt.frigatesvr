@@ -67,8 +67,8 @@ public class frigateSVRHTTPHelper {
     //
     // Configure at initialization
 
-    public void configure(HttpClient httpClient, String address, int timeout, boolean requireAuth, String username,
-            String password, boolean selfsigned) {
+    public void configure(String address, int timeout, boolean requireAuth, String username, String password,
+            boolean selfsigned) {
 
         this.setBaseURL(address);
 

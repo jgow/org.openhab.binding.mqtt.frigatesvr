@@ -26,7 +26,6 @@ import java.util.concurrent.TimeoutException;
 import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
-import org.eclipse.jetty.client.HttpClient;
 import org.openhab.binding.mqtt.frigatesvr.internal.helpers.ResultStruct;
 import org.openhab.binding.mqtt.frigatesvr.internal.helpers.frigateSVRHTTPHelper;
 import org.openhab.binding.mqtt.frigatesvr.internal.helpers.frigateSVRNetworkHelper;
@@ -80,7 +79,6 @@ public class frigateSVRServerHandler extends BaseBridgeHandler implements MqttMe
     private frigateSVRServerState svrState = new frigateSVRServerState();
     private frigateSVRFrigateConfiguration frigateConfig = new frigateSVRFrigateConfiguration();
 
-    protected HttpClient httpClient;
     protected frigateSVRServlet httpServlet;
     protected Map<String, frigateSVRChannelState> Channels = new HashMap<String, frigateSVRChannelState>();
     protected frigateSVRHTTPHelper httpHelper = new frigateSVRHTTPHelper();
@@ -93,10 +91,9 @@ public class frigateSVRServerHandler extends BaseBridgeHandler implements MqttMe
             Map.entry(MQTT_ONLINE_SUFFIX, new APICamOnline(this.svrState)),
             Map.entry(MQTT_GETTHUMBNAIL_SUFFIX, new APIGetThumbnail()));
 
-    public frigateSVRServerHandler(Bridge thing, HttpClient httpClient, HttpService httpService) {
+    public frigateSVRServerHandler(Bridge thing, HttpService httpService) {
         super(thing);
 
-        this.httpClient = httpClient;
         this.httpServlet = new frigateSVRServlet(httpService);
 
         // the channel map
@@ -125,8 +122,8 @@ public class frigateSVRServerHandler extends BaseBridgeHandler implements MqttMe
         if (!config.serverClientID.equals("")) {
             baseurl += "/" + config.serverClientID;
         }
-        this.httpHelper.configure(this.httpClient, baseurl, config.HTTPTimeout, config.requireAuth, config.username,
-                config.password, config.allowSelfSigned);
+        this.httpHelper.configure(baseurl, config.HTTPTimeout, config.requireAuth, config.username, config.password,
+                config.allowSelfSigned);
 
         // build our server state block. Cameras may need some of this info.
 
