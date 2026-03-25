@@ -104,6 +104,30 @@
 			<label>@text/param.server.serverURL.label</label>
 			<description>@text/param.server.serverURL.description</description>
 		</parameter>
+		<parameter name="requireAuth" type="boolean" required="true">
+			<context>name</context>
+			<label>@text/param.server.requireAuth.label</label>
+			<description>@text/param.server.requireAuth.description</description>
+			<default>false</default>
+			<advanced>false</advanced>
+		</parameter>
+		<parameter name="username" type="text" required="false">
+			<context>username</context>
+			<label>@text/param.server.username.label</label>
+			<description>@text/param.server.username.description</description>
+		</parameter>
+		<parameter name="password" type="text" required="false">
+			<context>password</context>
+			<label>@text/param.server.password.label</label>
+			<description>@text/param.server.password.description</description>
+		</parameter>
+		<parameter name="allowSelfSigned" type="boolean" required="true">
+			<context>name</context>
+			<label>@text/param.server.allowSelfSigned.label</label>
+			<description>@text/param.server.allowSelfSigned.description</description>
+			<default>false</default>
+			<advanced>false</advanced>
+		</parameter>
 		<parameter name="serverClientID" type="text" required="false">
 			<context>client-id</context>
 			<label>@text/param.server.serverClientID.label</label>
@@ -120,7 +144,7 @@
 			<context>keep-alive</context>
 			<label>@text/param.server.HTTPTimeout.label</label>
 			<description>@text/param.server.HTTPTimeout.description</description>
-			<default>100</default>
+			<default>120</default>
 		</parameter>
 		<parameter name="enableAPIForwarder" type="boolean" required="true">
 			<context>name</context>

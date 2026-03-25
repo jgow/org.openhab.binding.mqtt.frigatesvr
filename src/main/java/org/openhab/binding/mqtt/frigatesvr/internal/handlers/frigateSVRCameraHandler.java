@@ -23,7 +23,6 @@ import java.util.Map;
 import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
-import org.eclipse.jetty.client.HttpClient;
 import org.openhab.binding.mqtt.frigatesvr.internal.actions.CameraActions;
 import org.openhab.binding.mqtt.frigatesvr.internal.helpers.ResultStruct;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.HTTPHandler;
@@ -146,9 +145,9 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     //
     // We build the channel map in the constructor
 
-    public frigateSVRCameraHandler(Thing thing, HttpClient httpClient, HttpService httpService) {
+    public frigateSVRCameraHandler(Thing thing, HttpService httpService) {
 
-        super(thing, httpClient, httpService);
+        super(thing, httpService);
         this.Channels = Map.ofEntries(
                 Map.entry(CHANNEL_CAM_CAMFPS,
                         new frigateSVRChannelState("camera_fps", frigateSVRChannelState::fromNumberMQTT,

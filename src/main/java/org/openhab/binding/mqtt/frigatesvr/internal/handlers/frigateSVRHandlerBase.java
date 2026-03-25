@@ -21,7 +21,6 @@ import java.util.concurrent.TimeoutException;
 import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
-import org.eclipse.jetty.client.HttpClient;
 import org.openhab.binding.mqtt.frigatesvr.internal.helpers.frigateSVRHTTPHelper;
 import org.openhab.binding.mqtt.frigatesvr.internal.helpers.frigateSVRNetworkHelper;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.frigateSVRServlet;
@@ -60,15 +59,13 @@ public class frigateSVRHandlerBase extends BaseThingHandler implements MqttMessa
     private final Logger logger = LoggerFactory.getLogger(frigateSVRHandlerBase.class);
 
     protected frigateSVRNetworkHelper networkHelper = new frigateSVRNetworkHelper();
-    protected HttpClient httpClient;
     protected @Nullable MqttBrokerConnection MQTTConnection = null;
     protected frigateSVRHTTPHelper httpHelper = new frigateSVRHTTPHelper();
     protected Map<String, frigateSVRChannelState> Channels = new HashMap<String, frigateSVRChannelState>();
     protected frigateSVRServlet httpServlet;
 
-    public frigateSVRHandlerBase(Thing thing, HttpClient httpClient, HttpService httpService) {
+    public frigateSVRHandlerBase(Thing thing, HttpService httpService) {
         super(thing);
-        this.httpClient = httpClient;
         this.httpServlet = new frigateSVRServlet(httpService);
     }
 

@@ -23,7 +23,6 @@ import java.util.concurrent.TimeUnit;
 import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
-import org.eclipse.jetty.client.HttpClient;
 import org.openhab.binding.mqtt.frigatesvr.internal.helpers.ResultStruct;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.HTTPHandler;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.DASHStream;
@@ -77,8 +76,8 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
             Map.entry(MQTT_ONLINE_SUFFIX, new APICamOnline(this.svrState)),
             Map.entry(MQTT_GETTHUMBNAIL_SUFFIX, new APIGetThumbnail()));
 
-    public frigateSVRServerHandler(Thing thing, HttpClient httpClient, HttpService httpService) {
-        super(thing, httpClient, httpService);
+    public frigateSVRServerHandler(Thing thing, HttpService httpService) {
+        super(thing, httpService);
 
         // the channel map
 
@@ -107,7 +106,8 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
         if (!config.serverClientID.equals("")) {
             baseurl += "/" + config.serverClientID;
         }
-        this.httpHelper.configure(this.httpClient, baseurl, config.HTTPTimeout);
+        this.httpHelper.configure(baseurl, config.HTTPTimeout, config.requireAuth, config.username, config.password,
+                config.allowSelfSigned);
 
         // build our server state block. Cameras may need some of this info.
 

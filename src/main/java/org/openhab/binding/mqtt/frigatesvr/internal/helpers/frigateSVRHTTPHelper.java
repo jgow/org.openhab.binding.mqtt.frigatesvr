@@ -12,7 +12,10 @@
  */
 package org.openhab.binding.mqtt.frigatesvr.internal.helpers;
 
+import java.net.HttpCookie;
 import java.net.URI;
+import java.util.Date;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -27,9 +30,15 @@ import org.eclipse.jetty.client.util.StringContentProvider;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.http.HttpStatus;
+import org.eclipse.jetty.http.MimeTypes;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.openhab.core.library.types.RawType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.exceptions.JWTDecodeException;
+import com.auth0.jwt.interfaces.DecodedJWT;
 
 /**
  * The {@link mqtt.frigateSVRHTTPHelper} is a helper class providing access to HTTP services
@@ -43,6 +52,12 @@ public class frigateSVRHTTPHelper {
     private String baseurl = "";
     private final Logger logger = LoggerFactory.getLogger(frigateSVRHTTPHelper.class);
     private int timeout = 100;
+    private String authtok = "";
+    private String username = "";
+    private String password = "";
+    private boolean authNeeded = false;
+    private boolean authTokValid = false; // token is valid
+    private Date tokExp = new Date();
 
     public frigateSVRHTTPHelper() {
     }
@@ -52,9 +67,46 @@ public class frigateSVRHTTPHelper {
     //
     // Configure at initialization
 
-    public void configure(HttpClient httpClient, String address, int timeout) {
+    public void configure(String address, int timeout, boolean requireAuth, String username, String password,
+            boolean selfsigned) {
+
         this.setBaseURL(address);
-        this.client = httpClient;
+
+        // Modifications to support SSL involve no longer using the
+        // common client.
+
+        this.authNeeded = requireAuth;
+        if (this.authNeeded) {
+            this.username = username;
+            this.password = password;
+        } else {
+            this.username = "";
+            this.password = "";
+        }
+        this.tokExp = new Date();
+        this.authTokValid = false;
+        this.authtok = "";
+
+        logger.debug("configuring: username {} addr {}", username, address);
+        logger.debug("auth needed: {}", (this.authNeeded) ? "yes" : "no");
+
+        SslContextFactory.Client sslContextFactory = new SslContextFactory.Client();
+
+        if (selfsigned) {
+            logger.debug("disabling host verification"); // disable host verification; encryption only.
+            sslContextFactory.setTrustAll(true);
+            sslContextFactory.setEndpointIdentificationAlgorithm(null);
+        }
+
+        this.client = new HttpClient(sslContextFactory);
+
+        try {
+            this.client.start();
+        } catch (Exception e) {
+            logger.error("Failed to start HTTP client: {}", e.getMessage());
+        }
+        // no longer use single client
+        // this.client = httpClient;
         if (timeout > 0) {
             this.timeout = timeout;
         }
@@ -94,8 +146,8 @@ public class frigateSVRHTTPHelper {
 
     public String getHostAndPort() {
         try {
-            URI url = new URI(baseurl);
-            String s = url.getHost() + url.getPort();
+            URI uri = new URI(baseurl);
+            String s = uri.getHost() + uri.getPort();
             return s.replace(".", "-");
         } catch (Exception e) {
             return new String("");
@@ -109,8 +161,8 @@ public class frigateSVRHTTPHelper {
 
     public String getHost() {
         try {
-            URI url = new URI(baseurl);
-            return url.getHost();
+            URI uri = new URI(baseurl);
+            return uri.getHost();
         } catch (Exception e) {
             return new String("");
         }
@@ -124,6 +176,102 @@ public class frigateSVRHTTPHelper {
     private String buildURL(String request) {
         StringBuilder sb = new StringBuilder();
         return sb.append(baseurl).append(request).toString();
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // getAuth
+    //
+    // Obtain an authorization token from the server
+
+    private boolean getAuth() {
+        boolean rc = false;
+        this.authTokValid = false;
+        try {
+            Request request = ((@NonNull HttpClient) this.client).POST(buildURL("api/login"));
+            request.timeout(timeout, TimeUnit.MILLISECONDS);
+            request.header(HttpHeader.CONTENT_TYPE, MimeTypes.Type.APPLICATION_JSON.asString());
+            request.content(new StringContentProvider(
+                    String.format("{\"user\":\"%s\",\"password\":\"%s\"}", this.username, this.password)));
+            logger.debug("Address {} Content:{}", buildURL("api/login"),
+                    String.format("{\"user\":\"%s\",\"password\":\"*****\" }", this.username));
+            try {
+                ContentResponse response = request.send();
+                if (response.getStatus() == HttpStatus.OK_200) {
+
+                    // we need the set-cookie header
+                    try {
+                        List<HttpCookie> cookies = HttpCookie.parse(response.getHeaders().get("set-cookie"));
+                        if (!cookies.isEmpty()) {
+                            HttpCookie first = cookies.getFirst();
+                            if (first.getName().equals("frigate_token")) {
+                                this.authtok = first.getValue();
+                                logger.debug("obtained auth token: {}", this.authtok);
+
+                                try {
+                                    DecodedJWT token = JWT.decode(this.authtok);
+                                    this.tokExp = token.getExpiresAt();
+                                    logger.debug("auth token is valid (exp {})", this.tokExp.toString());
+                                    this.authTokValid = true;
+                                    rc = true;
+                                } catch (JWTDecodeException k) {
+                                    // we don't have a valid token anyway; return false
+                                    logger.error("auth: token can not be decoded");
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        logger.error("Auth failed - header parse {}", e.getMessage());
+                    }
+                } else {
+                    logger.error("Auth failed; return status {}", response.getStatus());
+                }
+            } catch (TimeoutException e) {
+                logger.error("auth: timeoutException: Call to Frigate Server timed out after {} msec", timeout);
+            } catch (ExecutionException e) {
+                logger.error("auth: ExecutionException: {}", e.getMessage());
+            } catch (InterruptedException e) {
+                logger.error("auth: InterruptedException: {}", e.getMessage());
+                Thread.currentThread().interrupt();
+            }
+        } catch (Exception e) {
+            logger.error("auth: HTTP helper POST called in unconfigured state (message {})", e.getMessage());
+        }
+        return rc;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // CheckAuthState
+    //
+    // Check and verify our auth token. If invalid, or about to expire, trigger
+    // the request for a new one. If we can't get one, then return false. If
+    // we return true, the auth token in the class is valid.
+    // Note: if the password is blank, we assume auth is not needed and
+    // proceed anyway
+
+    private boolean CheckAuthState() {
+
+        boolean rc = false;
+
+        // If we don't need auth, we return true. Otherwise, we check
+        // for a valid token that has, or is about to, expire and try
+        // and renew it.
+
+        if (this.authNeeded) {
+            logger.debug("Auth required");
+            if (!this.authTokValid || this.tokExp.before(new Date())) {
+                logger.debug("getting auth");
+                ;
+                rc = this.getAuth();
+            } else {
+                logger.debug("authtok valid and not expired");
+                rc = true; // valid and not expired
+            }
+
+        } else {
+            logger.debug("auth not required");
+            rc = true;
+        }
+        return rc;
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -149,37 +297,64 @@ public class frigateSVRHTTPHelper {
 
     public ResultStruct runGet(String call) {
         ResultStruct r = new ResultStruct();
-        try {
-            Request request = ((@NonNull HttpClient) this.client).newRequest(buildURL(call));
-            request.method(HttpMethod.GET);
-            request.timeout(timeout, TimeUnit.MILLISECONDS);
-            // request.header(HttpHeader.AUTHORIZATION, "Bearer " + jwtToken); TODO
-            // 401 response if token wrong
-
+        if (this.CheckAuthState()) {
             try {
-                ContentResponse response = request.send();
-                if (response.getStatus() == HttpStatus.OK_200) {
-                    RawType jsonrq = new RawType(response.getContent(),
-                            response.getHeaders().get(HttpHeader.CONTENT_TYPE));
-                    r.rc = true;
-                    r.raw = jsonrq.getBytes();
-                    r.message = "ok";
-                } else {
-                    r.message = String.format("HTTP GET failed: %d, %s", response.getStatus(), response.getReason());
+                Request request = ((@NonNull HttpClient) this.client).newRequest(buildURL(call));
+                request.method(HttpMethod.GET);
+                if (this.authNeeded) {
+                    request.header(HttpHeader.AUTHORIZATION, "Bearer " + this.authtok);
                 }
-            } catch (TimeoutException e) {
-                r.message = String.format("TimeoutException: Call to Frigate Server timed out after %d msec", timeout);
-            } catch (ExecutionException e) {
-                r.message = String.format("ExecutionException: %s", e.getMessage());
-            } catch (InterruptedException e) {
-                r.message = String.format("InterruptedException: %s", e.getMessage());
-                Thread.currentThread().interrupt();
+                request.timeout(timeout, TimeUnit.MILLISECONDS);
+                for (int idx = 0; idx < 2; idx++) {
+                    try {
+                        ContentResponse response = request.send();
+                        if (response.getStatus() == HttpStatus.OK_200) {
+                            RawType jsonrq = new RawType(response.getContent(),
+                                    response.getHeaders().get(HttpHeader.CONTENT_TYPE));
+                            r.rc = true;
+                            r.raw = jsonrq.getBytes();
+                            r.message = "ok";
+                            break;
+                        } else {
+                            if ((response.getStatus() == HttpStatus.UNAUTHORIZED_401)) {
+                                if (this.authNeeded) {
+                                    // we try again if we can refresh the auth token. Invalidate it first
+                                    this.authTokValid = false;
+                                    if (!this.CheckAuthState()) {
+                                        logger.error("reauth failed");
+                                        break;
+                                    }
+                                } else {
+                                    logger.error("server returned 401 but credentials not supplied");
+                                    break;
+                                }
+                            } else {
+                                r.message = String.format("HTTP GET failed: %d, %s", response.getStatus(),
+                                        response.getReason());
+                                break;
+                            }
+                        }
+                    } catch (TimeoutException e) {
+                        r.message = String.format("TimeoutException: Call to Frigate Server timed out after %d msec",
+                                timeout);
+                        break;
+                    } catch (ExecutionException e) {
+                        r.message = String.format("ExecutionException: %s", e.getMessage());
+                        break;
+                    } catch (InterruptedException e) {
+                        r.message = String.format("InterruptedException: %s", e.getMessage());
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+            } catch (Exception e) {
+                r.message = new String("HTTP helper called in unconfigured state");
             }
-        } catch (Exception e) {
-            r.message = new String("HTTP helper called in unconfigured state");
+        } else {
+            r.message = new String("Unauthorized");
         }
         if (!r.rc) {
-            logger.error("{}", r.message);
+            logger.debug("{}", r.message);
         }
         return r;
     }
@@ -191,34 +366,63 @@ public class frigateSVRHTTPHelper {
 
     public ResultStruct runPost(String call, @Nullable String payload) {
         ResultStruct r = new ResultStruct();
-        try {
-            Request request = ((@NonNull HttpClient) this.client).POST(buildURL(call));
-            request.timeout(timeout, TimeUnit.MILLISECONDS);
-            // request.header(HttpHeader.AUTHORIZATION, "Bearer " + jwtToken); TODO
-            if (payload != null) {
-                request.content(new StringContentProvider(payload));
-            }
+        if (this.CheckAuthState()) {
             try {
-                ContentResponse response = request.send();
-                if (response.getStatus() == HttpStatus.OK_200) {
-                    RawType jsonrq = new RawType(response.getContent(),
-                            response.getHeaders().get(HttpHeader.CONTENT_TYPE));
-                    r.rc = true;
-                    r.raw = jsonrq.getBytes();
-                    r.message = new String("ok");
-                } else {
-                    r.message = String.format("HTTP GET failed: %d, %s", response.getStatus(), response.getReason());
+                Request request = ((@NonNull HttpClient) this.client).POST(buildURL(call));
+                request.timeout(timeout, TimeUnit.MILLISECONDS);
+                if (this.authNeeded) {
+                    request.header(HttpHeader.AUTHORIZATION, "Bearer " + this.authtok);
                 }
-            } catch (TimeoutException e) {
-                r.message = String.format("TimeoutException: Call to Frigate Server timed out after %d msec", timeout);
-            } catch (ExecutionException e) {
-                r.message = String.format("ExecutionException: %s", e.getMessage());
-            } catch (InterruptedException e) {
-                r.message = String.format("InterruptedException: %s", e.getMessage());
-                Thread.currentThread().interrupt();
+                if (payload != null) {
+                    request.content(new StringContentProvider(payload));
+                }
+                for (int idx = 0; idx < 2; idx++) {
+                    try {
+                        ContentResponse response = request.send();
+                        if (response.getStatus() == HttpStatus.OK_200) {
+                            RawType jsonrq = new RawType(response.getContent(),
+                                    response.getHeaders().get(HttpHeader.CONTENT_TYPE));
+                            r.rc = true;
+                            r.raw = jsonrq.getBytes();
+                            r.message = new String("ok");
+                        } else {
+                            if ((response.getStatus() == HttpStatus.UNAUTHORIZED_401)) {
+                                if (this.authNeeded) {
+                                    // we try again if we can refresh the auth token. Invalidate it first
+                                    this.authTokValid = false;
+                                    if (!this.CheckAuthState()) {
+                                        logger.error("reauth failed");
+                                        break;
+                                    }
+                                } else {
+                                    logger.error("server returned 401 but credentials not supplied");
+                                    break;
+                                }
+                            } else {
+                                r.message = String.format("HTTP POST failed: %d, %s", response.getStatus(),
+                                        response.getReason());
+                                break;
+                            }
+                        }
+                    } catch (TimeoutException e) {
+                        r.message = String.format("TimeoutException: Call to Frigate Server timed out after %d msec",
+                                timeout);
+                        break;
+                    } catch (ExecutionException e) {
+                        r.message = String.format("ExecutionException: %s", e.getMessage());
+                        break;
+                    } catch (InterruptedException e) {
+                        r.message = String.format("InterruptedException: %s", e.getMessage());
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+            } catch (Exception e) {
+                r.message = new String("HTTP helper POST called in unconfigured state");
             }
-        } catch (Exception e) {
-            r.message = new String("HTTP helper POST called in unconfigured state");
+        } else {
+            r.rc = false;
+            r.message = new String("Unauthorized");
         }
         if (!r.rc) {
             logger.error("{}", r.message);

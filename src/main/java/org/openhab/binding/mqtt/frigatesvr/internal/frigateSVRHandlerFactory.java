@@ -18,12 +18,10 @@ import java.util.Hashtable;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
-import org.eclipse.jetty.client.HttpClient;
 import org.openhab.binding.mqtt.frigatesvr.internal.discovery.frigateSVRCameraDiscoveryService;
 import org.openhab.binding.mqtt.frigatesvr.internal.handlers.frigateSVRCameraHandler;
 import org.openhab.binding.mqtt.frigatesvr.internal.handlers.frigateSVRServerHandler;
 import org.openhab.core.config.discovery.DiscoveryService;
-import org.openhab.core.io.net.http.HttpClientFactory;
 import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingTypeUID;
 import org.openhab.core.thing.binding.BaseThingHandlerFactory;
@@ -46,7 +44,6 @@ import org.osgi.service.http.HttpService;
 @Component(configurationPid = "mqtt:frigateCamera", service = ThingHandlerFactory.class)
 public class frigateSVRHandlerFactory extends BaseThingHandlerFactory {
 
-    private static HttpClient httpClient = new HttpClient(); // common HTTP client
     private @Nullable ServiceRegistration<?> CameraDiscoveryServiceRegistration;
     private final HttpService httpService;
 
@@ -54,9 +51,7 @@ public class frigateSVRHandlerFactory extends BaseThingHandlerFactory {
     // Standard stuff...
 
     @Activate
-    public frigateSVRHandlerFactory(final @Reference HttpClientFactory httpClientFactory,
-            final @Reference HttpService httpService) {
-        frigateSVRHandlerFactory.httpClient = httpClientFactory.getCommonHttpClient();
+    public frigateSVRHandlerFactory(final @Reference HttpService httpService) {
         this.httpService = httpService;
     }
 
@@ -79,13 +74,12 @@ public class frigateSVRHandlerFactory extends BaseThingHandlerFactory {
     protected @Nullable ThingHandler createHandler(Thing thing) {
         ThingTypeUID thingTypeUID = thing.getThingTypeUID();
         if (thingTypeUID.equals(THING_TYPE_SERVER)) {
-            frigateSVRServerHandler handler = new frigateSVRServerHandler(thing, frigateSVRHandlerFactory.httpClient,
-                    httpService);
+            frigateSVRServerHandler handler = new frigateSVRServerHandler(thing, httpService);
             registerCameraDiscoveryService(handler);
             return handler;
         }
         if (thingTypeUID.equals(THING_TYPE_CAMERA)) {
-            return new frigateSVRCameraHandler(thing, frigateSVRHandlerFactory.httpClient, httpService);
+            return new frigateSVRCameraHandler(thing, httpService);
         }
         return null;
     }

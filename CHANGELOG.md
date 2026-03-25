@@ -33,3 +33,5 @@
   - Fix for later ffmpegs not reporting fps (backported from v3.x)
   - Fix for short stream creation timeouts
   - Additional parameter allowing the wait time for stream creation to be configurable.
+- Version 2.4
+  - TLS and auth support for authenticated API (backported from v3.x)
