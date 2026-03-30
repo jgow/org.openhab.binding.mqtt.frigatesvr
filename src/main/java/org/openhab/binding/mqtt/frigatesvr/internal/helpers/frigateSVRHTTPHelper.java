@@ -190,6 +190,7 @@ public class frigateSVRHTTPHelper {
             Request request = ((@NonNull HttpClient) this.client).POST(buildURL("api/login"));
             request.timeout(timeout, TimeUnit.MILLISECONDS);
             request.header(HttpHeader.CONTENT_TYPE, MimeTypes.Type.APPLICATION_JSON.asString());
+            request.header(HttpHeader.AUTHORIZATION, "Basic");
             request.content(new StringContentProvider(
                     String.format("{\"user\":\"%s\",\"password\":\"%s\"}", this.username, this.password)));
             logger.debug("Content:{}",
