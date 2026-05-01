@@ -26,11 +26,14 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 @NonNullByDefault
 public class frigateSVRNetworkHelper {
 
+    // private final Logger logger = LoggerFactory.getLogger(frigateSVRNetworkHelper.class);
+
     private String hostname = "";
     private String port = "8080";
 
-    public frigateSVRNetworkHelper() {
+    public frigateSVRNetworkHelper(String port) {
         hostname = this.GetAccessName();
+        this.port = port;
     }
 
     ///////////////////////////////////////////////////////////////////////////

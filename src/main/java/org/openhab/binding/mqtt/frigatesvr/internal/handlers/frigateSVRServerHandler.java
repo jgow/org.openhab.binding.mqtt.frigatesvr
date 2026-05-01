@@ -76,8 +76,8 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
             Map.entry(MQTT_ONLINE_SUFFIX, new APICamOnline(this.svrState)),
             Map.entry(MQTT_GETTHUMBNAIL_SUFFIX, new APIGetThumbnail()));
 
-    public frigateSVRServerHandler(Thing thing, HttpService httpService) {
-        super(thing, httpService);
+    public frigateSVRServerHandler(Thing thing, HttpService httpService, String httpPort) {
+        super(thing, httpService, httpPort);
 
         // the channel map
 

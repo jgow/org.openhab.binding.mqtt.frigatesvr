@@ -145,9 +145,9 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     //
     // We build the channel map in the constructor
 
-    public frigateSVRCameraHandler(Thing thing, HttpService httpService) {
+    public frigateSVRCameraHandler(Thing thing, HttpService httpService, String httpPort) {
 
-        super(thing, httpService);
+        super(thing, httpService, httpPort);
         this.Channels = Map.ofEntries(
                 Map.entry(CHANNEL_CAM_CAMFPS,
                         new frigateSVRChannelState("camera_fps", frigateSVRChannelState::fromNumberMQTT,

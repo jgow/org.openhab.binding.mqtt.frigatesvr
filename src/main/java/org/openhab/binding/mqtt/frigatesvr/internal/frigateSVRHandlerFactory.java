@@ -14,6 +14,7 @@ package org.openhab.binding.mqtt.frigatesvr.internal;
 
 import static org.openhab.binding.mqtt.frigatesvr.internal.frigateSVRBindingConstants.*;
 
+import java.util.Dictionary;
 import java.util.Hashtable;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
@@ -28,10 +29,14 @@ import org.openhab.core.thing.binding.BaseThingHandlerFactory;
 import org.openhab.core.thing.binding.ThingHandler;
 import org.openhab.core.thing.binding.ThingHandlerFactory;
 import org.osgi.framework.ServiceRegistration;
+import org.osgi.service.cm.Configuration;
+import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.http.HttpService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The {@link mqtt.frigateSVRHandlerFactory} is responsible for creating things and thing
@@ -44,15 +49,30 @@ import org.osgi.service.http.HttpService;
 @Component(configurationPid = "mqtt:frigateCamera", service = ThingHandlerFactory.class)
 public class frigateSVRHandlerFactory extends BaseThingHandlerFactory {
 
+    private final Logger logger = LoggerFactory.getLogger(frigateSVRHandlerFactory.class);
+
     private @Nullable ServiceRegistration<?> CameraDiscoveryServiceRegistration;
     private final HttpService httpService;
+    private String httpPort;
+    private final ConfigurationAdmin cfgAdmin;
 
     //
     // Standard stuff...
 
     @Activate
-    public frigateSVRHandlerFactory(final @Reference HttpService httpService) {
+    public frigateSVRHandlerFactory(final @Reference HttpService httpService, @Reference ConfigurationAdmin cfgAdmin) {
+        this.cfgAdmin = cfgAdmin;
         this.httpService = httpService;
+        try {
+            Configuration cfg = this.cfgAdmin.getConfiguration("org.ops4j.pax.web", null);
+            Dictionary<String, Object> properties = cfg.getProperties();
+            Object foundPort = properties.get("org.osgi.service.http.port");
+            httpPort = foundPort.toString();
+            logger.info("Web service port found at {}", httpPort);
+        } catch (Exception e) {
+            logger.error("Unable to determine port ({}), assuming 8080", e.getMessage());
+            httpPort = "8080";
+        }
     }
 
     @Override
@@ -74,12 +94,12 @@ public class frigateSVRHandlerFactory extends BaseThingHandlerFactory {
     protected @Nullable ThingHandler createHandler(Thing thing) {
         ThingTypeUID thingTypeUID = thing.getThingTypeUID();
         if (thingTypeUID.equals(THING_TYPE_SERVER)) {
-            frigateSVRServerHandler handler = new frigateSVRServerHandler(thing, httpService);
+            frigateSVRServerHandler handler = new frigateSVRServerHandler(thing, httpService, httpPort);
             registerCameraDiscoveryService(handler);
             return handler;
         }
         if (thingTypeUID.equals(THING_TYPE_CAMERA)) {
-            return new frigateSVRCameraHandler(thing, httpService);
+            return new frigateSVRCameraHandler(thing, httpService, httpPort);
         }
         return null;
     }

@@ -58,15 +58,16 @@ public class frigateSVRHandlerBase extends BaseThingHandler implements MqttMessa
 
     private final Logger logger = LoggerFactory.getLogger(frigateSVRHandlerBase.class);
 
-    protected frigateSVRNetworkHelper networkHelper = new frigateSVRNetworkHelper();
+    protected frigateSVRNetworkHelper networkHelper; // = new frigateSVRNetworkHelper();
     protected @Nullable MqttBrokerConnection MQTTConnection = null;
     protected frigateSVRHTTPHelper httpHelper = new frigateSVRHTTPHelper();
     protected Map<String, frigateSVRChannelState> Channels = new HashMap<String, frigateSVRChannelState>();
     protected frigateSVRServlet httpServlet;
 
-    public frigateSVRHandlerBase(Thing thing, HttpService httpService) {
+    public frigateSVRHandlerBase(Thing thing, HttpService httpService, String httpPort) {
         super(thing);
         this.httpServlet = new frigateSVRServlet(httpService);
+        this.networkHelper = new frigateSVRNetworkHelper(httpPort);
     }
 
     @Override
