@@ -35,6 +35,7 @@ import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRChannel
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRServerState;
 import org.openhab.core.io.transport.mqtt.MqttBrokerConnection;
 import org.openhab.core.io.transport.mqtt.MqttMessageSubscriber;
+import org.openhab.core.net.NetworkAddressService;
 import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingStatus;
 import org.openhab.core.thing.ThingStatusDetail;
@@ -145,9 +146,9 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
     //
     // We build the channel map in the constructor
 
-    public frigateSVRCameraHandler(Thing thing, HttpService httpService, String httpPort) {
+    public frigateSVRCameraHandler(Thing thing, HttpService httpService, NetworkAddressService addressService) {
 
-        super(thing, httpService, httpPort);
+        super(thing, httpService, addressService);
         this.Channels = Map.ofEntries(
                 Map.entry(CHANNEL_CAM_CAMFPS,
                         new frigateSVRChannelState("camera_fps", frigateSVRChannelState::fromNumberMQTT,

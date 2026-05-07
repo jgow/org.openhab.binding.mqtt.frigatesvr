@@ -31,6 +31,7 @@ import org.openhab.core.io.transport.mqtt.MqttMessageSubscriber;
 import org.openhab.core.library.types.DecimalType;
 import org.openhab.core.library.types.OnOffType;
 import org.openhab.core.library.types.OpenClosedType;
+import org.openhab.core.net.NetworkAddressService;
 import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.ChannelUID;
 import org.openhab.core.thing.Thing;
@@ -64,10 +65,10 @@ public class frigateSVRHandlerBase extends BaseThingHandler implements MqttMessa
     protected Map<String, frigateSVRChannelState> Channels = new HashMap<String, frigateSVRChannelState>();
     protected frigateSVRServlet httpServlet;
 
-    public frigateSVRHandlerBase(Thing thing, HttpService httpService, String httpPort) {
+    public frigateSVRHandlerBase(Thing thing, HttpService httpService, NetworkAddressService addressService) {
         super(thing);
         this.httpServlet = new frigateSVRServlet(httpService);
-        this.networkHelper = new frigateSVRNetworkHelper(httpPort);
+        this.networkHelper = new frigateSVRNetworkHelper(addressService);
     }
 
     @Override

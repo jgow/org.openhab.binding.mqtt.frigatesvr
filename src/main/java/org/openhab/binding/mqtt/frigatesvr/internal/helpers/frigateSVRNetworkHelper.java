@@ -16,6 +16,10 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
+import org.openhab.core.net.NetworkAddressService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The {@link mqtt.frigateSVRNetworkHelper} provides some useful information
@@ -26,14 +30,21 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 @NonNullByDefault
 public class frigateSVRNetworkHelper {
 
-    // private final Logger logger = LoggerFactory.getLogger(frigateSVRNetworkHelper.class);
+    private final Logger logger = LoggerFactory.getLogger(frigateSVRNetworkHelper.class);
+    private NetworkAddressService addressService;
 
-    private String hostname = "";
-    private String port = "8080";
+    public frigateSVRNetworkHelper(NetworkAddressService addressService) {
+        this.addressService = addressService;
+    }
 
-    public frigateSVRNetworkHelper(String port) {
-        hostname = this.GetAccessName();
-        this.port = port;
+    ///////////////////////////////////////////////////////////////////////////
+    // GetProtocol
+    //
+    // The protocol would be set up in config; we do need to determine if
+    // https is required from the config. Todo.
+
+    public String GetProtocol() {
+        return "http";
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -42,7 +53,7 @@ public class frigateSVRNetworkHelper {
     // Returns the host, FQDN or otherwise (no port suffixes etc)
 
     public String GetHost() {
-        return hostname;
+        return this.GetAccessName();
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -51,6 +62,15 @@ public class frigateSVRNetworkHelper {
     // Return the port the current OH instance is running on
 
     public String GetPort() {
+        @Nullable
+        String port;
+        port = System.getProperty("org.osgi.service.http.port");
+        if (port != null) {
+            logger.info("Web service port found at {}", port);
+        } else {
+            logger.error("Unable to determine port, assuming 8080");
+            port = "8080";
+        }
         return port;
     }
 
@@ -60,7 +80,7 @@ public class frigateSVRNetworkHelper {
     // Return the base URL to the running instance
 
     public String GetHostBaseURL() {
-        return "http://" + hostname + ":" + port;
+        return GetProtocol() + "://" + GetHost() + ":" + GetPort();
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -71,26 +91,43 @@ public class frigateSVRNetworkHelper {
     // revert to 'localhost
 
     private String GetAccessName() {
+
         String host = "";
+        logger.info("attempting to obtain host name");
         try {
-            host = InetAddress.getLocalHost().getCanonicalHostName();
+            host = InetAddress.getByName(addressService.getPrimaryIpv4HostAddress()).getCanonicalHostName();
         } catch (Exception e) {
             try {
-                host = InetAddress.getLocalHost().getHostAddress();
+                logger.error("trying addressService with getHostAddress");
+                host = InetAddress.getByName(addressService.getPrimaryIpv4HostAddress()).getHostAddress();
             } catch (Exception f) {
                 try {
-                    // if all is lost, try this
-                    // the IP does not need to be reachable
-                    DatagramSocket socket = new DatagramSocket();
-                    socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
-                    host = socket.getLocalAddress().getHostAddress();
-                    socket.close();
+                    logger.error("trying getLocalHost with getCanonicalHostName");
+                    host = InetAddress.getLocalHost().getCanonicalHostName();
                 } catch (Exception g) {
-                    // I give up
-                    host = "localhost";
+                    try {
+                        logger.error("failed; trying getLocalHost and getHostAddress");
+                        host = InetAddress.getLocalHost().getHostAddress();
+                    } catch (Exception h) {
+                        try {
+                            logger.error("failed; trying local connection");
+                            // if all is lost, try this
+                            // the IP does not need to be reachable
+                            DatagramSocket socket = new DatagramSocket();
+                            socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
+                            host = socket.getLocalAddress().getHostAddress();
+                            socket.close();
+                        } catch (Exception i) {
+                            // I give up
+                            logger.error(
+                                    "all methods failed; unable to determine forwarder host name - using <unknown>");
+                            host = "<unknown>";
+                        }
+                    }
                 }
             }
         }
+        logger.info("have forwarder hostname {}", host);
         return host;
     }
 }
