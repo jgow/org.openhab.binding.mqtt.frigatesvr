@@ -39,13 +39,12 @@ import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRChannel
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRFrigateConfiguration;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRServerConfiguration;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRServerState;
+import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRServices;
 import org.openhab.core.io.transport.mqtt.MqttBrokerConnection;
 import org.openhab.core.io.transport.mqtt.MqttMessageSubscriber;
-import org.openhab.core.net.NetworkAddressService;
 import org.openhab.core.thing.Thing;
 import org.openhab.core.thing.ThingStatus;
 import org.openhab.core.thing.ThingStatusDetail;
-import org.osgi.service.http.HttpService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,8 +76,8 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
             Map.entry(MQTT_ONLINE_SUFFIX, new APICamOnline(this.svrState)),
             Map.entry(MQTT_GETTHUMBNAIL_SUFFIX, new APIGetThumbnail()));
 
-    public frigateSVRServerHandler(Thing thing, HttpService httpService, NetworkAddressService addressService) {
-        super(thing, httpService, addressService);
+    public frigateSVRServerHandler(Thing thing, frigateSVRServices services) {
+        super(thing, services);
 
         // the channel map
 

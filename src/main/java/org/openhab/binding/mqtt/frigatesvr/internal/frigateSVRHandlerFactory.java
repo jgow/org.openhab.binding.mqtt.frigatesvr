@@ -21,6 +21,7 @@ import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.mqtt.frigatesvr.internal.discovery.frigateSVRCameraDiscoveryService;
 import org.openhab.binding.mqtt.frigatesvr.internal.handlers.frigateSVRCameraHandler;
 import org.openhab.binding.mqtt.frigatesvr.internal.handlers.frigateSVRServerHandler;
+import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRServices;
 import org.openhab.core.config.discovery.DiscoveryService;
 import org.openhab.core.net.NetworkAddressService;
 import org.openhab.core.thing.Thing;
@@ -34,8 +35,6 @@ import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.http.HttpService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * The {@link mqtt.frigateSVRHandlerFactory} is responsible for creating things and thing
@@ -48,12 +47,11 @@ import org.slf4j.LoggerFactory;
 @Component(configurationPid = "mqtt:frigateCamera", service = ThingHandlerFactory.class)
 public class frigateSVRHandlerFactory extends BaseThingHandlerFactory {
 
-    private final Logger logger = LoggerFactory.getLogger(frigateSVRHandlerFactory.class);
+    // private final Logger logger = LoggerFactory.getLogger(frigateSVRHandlerFactory.class);
 
     private @Nullable ServiceRegistration<?> CameraDiscoveryServiceRegistration;
-    private final HttpService httpService;
-    private final ConfigurationAdmin cfgAdmin;
-    private final NetworkAddressService addressService;
+
+    private final frigateSVRServices services;
 
     //
     // Standard stuff...
@@ -61,9 +59,7 @@ public class frigateSVRHandlerFactory extends BaseThingHandlerFactory {
     @Activate
     public frigateSVRHandlerFactory(final @Reference HttpService httpService, @Reference ConfigurationAdmin cfgAdmin,
             final @Reference NetworkAddressService networkAddressService) {
-        this.cfgAdmin = cfgAdmin;
-        this.httpService = httpService;
-        this.addressService = networkAddressService;
+        services = new frigateSVRServices(httpService, cfgAdmin, networkAddressService);
     }
 
     @Override
@@ -86,12 +82,12 @@ public class frigateSVRHandlerFactory extends BaseThingHandlerFactory {
 
         ThingTypeUID thingTypeUID = thing.getThingTypeUID();
         if (thingTypeUID.equals(THING_TYPE_SERVER)) {
-            frigateSVRServerHandler handler = new frigateSVRServerHandler(thing, httpService, addressService);
+            frigateSVRServerHandler handler = new frigateSVRServerHandler(thing, services);
             registerCameraDiscoveryService(handler);
             return handler;
         }
         if (thingTypeUID.equals(THING_TYPE_CAMERA)) {
-            return new frigateSVRCameraHandler(thing, httpService, addressService);
+            return new frigateSVRCameraHandler(thing, services);
         }
         return null;
     }

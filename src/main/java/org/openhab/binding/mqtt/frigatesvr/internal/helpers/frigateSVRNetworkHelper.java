@@ -17,7 +17,7 @@ import java.net.InetAddress;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
-import org.openhab.core.net.NetworkAddressService;
+import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRServices;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,10 +31,10 @@ import org.slf4j.LoggerFactory;
 public class frigateSVRNetworkHelper {
 
     private final Logger logger = LoggerFactory.getLogger(frigateSVRNetworkHelper.class);
-    private NetworkAddressService addressService;
+    private frigateSVRServices services;
 
-    public frigateSVRNetworkHelper(NetworkAddressService addressService) {
-        this.addressService = addressService;
+    public frigateSVRNetworkHelper(frigateSVRServices services) {
+        this.services = services;
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -95,11 +95,11 @@ public class frigateSVRNetworkHelper {
         String host = "";
         logger.info("attempting to obtain host name");
         try {
-            host = InetAddress.getByName(addressService.getPrimaryIpv4HostAddress()).getCanonicalHostName();
+            host = InetAddress.getByName(services.addressService.getPrimaryIpv4HostAddress()).getCanonicalHostName();
         } catch (Exception e) {
             try {
                 logger.error("trying addressService with getHostAddress");
-                host = InetAddress.getByName(addressService.getPrimaryIpv4HostAddress()).getHostAddress();
+                host = InetAddress.getByName(services.addressService.getPrimaryIpv4HostAddress()).getHostAddress();
             } catch (Exception f) {
                 try {
                     logger.error("trying getLocalHost with getCanonicalHostName");

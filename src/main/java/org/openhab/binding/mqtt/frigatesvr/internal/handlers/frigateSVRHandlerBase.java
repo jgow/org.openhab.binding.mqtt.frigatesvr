@@ -25,13 +25,13 @@ import org.openhab.binding.mqtt.frigatesvr.internal.helpers.frigateSVRHTTPHelper
 import org.openhab.binding.mqtt.frigatesvr.internal.helpers.frigateSVRNetworkHelper;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.frigateSVRServlet;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRChannelState;
+import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRServices;
 import org.openhab.binding.mqtt.handler.AbstractBrokerHandler;
 import org.openhab.core.io.transport.mqtt.MqttBrokerConnection;
 import org.openhab.core.io.transport.mqtt.MqttMessageSubscriber;
 import org.openhab.core.library.types.DecimalType;
 import org.openhab.core.library.types.OnOffType;
 import org.openhab.core.library.types.OpenClosedType;
-import org.openhab.core.net.NetworkAddressService;
 import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.ChannelUID;
 import org.openhab.core.thing.Thing;
@@ -44,7 +44,6 @@ import org.openhab.core.thing.binding.ThingHandler;
 import org.openhab.core.types.Command;
 import org.openhab.core.types.RefreshType;
 import org.openhab.core.types.State;
-import org.osgi.service.http.HttpService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,10 +64,10 @@ public class frigateSVRHandlerBase extends BaseThingHandler implements MqttMessa
     protected Map<String, frigateSVRChannelState> Channels = new HashMap<String, frigateSVRChannelState>();
     protected frigateSVRServlet httpServlet;
 
-    public frigateSVRHandlerBase(Thing thing, HttpService httpService, NetworkAddressService addressService) {
+    public frigateSVRHandlerBase(Thing thing, frigateSVRServices services) {
         super(thing);
-        this.httpServlet = new frigateSVRServlet(httpService);
-        this.networkHelper = new frigateSVRNetworkHelper(addressService);
+        this.httpServlet = new frigateSVRServlet(services.httpService);
+        this.networkHelper = new frigateSVRNetworkHelper(services);
     }
 
     @Override
