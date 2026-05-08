@@ -45,6 +45,7 @@ import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRChannel
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRFrigateConfiguration;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRServerConfiguration;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRServerState;
+import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRServices;
 import org.openhab.binding.mqtt.handler.AbstractBrokerHandler;
 import org.openhab.core.io.transport.mqtt.MqttBrokerConnection;
 import org.openhab.core.io.transport.mqtt.MqttMessageSubscriber;
@@ -56,7 +57,6 @@ import org.openhab.core.thing.ThingStatusInfo;
 import org.openhab.core.thing.binding.BaseBridgeHandler;
 import org.openhab.core.thing.binding.ThingHandler;
 import org.openhab.core.types.Command;
-import org.osgi.service.http.HttpService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,7 +83,7 @@ public class frigateSVRServerHandler extends BaseBridgeHandler implements MqttMe
     protected Map<String, frigateSVRChannelState> Channels = new HashMap<String, frigateSVRChannelState>();
     protected frigateSVRHTTPHelper httpHelper = new frigateSVRHTTPHelper();
     protected @Nullable MqttBrokerConnection MQTTConnection = null;
-    protected frigateSVRNetworkHelper networkHelper = new frigateSVRNetworkHelper();
+    protected frigateSVRNetworkHelper networkHelper;
 
     private Map<String, APIBase> cm = Map.ofEntries(Map.entry(MQTT_EVTTRIGGER_SUFFIX, new APITriggerEvent()),
             Map.entry(MQTT_GETLASTFRAME_SUFFIX, new APIGetLastFrame()),
@@ -91,10 +91,8 @@ public class frigateSVRServerHandler extends BaseBridgeHandler implements MqttMe
             Map.entry(MQTT_ONLINE_SUFFIX, new APICamOnline(this.svrState)),
             Map.entry(MQTT_GETTHUMBNAIL_SUFFIX, new APIGetThumbnail()));
 
-    public frigateSVRServerHandler(Bridge thing, HttpService httpService) {
+    public frigateSVRServerHandler(Bridge thing, frigateSVRServices services) {
         super(thing);
-
-        this.httpServlet = new frigateSVRServlet(httpService);
 
         // the channel map
         this.Channels = Map.ofEntries(
@@ -109,6 +107,9 @@ public class frigateSVRServerHandler extends BaseBridgeHandler implements MqttMe
                                 frigateSVRChannelState::toStringMQTT, false)),
                 Map.entry(CHANNEL_BIRDSEYE_URL, new frigateSVRChannelState(CHANNEL_BIRDSEYE_URL,
                         frigateSVRChannelState::fromStringMQTT, frigateSVRChannelState::toStringMQTT, false)));
+
+        this.networkHelper = new frigateSVRNetworkHelper(services);
+        this.httpServlet = new frigateSVRServlet(services.httpService);
     }
 
     @Override

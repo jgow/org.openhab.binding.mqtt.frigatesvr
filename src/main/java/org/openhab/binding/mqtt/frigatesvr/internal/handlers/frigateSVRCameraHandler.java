@@ -38,6 +38,7 @@ import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRCameraC
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRChannelState;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRFrigateConfig.frigateSVRFrigateConfigBlock;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRServerState;
+import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRServices;
 import org.openhab.core.io.transport.mqtt.MqttBrokerConnection;
 import org.openhab.core.io.transport.mqtt.MqttMessageSubscriber;
 import org.openhab.core.library.types.DecimalType;
@@ -56,7 +57,6 @@ import org.openhab.core.thing.binding.ThingHandlerService;
 import org.openhab.core.types.Command;
 import org.openhab.core.types.RefreshType;
 import org.openhab.core.types.State;
-import org.osgi.service.http.HttpService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,7 +80,7 @@ public class frigateSVRCameraHandler extends BaseThingHandler implements MqttMes
     private String pfxFrigateToCam = "";
     private String pfxFrigateInstance = "";
 
-    private frigateSVRNetworkHelper networkHelper = new frigateSVRNetworkHelper();
+    private frigateSVRNetworkHelper networkHelper;
     private @Nullable MqttBrokerConnection MQTTConnection = null;
     private frigateSVRHTTPHelper httpHelper = new frigateSVRHTTPHelper();
     private Map<String, frigateSVRChannelState> Channels = new HashMap<String, frigateSVRChannelState>();
@@ -165,7 +165,7 @@ public class frigateSVRCameraHandler extends BaseThingHandler implements MqttMes
     //
     // We build the channel map in the constructor
 
-    public frigateSVRCameraHandler(Thing thing, HttpService httpService) {
+    public frigateSVRCameraHandler(Thing thing, frigateSVRServices services) {
         super(thing);
         this.Channels = Map.ofEntries(
                 Map.entry(CHANNEL_CAM_CAMFPS,
@@ -357,7 +357,8 @@ public class frigateSVRCameraHandler extends BaseThingHandler implements MqttMes
                 Map.entry(CHANNEL_LAST_FRAME, new frigateSVRChannelState("", frigateSVRChannelState::fromNoConversion,
                         frigateSVRChannelState::toNoConversion, false)));
 
-        this.httpServlet = new frigateSVRServlet(httpService);
+        this.networkHelper = new frigateSVRNetworkHelper(services);
+        this.httpServlet = new frigateSVRServlet(services.httpService);
     }
 
     //

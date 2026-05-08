@@ -5,11 +5,11 @@ $${\color{red}and \space even \space if \space it \space does \space it \space s
 $${\color{red}Please \space use \space the \space 'main' \space branch for \space current \space versions.}$$
 $${\color{red}However, \space PRs \space welcome.}$$
 
-This is a comprehensive binding for the Frigate NVR system (https://docs.frigate.video/). It allows access to all configured
+This is a comprehensive binding for the Frigate NVR system <https://docs.frigate.video/>. It allows access to all configured
 cameras, and realtime event information from the cameras can be used in rules. It tracks Frigate server status and can alert
 if the Frigate server goes offline.
 
-_For build instructions see the 'Building' section below_
+Build instructions: _For build instructions see the 'Building' section below_
 
 The binding supports:
 
@@ -31,7 +31,7 @@ See CHANGELOG.md
 
 The design philosophy behind this binding is to allow for three main areas of functionality
 
-- OpenHAB access to the useful and considerable status and event information from the cameras attached to the Frigate server, to allow rules to be triggered based upon changes to the streams as detected by Frigate. 
+- OpenHAB access to the useful and considerable status and event information from the cameras attached to the Frigate server, to allow rules to be triggered based upon changes to the streams as detected by Frigate.
 - Per-camera configuration (such as turning motion detect on/off)
 - A forwarder mechanism to allow API calls to the Frigate server via an endpoint on the openHAB instance.
 - A streaming mechanism allowing video from the RTSP feeds of server 'birdseye' view and individual camera feeds to be visible on a UI widget via a URL on the local instance.
@@ -40,9 +40,9 @@ The design philosophy behind this binding is to allow for three main areas of fu
 
 Frigate detection events fall into three types: 'new', 'update', and 'end'. When an event occurs, it is assigned a unique ID and an event is posted. The binding picks this up and farms out the useful information into a set of channels.
 
-Frigate sends events as a delta - the event packet contains information pertaining to both the previous state (before the event occurred - denoted 'previous' in the camera channel descriptions) and information relating to the current state (denoted 'current' in the camera channel descriptions). This allows openHAB rules to make an intelligent decision based upon changes to the 'picture' seen by the cameras, with Frigate itself responsible for all the detection and image processing. 
+Frigate sends events as a delta - the event packet contains information pertaining to both the previous state (before the event occurred - denoted 'previous' in the camera channel descriptions) and information relating to the current state (denoted 'current' in the camera channel descriptions). This allows openHAB rules to make an intelligent decision based upon changes to the 'picture' seen by the cameras, with Frigate itself responsible for all the detection and image processing.
 
-The frigateSVR binding provides a *lot* of openHAB channels that can be used in a multitude of ways. Further information can be obtained through perusal of the Frigate documentation - the channel mapping is logical and follows the Frigate specifications - there should be no surprises. However, the architecture of this binding is slightly different from usual and the following section provides an overview.
+The frigateSVR binding provides a _lot_ of openHAB channels that can be used in a multitude of ways. Further information can be obtained through perusal of the Frigate documentation - the channel mapping is logical and follows the Frigate specifications - there should be no surprises. However, the architecture of this binding is slightly different from usual and the following section provides an overview.
 
 ### API forwarder
 
@@ -115,7 +115,7 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 | HTTPTimeout                    | integer | Timeout of HTTP requests to the Frigate API                           | 100                                    | yes      | no       |
 | enableAPIForwarder             | boolean | Enable the Frigate API forwarder                                      | true                                   | yes      | no       |
 | enableStream                   | boolean | Enable the internal stream server                                     | true                                   | yes      | no       |
-| streamWhitelist                | text    | List of IPs allowed to connect                                        | DISABLE                                | no       | yes      |    
+| streamWhitelist                | text    | List of IPs allowed to connect                                        | DISABLE                                | no       | yes      |
 | ffmpegLocation                 | text    | Location of ffmpeg binary                                             | /usr/bin/ffmpeg                        | yes      | yes      |
 | ffMJPEGStartProducerOnLoad     | text    | Start ffmpeg for MJPEG streams when binding started                   | false                                  | yes      | yes      |
 | ffMJPEGTranscodeCommands       | text    | Commands for ffmpeg transcode section for MJPEG streams               | -q:v 5 -r 2 -vf scale=640:-2 -update 1 | yes      | yes      |
@@ -178,7 +178,6 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 - ffKeepalivesBeforeExit: If the ff***StartProducerOnLoad is set false, this parameter specifies how many keepalives should elapse without a stream file request being received before the ffmpeg process is shut down.
 - ffTempDir: this is the working directory for the served streams. This is by default the openHAB user data area, but could be set to a ramdisk (e.g. /dev/shm) to improve performance. The files created are deleted when a stream is shut down, and the streams are organized to rotate and not fill the disk.
 
-
 ## Channels
 
 ### `frigateSVR Server` 'Thing' Channels
@@ -196,7 +195,6 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 - 'fgUI' is the base URL of the Frigate server being used
 - 'fgAPIForwarderURL: If the API forwarder is enabled, this channel contains a local URL from which the Frigate HTTP API can be accessed (add /api/<frigate API string> to the URL to access it).
 - 'fgBirdseyeURL': if the Frigate server is set up to restream the 'birdseye' view (if in the Frigate config, 'restream: true' is set in the 'birdseye' section), and if the 'enableStream' configuration parameter on the frigateSVR server 'thing' is set true, then a stream of the 'birdseye' view can be had at this URL. If Frigate is not configured to provide this, or the 'enableStream' parameter is set to off, then this URL will be blank.
-
 
 ### `frigateSVR Camera` 'Thing' Channels
 
@@ -265,7 +263,6 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 | fgCurPositionChanges  | Number   | R/O         | Current event: Number of position changes                     |
 | fgCurMaxSeverity      | String   | R/O         | Current event: ('alert' or 'detection')                       |
 
-
 #### Notes
 
 - 'Current event' and 'Prior to event' channels are updated with `fgEventType`. This ensures consistency of information passed to event handlers - there should be no 'stale' information left in any of the 'Cur' or 'Prev' channels. Note also that some of these values may change to NULL if the value on the Frigate server side is NULL. Thus, rules that wish to interrogate multiple 'cur' or 'prev' channels should trigger on changes to 'fgEventType' as this channel is updated once all other event channels have been updated.
@@ -293,7 +290,7 @@ An example of how a rule can be written to use the event information follows. Th
 
 Note that the detected entity string is supplied by Frigate wrapped in quotes. I may modify the binding later to strip these off.
 
-```
+```yaml
 configuration: {}
 triggers:
   - id: "1"
@@ -339,20 +336,20 @@ Latest versions of this binding **do** support native video and should do so wit
 
 - Ensure you have a version of ffmpeg installed on your OpenHAB host that has access to the appropriate codecs (e.g. h264) - for example I use openSuSE, so had to install the 'Packman' version of ffmpeg in order to get the necessary codecs. There should be a similar source of codecs for your distribution of choice. Note the path of ffmpeg (usually /usr/bin/ffmpeg under Linux).
 - For cameras:
-    - Frigate exports RTSP streams for each camera on `http://<frigate-server>:8554/<stream-name>` The binding will by default look for a stream where <stream-NAME> is equal to the cameraName. If the Frigate configuration differs, ensure the desired Frigate `<stream-name>` is inserted in the 'ffmpegCameraNameOverride' parameter on the camera 'thing'.
-    - Ensure that the streaming is turned on using the 'enableStream' parameter on the camera 'thing'.
-    - On the frigateSVR server 'thing' check the 'ffmpegLocation' parameter points to the ffmpeg binary.
-    - If the camera is online, the 'fgStreamURL' channel on the camera 'thing' should contain a URL. To access the relevant stream, append an extension to this URL (.m3u8 for HLS, .mpd for DASH,  no extension for MJPEG) and this forms a URL to which you can point your UI widget. You should then see the video stream in the UI widget. This will be a 'clean' video stream from the camera - there will be no overlays on object detection etc.
-    - The **snapshots** exposed by the frigateSVR binding  _will_  show the overlays on detection of objects.
+  - Frigate exports RTSP streams for each camera on `http://<frigate-server>:8554/<stream-name>` The binding will by default look for a stream where <stream-NAME> is equal to the cameraName. If the Frigate configuration differs, ensure the desired Frigate `<stream-name>` is inserted in the 'ffmpegCameraNameOverride' parameter on the camera 'thing'.
+  - Ensure that the streaming is turned on using the 'enableStream' parameter on the camera 'thing'.
+  - On the frigateSVR server 'thing' check the 'ffmpegLocation' parameter points to the ffmpeg binary.
+  - If the camera is online, the 'fgStreamURL' channel on the camera 'thing' should contain a URL. To access the relevant stream, append an extension to this URL (.m3u8 for HLS, .mpd for DASH,  no extension for MJPEG) and this forms a URL to which you can point your UI widget. You should then see the video stream in the UI widget. This will be a 'clean' video stream from the camera - there will be no overlays on object detection etc.
+  - The **snapshots** exposed by the frigateSVR binding  _will_  show the overlays on detection of objects.
 - For the 'birdseye' view:
-    - Ensure this is turned on in Frigate by having 'restream: true' in the 'birdseye' section of the Frigate config.
-    - On the server 'thing', ensure 'enableStream' is on and that the ffmpeg binary path is correct in 'ffmpegLocation'.
-    - If the stream is available, the channel 'fgBirdseyeURL' should contain a URL to point a UI widget at to display the Frigate birdseye view.
-    - The birdseye view is quite a good mechanism to look at all cameras in openHAB while minimizing CPU and network load.
+  - Ensure this is turned on in Frigate by having 'restream: true' in the 'birdseye' section of the Frigate config.
+  - On the server 'thing', ensure 'enableStream' is on and that the ffmpeg binary path is correct in 'ffmpegLocation'.
+  - If the stream is available, the channel 'fgBirdseyeURL' should contain a URL to point a UI widget at to display the Frigate birdseye view.
+  - The birdseye view is quite a good mechanism to look at all cameras in openHAB while minimizing CPU and network load.
 
 ### UI example
 
-```
+```yaml
 - component: oh-video
   config:
       url: =items.frigateSVR_Server_Birdseye_stream_URL.state + ".m3u8"
@@ -395,4 +392,3 @@ Once the build is complete, the .jar will be found in bundles/org.openhab.bindin
 # Releases
 
 If you do not want to build it yourself, I do provide occasional snapshot releases as .jar builds. See 'Releases' for more details
-

@@ -4,9 +4,10 @@ The binding supports ThingActions giving access to the events model in Frigate.
 
 ## A note
 
-Camera ThingActions are *asynchronous*. Calls to the ThingAction will return immediately, with an error code and message (see 'Structure' below). This error code and message, if showing success, indicates that the message has successfully been queued. An indeterminate time later, defined largely by the response times of the server Thing and the Frigate server itself, the result will appear in two camera channels (again, this is described in the 'Structure' section. The reason for this is essentially down to the design of OpenHAB. See the 'Notes' section for more detail.
+Camera ThingActions are _asynchronous_. Calls to the ThingAction will return immediately, with an error code and message (see 'Structure' below). This error code and message, if showing success, indicates that the message has successfully been queued. An indeterminate time later, defined largely by the response times of the server Thing and the Frigate server itself, the result will appear in two camera channels (again, this is described in the 'Structure' section. The reason for this is essentially down to the design of OpenHAB. See the 'Notes' section for more detail.
 
 ## Structure
+
 Camera ThingActions follow the standard pattern for ThingActions. Examples are provided in this document. Zero or more arguments should be passed to the ThingAction as listed. It will return a map containing two elements:
 <br/>
 
@@ -25,10 +26,9 @@ Once processed by Frigate, the response will appear, at an indeterminate time la
 | fgLastProcessedFrame  | If the Frigate API call returns an image (e.g a snapshot), it will appear here. If the call does not return an image, this channel will not be updated |
 | fgCamActionResult     | A JSON string consisting of two objects - see below |
 
-
 The channel 'fgCamActionResult' contains a properly-formatted JSON object in string form. For a successful call, this channel will be updated to:
 
-```
+```javascript
 {
     "success" : true,
     "message" : `<returned_JSON_data_from_Frigate>` 
@@ -36,19 +36,21 @@ The channel 'fgCamActionResult' contains a properly-formatted JSON object in str
 ```
 
 If the call fails, the channel will be updated to:
-```
+
+```javascript
 {
     "success" : false,
     "message" : `<String_giving_details_of_error>`
 }
 ```
+
 The exact format of the `<returned_JSON_data_from_Frigate>` will depend on the call, and this can be found from the Frigate API documentation
 
 ## Using camera ThingActions in a rule - an example
 
 Note that this does not show the processing of the output channels (fgTriggerEventResult, fgLastProcessedFrame), which would follow normal openHAB practice.
 
-```
+```javascript
 var camActions = actions.thingActions("frigateCamera","mqtt:frigateCamera:122343:locationCam");
 
 if (camActions != null) {
@@ -66,84 +68,77 @@ If the request is successfully queued, then an indeterminate time later one or b
 
 ## Reference
 
-1. **TriggerEvent(String eventLabel, String eventRequest)**.
+**TriggerEvent(String eventLabel, String eventRequest)**.
 
-    - Description:
+- Description:
 
-         For versions of Frigate >= 0.13.0-beta6, this ThingAction will trigger an event. The event will be created with the label 'eventLabel' and the argument 'eventRequest' should contain the JSON string expected by Frigate. It will fail with a 404 error for any earlier version of Frigate.
+  For versions of Frigate >= 0.13.0-beta6, this ThingAction will trigger an event. The event will be created with the label 'eventLabel' and the argument 'eventRequest' should contain the JSON string expected by Frigate. It will fail with a 404 error for any earlier version of Frigate.
 
-    - Arguments: <br/>
+- Arguments: <br/>
 
-        | argument     |                                                  |
-        |--------------|--------------------------------------------------|
-        | eventLabel   | desired label of the event. Must be alphanumeric |
-        | eventRequest |optional JSON formatted string containing Frigate event request as per Frigate API documentation |
+  | argument     |                                                  |
+  |--------------|--------------------------------------------------|
+  | eventLabel   | desired label of the event. Must be alphanumeric |
+  | eventRequest |optional JSON formatted string containing Frigate event request as per Frigate API documentation |
 
-    - Returns: <br/>
+- Returns: <br/>
 
-        | channel | failure | success |
-        |----------------------|-----------------------|-------------|
-        | fgTriggerEventResult | a string containing the reason for failure. If the Frigate API does not support this call, it will fail and a 404 error code will be returned. | a JSON string as described in the Frigate API documentation |
-        | fgLastProcessedFrame |not used or updated by this call.|not used or updated by this call.|
+  | channel | failure | success |
+  |----------------------|-----------------------|-------------|
+  | fgTriggerEventResult | a string containing the reason for failure. If the Frigate API does not support this call, it will fail and a 404 error code will be returned. | a JSON string as described in the Frigate API documentation |
+  | fgLastProcessedFrame |not used or updated by this call.|not used or updated by this call.|
 
+**GetRecordingSummary()**.
 
-2. **GetRecordingSummary()**.
+- Description:
 
-    - Description:
+  Returns a summary of recordings for this camera, as a JSON array described in the Frigate API documentation
 
-        Returns a summary of recordings for this camera, as a JSON array described in the Frigate API documentation
+- Arguments:
 
-    - Arguments:
+  none
 
-        none
+- Returns: <br/>
 
-    - Returns: <br/>
+  | channel | failure | success |
+  |----------------------|-----------------------|-------------|
+  | fgTriggerEventResult | a string containing the reason for failure. If the Frigate API does not support this call, it will fail and a 404 error code will be returned. | a JSON string containing the summary of recordings for this camera as described in the Frigate API |
+  | fgLastProcessedFrame |not used or updated by this call.|not used or updated by this call.|
 
-        | channel | failure | success |
-        |----------------------|-----------------------|-------------|
-        | fgTriggerEventResult | a string containing the reason for failure. If the Frigate API does not support this call, it will fail and a 404 error code will be returned. | a JSON string containing the summary of recordings for this camera as described in the Frigate API |
-        | fgLastProcessedFrame |not used or updated by this call.|not used or updated by this call.|
+**GetThumbnail(String eventLabel)**.
 
+- Description:
 
-3. **GetThumbnail(String eventLabel)**.
+  Returns the thumbnail for the given event label, or the latest event if 'any' is specified
 
-    - Description:
+- Arguments:
 
-        Returns the thumbnail for the given event label, or the latest event if 'any' is specified
+  | argument     |                                                  |
+  |--------------|--------------------------------------------------|
+  | eventLabel   | a string containing the label for which the thumbnail is required; use 'any' to retrieve the thumbnail for the latest |
 
-    - Arguments: <br/>
+- Returns: <br/>
 
-        | argument     |                                                  |
-        |--------------|--------------------------------------------------|
-        | eventLabel   | a string containing the label for which the thumbnail is required; use 'any' to retrieve the thumbnail for the latest |
+  | channel | failure | success |
+  |----------------------|-----------------------|-------------|
+  | fgTriggerEventResult | a string containing the reason for failure. If the Frigate API does not support this call, it will fail and a 404 error code will be returned. | "ok" |
+  | fgLastProcessedFrame |no change|if the call is successful the thumbnail will be returned here|
 
-    - Returns: <br/>
+**GetLastFrame(String eventParams)**.
 
-        | channel | failure | success |
-        |----------------------|-----------------------|-------------|
-        | fgTriggerEventResult | a string containing the reason for failure. If the Frigate API does not support this call, it will fail and a 404 error code will be returned. | "ok" |
-        | fgLastProcessedFrame |no change|if the call is successful the thumbnail will be returned here|
+- Description:
 
+  Returns the most recent frame that Frigate has finished processing.
 
-3. **GetLastFrame(String eventParams)**.
+- Arguments: <br/>
 
-    - Description:
+  | argument     |                                                  |
+  |--------------|--------------------------------------------------|
+  | eventParams  | a JSON string containing the parameters for the frame. These are the parameters of the Frigate `/api/events/<id>/latest.jpg` Frigate API call, encoded as a series of name-value pairs in a JSON string. |
 
-        Returns the most recent frame that Frigate has finished processing.
+- Returns: <br/>
 
-    - Arguments: <br/>
-
-        | argument     |                                                  |
-        |--------------|--------------------------------------------------|
-        | eventParams  | a JSON string containing the parameters for the frame. These are the parameters of the Frigate `/api/events/<id>/latest.jpg` Frigate API call, encoded as a series of name-value pairs in a JSON string. |
-
-    - Returns: <br/>
-
-        | channel | failure | success |
-        |----------------------|-----------------------|-------------|
-        | fgTriggerEventResult | a string containing the reason for failure. If the Frigate API does not support this call, it will fail and a 404 error code will be returned. | "ok" |
-        | fgLastProcessedFrame |no change|if the call is successful the thumbnail will be returned here|
-
-
-
-
+  | channel | failure | success |
+  |----------------------|-----------------------|-------------|
+  | fgTriggerEventResult | a string containing the reason for failure. If the Frigate API does not support this call, it will fail and a 404 error code will be returned. | "ok" |
+  | fgLastProcessedFrame |no change|if the call is successful the thumbnail will be returned here|
