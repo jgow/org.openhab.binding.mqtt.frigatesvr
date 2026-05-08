@@ -41,10 +41,18 @@ public class frigateSVRNetworkHelper {
     // GetProtocol
     //
     // The protocol would be set up in config; we do need to determine if
-    // https is required from the config. Todo.
+    // https is required from the config? Todo.
 
     public String GetProtocol() {
-        return "http";
+        String protocol = "";
+        if (System.getProperty("org.osgi.service.http.port.secure") != null) {
+            protocol = "https";
+        } else {
+            if (System.getProperty("org.osgi.service.http.port") != null) {
+                protocol = "http";
+            }
+        }
+        return protocol;
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -64,12 +72,14 @@ public class frigateSVRNetworkHelper {
     public String GetPort() {
         @Nullable
         String port;
-        port = System.getProperty("org.osgi.service.http.port");
-        if (port != null) {
-            logger.info("Web service port found at {}", port);
-        } else {
-            logger.error("Unable to determine port, assuming 8080");
-            port = "8080";
+        port = System.getProperty("org.osgi.service.http.port.secure");
+        if (port == null) {
+            logger.info("Secure web service port not found, looking for insecure");
+            port = System.getProperty("org.osgi.service.http.port");
+            if (port == null) {
+                logger.error("unable to determine secure and insecure web server ports");
+                port = "";
+            }
         }
         return port;
     }
@@ -80,7 +90,13 @@ public class frigateSVRNetworkHelper {
     // Return the base URL to the running instance
 
     public String GetHostBaseURL() {
-        return GetProtocol() + "://" + GetHost() + ":" + GetPort();
+        String protocol = GetProtocol();
+        String port = GetPort();
+        String url = "";
+        if (!protocol.isBlank() && !port.isBlank()) {
+            url = protocol + "://" + GetHost() + ":" + port;
+        }
+        return url;
     }
 
     ///////////////////////////////////////////////////////////////////////////
