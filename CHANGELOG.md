@@ -6,7 +6,7 @@
   - do not have video support
   - do have full event support
 - Version 1.5:
-  -  introduced video streaming for birdseye and cameras (MJPEG only)
+  - introduced video streaming for birdseye and cameras (MJPEG only)
 - Version 1.6:
   - has a rewritten video subsystem
   - adds an API forwarder
