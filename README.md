@@ -348,6 +348,32 @@ Latest versions of this binding **do** support native video and should do so wit
       url: =items.frigateSVR_Server_Birdseye_stream_URL.state + ".m3u8"
 ```
 
+*NOTE* the above may trigger [this bug](https://github.com/openhab/openhab-webui/issues/1464) in the oh-video card (as of 2026 this bug still seems to be present). The problem manifests as the video not appearing when the OH UI is first loaded or reloaded, but if you tab away and then back again, the video appears.
+
+For example, if you have a video displaying in the overview, it won't show on the first load. However, if you tab to (say) 'Locations', then back to 'Overview', the video appears.
+
+There are one of two workarounds: the first is to hard-code the URL in the 'URL:' configuration (substituting values for 'openhab-server.example' appropriate to your installation - this value can be obtained from the contents of the birdseye stream URL channel on the Frigate server Thing), e.g:
+
+```javascript
+- component: oh-video
+  config:
+      url: https://openhab-server.example:8443/frigate/birdseye
+```
+
+As this URL is only likely to change if you reconfigure your Frigate server, this should be ok.
+
+Another workaround is to use the 'item' configuration parameter on oh-video. This, however, would require that the item pointed to contains the full URL including the '.m3u8' extension. As the contents of the URL Items linked to the Frigate Thing's (server or camera) channels requires the user to add the extension to access the stream type required, it becomes necessary to add a second Item and use a rule to update this from the item linked to the Frigate Thing's URL channel and append the extension. The configuration then would look something like this:
+
+```javascript
+- component: oh-video
+  config:
+      item: BirdsEyeWithExtension
+```
+
+where 'BirdsEyeWithExtension is a new String item, whose State is updated from frigateSVR_Server_Birdseye_stream_URL to append the extension '.m3u8'. This would preserve the dynamic updates.
+
+If this bug in oh-video is not likely to be fixed, I will consider adding an additional config parameter to future versions of the the Frigate things to allow the extension to be selected separately and the URL channels will then contain the full URL including extension, rather than requiring the user to amend the URL at the point of use.
+
 ## Rules DSL Example
 
 See [doc/conf](./doc/conf) folder for a conf based configuration using files, including a rule to send [Pushover](https://www.openhab.org/addons/bindings/pushover/) alerts for a `person` label in a specific zone.
