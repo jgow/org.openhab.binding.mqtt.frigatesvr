@@ -35,3 +35,7 @@
   - Additional parameter allowing the wait time for stream creation to be configurable.
 - Version 2.4
   - TLS and auth support for authenticated API (backported from v3.x)
+- Version 2.5 (forthcoming)
+  - Documentation corrections
+  - Additional server channel to list object labels detected by Frigate
+  - Preparation for move to v3.x

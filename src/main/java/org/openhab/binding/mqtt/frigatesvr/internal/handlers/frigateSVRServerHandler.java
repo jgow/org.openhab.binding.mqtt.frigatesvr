@@ -16,6 +16,7 @@ import static org.openhab.binding.mqtt.frigatesvr.internal.frigateSVRBindingCons
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -34,6 +35,7 @@ import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APICam
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIGetLastFrame;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIGetRecordingSummary;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIGetThumbnail;
+import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIHelper;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APITriggerEvent;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRChannelState;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRFrigateConfiguration;
@@ -47,6 +49,8 @@ import org.openhab.core.thing.ThingStatus;
 import org.openhab.core.thing.ThingStatusDetail;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.gson.Gson;
 
 /**
  * The {@link mqtt.frigateSVRHandler} is responsible for handling commands, which are
@@ -69,6 +73,7 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
     private frigateSVRServerState svrState = new frigateSVRServerState();
     private frigateSVRFrigateConfiguration frigateConfig = new frigateSVRFrigateConfiguration();
     private boolean initialized = false;
+    private APIHelper apiHelper;
 
     private Map<String, APIBase> cm = Map.ofEntries(Map.entry(MQTT_EVTTRIGGER_SUFFIX, new APITriggerEvent()),
             Map.entry(MQTT_GETLASTFRAME_SUFFIX, new APIGetLastFrame()),
@@ -78,6 +83,8 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
 
     public frigateSVRServerHandler(Thing thing, frigateSVRServices services) {
         super(thing, services);
+
+        this.apiHelper = new APIHelper(this.httpHelper);
 
         // the channel map
 
@@ -91,7 +98,10 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
                 Map.entry(CHANNEL_APIFORWARDER_URL,
                         new frigateSVRChannelState(CHANNEL_APIFORWARDER_URL, frigateSVRChannelState::fromStringMQTT,
                                 frigateSVRChannelState::toStringMQTT, false)),
-                Map.entry(CHANNEL_BIRDSEYE_URL, new frigateSVRChannelState(CHANNEL_BIRDSEYE_URL,
+                Map.entry(CHANNEL_BIRDSEYE_URL,
+                        new frigateSVRChannelState(CHANNEL_BIRDSEYE_URL, frigateSVRChannelState::fromStringMQTT,
+                                frigateSVRChannelState::toStringMQTT, false)),
+                Map.entry(CHANNEL_TRACKEDOBJECTS, new frigateSVRChannelState(CHANNEL_TRACKEDOBJECTS,
                         frigateSVRChannelState::fromStringMQTT, frigateSVRChannelState::toStringMQTT, false)));
     }
 
@@ -252,6 +262,22 @@ public class frigateSVRServerHandler extends frigateSVRHandlerBase implements Mq
 
                 this.svrState.status = "online";
                 this.svrState.Cameras = this.frigateConfig.block.GetCameraList();
+
+                // update tracked objects.
+
+                try {
+                    List<String> trackedObjs = apiHelper.getTrackedObjects();
+                    // drop this in our server channel for info
+                    Gson gson = new Gson();
+                    String jsonArray = gson.toJson(trackedObjs);
+                    logger.info("Tracked objects: {}", jsonArray);
+                    updateState(CHANNEL_TRACKEDOBJECTS,
+                            ((@NonNull frigateSVRChannelState) (this.Channels.get(CHANNEL_TRACKEDOBJECTS)))
+                                    .toState(jsonArray));
+                } catch (Exception e) {
+                    logger.error("unable to retrieve tracked object list ({})", e.getMessage());
+                    break;
+                }
 
                 // cocked, locked and ready to rock..
 

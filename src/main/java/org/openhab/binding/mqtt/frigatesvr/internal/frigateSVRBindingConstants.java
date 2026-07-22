@@ -42,6 +42,7 @@ public class frigateSVRBindingConstants {
     public static final String CHANNEL_UI_URL = "fgUI";
     public static final String CHANNEL_APIFORWARDER_URL = "fgAPIForwarderURL";
     public static final String CHANNEL_BIRDSEYE_URL = "fgBirdseyeURL";
+    public static final String CHANNEL_TRACKEDOBJECTS = "fgTrackedObjects";
 
     public static final String CHANNEL_CAM_CAMFPS = "fgCameraFPS";
     public static final String CHANNEL_CAM_PROCESSFPS = "fgCameraProcessFPS";
@@ -146,4 +147,19 @@ public class frigateSVRBindingConstants {
     public static final String CONF_ID_SERVERID = "serverID";
     public static final String CONF_ID_ENABLESTREAM = "enableStream";
     public static final String CONF_ID_FFMPEGLOCATION = "ffmpegLocation";
+
+    // Frigate objects. We generally get this from the API for those for which cameras have been
+    // set to detect, but this is used as a fallback when processing messages if the API does
+    // not respond
+
+    public static final String[] CONST_FRIGATEOBJECTS = new String[] { "person", "bicycle", "car", "motorcycle",
+            "airplane", "bus", "train", "boat", "traffic light", "fire hydrant", "street sign", "stop sign",
+            "parking meter", "bench", "bird", "cat", "dog", "horse", "sheep", "cow", "elephant", "bear", "zebra",
+            "giraffe", "hat", "backpack", "umbrella", "shoe", "eye glasses", "handbag", "tie", "suitcase", "frisbee",
+            "skis", "snowboard", "sports ball", "kite", "baseball bat", "baseball glove", "skateboard", "surfboard",
+            "tennis racket", "bottle", "wine glass", "cup", "fork", "knife", "spoon", "bowl", "banana", "apple",
+            "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake", "chair", "couch",
+            "potted plant", "bed", "mirror", "dining table", "window", "desk", "toilet", "door", "laptop", "mouse",
+            "remote", "keyboard", "cell phone", "microwave", "oven", "toaster", "sink", "refrigerator", "bender",
+            "book", "clock", "vase", "scissors", "teddy bear", "hair drier", "toothbrush", "hair brush" };
 }

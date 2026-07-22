@@ -181,7 +181,7 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 | fgUI               | String | R/O         | URL to the Frigate UI for this server (useful for openHAB UI widgets)                                 |
 | fgAPIForwarderURL  | String | R/O         | URL to the API forwarder - allowing UI widgets to access the Frigate API from a local server instance |
 | fgBirdseyeURL      | String | R/O         | URL to the openHAB stream for the Frigate 'birdseye' view (if enabled)                                |
-
+| fgTrackedObjects   | String | R/O         | JSON array of object labels tracked by Frigate |
 #### Notes
 
 - the 'fgAPIVersion' is the version returned by the Frigate API
@@ -348,7 +348,7 @@ Latest versions of this binding **do** support native video and should do so wit
       url: =items.frigateSVR_Server_Birdseye_stream_URL.state + ".m3u8"
 ```
 
-*NOTE* the above may trigger [this bug](https://github.com/openhab/openhab-webui/issues/1464) in the oh-video card (as of 2026 this bug still seems to be present). The problem manifests as the video not appearing when the OH UI is first loaded or reloaded, but if you tab away and then back again, the video appears.
+_NOTE_ the above may trigger [this bug](https://github.com/openhab/openhab-webui/issues/1464) in the oh-video card (as of 2026 this bug still seems to be present). The problem manifests as the video not appearing when the OH UI is first loaded or reloaded, but if you tab away and then back again, the video appears.
 
 For example, if you have a video displaying in the overview, it won't show on the first load. However, if you tab to (say) 'Locations', then back to 'Overview', the video appears.
 

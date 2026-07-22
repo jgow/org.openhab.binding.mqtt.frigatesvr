@@ -877,6 +877,9 @@ public class frigateSVRCameraHandler extends frigateSVRHandlerBase implements Mq
                             updateState((@NonNull String) channel,
                                     ((@NonNull frigateSVRChannelState) this.Channels.get(channel)).toState(state));
                             break;
+                        } else {
+                            // If the action doesn't exist in the map, it either isn't handled (yet), or
+                            // may be an object (published during the object count). Frigate has a whole list
                         }
                     } else {
                         logger.error("cam {}: image topic {} is for different camera", config.cameraName, topic);
