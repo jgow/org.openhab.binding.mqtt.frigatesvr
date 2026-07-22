@@ -192,6 +192,8 @@ public class frigateSVRServerHandler extends BaseBridgeHandler implements MqttMe
             servercheck = null;
         }
         UnsubscribeMQTTTopics(this.svrState.pfxSvrMsg);
+        logger.debug("server-thing: stopping streaming server (disposal)");
+        this.httpServlet.StopServer();
         super.dispose();
     }
 
@@ -434,10 +436,10 @@ public class frigateSVRServerHandler extends BaseBridgeHandler implements MqttMe
 
         if (servercheck != null) {
             ((@NonNull ScheduledFuture<?>) servercheck).cancel(true);
-            logger.debug("server-thing: stopping streaming server (BridgeGoingOffline)");
-            this.httpServlet.StopServer();
             servercheck = null;
         }
+        logger.debug("server-thing: stopping streaming server (BridgeGoingOffline)");
+        this.httpServlet.StopServer();
     }
 
     ////////////////////////////////////////////////////////////////////
