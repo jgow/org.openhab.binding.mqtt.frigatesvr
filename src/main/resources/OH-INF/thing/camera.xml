@@ -78,6 +78,8 @@
 			<channel id="fgCurPositionChanges" typeId="fgCurPositionChanges"/>
 			<channel id="fgCurMaxSeverity" typeId="fgCurMaxSeverity"/>
 			<channel id="fgLastProcessedFrame" typeId="fgLastProcessedFrame"/>
+			<channel id="fgObjCount" typeId="fgObjCount"/>
+			<channel id="fgObjCountActive" typeId="fgObjCountActive"/>
 		</channels>
 		<config-description-ref uri="thing-type:mqtt:Camera"/>
 	</thing-type>
@@ -188,6 +190,17 @@
 		<label>@text/channel.camActionResult</label>
 		<description>@text/channel.camActionResult.description</description>
 	</channel-type>
+	<channel-type id="fgObjCount">
+		<item-type>String</item-type>
+		<label>@text/channel.objCount</label>
+		<description>@text/channel.objCount.description</description>
+	</channel-type>
+	<channel-type id="fgObjCountActive">
+		<item-type>String</item-type>
+		<label>@text/channel.objCountActive</label>
+		<description>@text/channel.objCountActive.description</description>
+	</channel-type>
+
 	<!-- Event: channels relating to the previous state -->
 
 	<channel-type id="fgPrevFrameTime">

@@ -42,6 +42,7 @@ public class frigateSVRBindingConstants {
     public static final String CHANNEL_UI_URL = "fgUI";
     public static final String CHANNEL_APIFORWARDER_URL = "fgAPIForwarderURL";
     public static final String CHANNEL_BIRDSEYE_URL = "fgBirdseyeURL";
+    public static final String CHANNEL_TRACKEDOBJECTS = "fgTrackedObjects";
 
     public static final String CHANNEL_CAM_CAMFPS = "fgCameraFPS";
     public static final String CHANNEL_CAM_PROCESSFPS = "fgCameraProcessFPS";
@@ -61,6 +62,9 @@ public class frigateSVRBindingConstants {
     public static final String CHANNEL_EVENT_CLIP_URL = "fgEventClipURL";
     public static final String CHANNEL_STREAM_URL = "fgStreamURL";
     public static final String CHANNEL_EVENT_JSON = "fgEventJSON";
+
+    public static final String CHANNEL_OBJ_COUNT = "fgObjCount";
+    public static final String CHANNEL_OBJ_COUNT_ACTIVE = "fgObjCountActive";
 
     public static final String CHANNEL_LAST_SNAPSHOT_OBJECT = "fgLastSnapshotObject";
     public static final String CHANNEL_LAST_SNAPSHOT = "fgLastSnapshot";
