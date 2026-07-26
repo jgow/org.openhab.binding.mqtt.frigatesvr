@@ -315,6 +315,7 @@ public class frigateSVRHTTPHelper {
                             r.rc = true;
                             r.raw = jsonrq.getBytes();
                             r.message = "ok";
+                            r.type = response.getHeaders().get(HttpHeader.CONTENT_TYPE);
                             break;
                         } else {
                             if ((response.getStatus() == HttpStatus.UNAUTHORIZED_401)) {
@@ -386,6 +387,7 @@ public class frigateSVRHTTPHelper {
                             r.rc = true;
                             r.raw = jsonrq.getBytes();
                             r.message = new String("ok");
+                            r.type = response.getHeaders().get(HttpHeader.CONTENT_TYPE);
                         } else {
                             if ((response.getStatus() == HttpStatus.UNAUTHORIZED_401)) {
                                 if (this.authNeeded) {

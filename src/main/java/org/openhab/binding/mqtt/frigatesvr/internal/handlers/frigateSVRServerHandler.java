@@ -38,12 +38,7 @@ import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.FrigateAPIFo
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.HLSStream;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.MJPEGStream;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIBase;
-import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APICamOnline;
-import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIGetLastFrame;
-import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIGetRecordingSummary;
-import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIGetThumbnail;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIHelper;
-import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APITriggerEvent;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRChannelState;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRFrigateConfiguration;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRServerConfiguration;
@@ -80,7 +75,6 @@ public class frigateSVRServerHandler extends BaseBridgeHandler implements MqttMe
     private frigateSVRServerConfiguration config = new frigateSVRServerConfiguration();
     private @Nullable ScheduledFuture<?> servercheck;
     private @Nullable String version = new String("");
-    private String pfxSvrToCam = ""; // TODO: used for thingactions in handleEvent but not needed
     private frigateSVRServerState svrState = new frigateSVRServerState();
     private frigateSVRFrigateConfiguration frigateConfig = new frigateSVRFrigateConfiguration();
     private APIHelper apiHelper;
@@ -95,11 +89,11 @@ public class frigateSVRServerHandler extends BaseBridgeHandler implements MqttMe
     protected @Nullable MqttBrokerConnection MQTTConnection = null;
     protected frigateSVRNetworkHelper networkHelper;
 
-    private Map<String, APIBase> cm = Map.ofEntries(Map.entry(MQTT_EVTTRIGGER_SUFFIX, new APITriggerEvent()),
-            Map.entry(MQTT_GETLASTFRAME_SUFFIX, new APIGetLastFrame()),
-            Map.entry(MQTT_GETRECORDINGSUMMARY_SUFFIX, new APIGetRecordingSummary()),
-            Map.entry(MQTT_ONLINE_SUFFIX, new APICamOnline(this.svrState)),
-            Map.entry(MQTT_GETTHUMBNAIL_SUFFIX, new APIGetThumbnail()));
+    //private Map<String, APIBase> cm = Map.ofEntries(Map.entry(MQTT_EVTTRIGGER_SUFFIX, new APITriggerEvent()),
+    //        Map.entry(MQTT_GETLASTFRAME_SUFFIX, new APIGetLastFrame()),
+    //        Map.entry(MQTT_GETRECORDINGSUMMARY_SUFFIX, new APIGetRecordingSummary()),
+    //        Map.entry(MQTT_ONLINE_SUFFIX, new APICamOnline(this.svrState)),
+    //        Map.entry(MQTT_GETTHUMBNAIL_SUFFIX, new APIGetThumbnail()));
 
     public frigateSVRServerHandler(Bridge thing, frigateSVRServices services) {
         super(thing);
@@ -164,13 +158,6 @@ public class frigateSVRServerHandler extends BaseBridgeHandler implements MqttMe
         // topic_prefix/
 
         this.svrState.pfxSvrMsg = "frigate"; // messages from Frigate server
-
-        // Prefix for messages originating from the server Thing and intended for a specific camera
-        // These are built when needed as the camera ID needs to be inserted
-        //
-        // frigateSVR/<cameraThingID>/<serverThingID>/
-
-        this.pfxSvrToCam = "frigateSVR";
 
         // mark us offline.
 
@@ -564,73 +551,27 @@ public class frigateSVRServerHandler extends BaseBridgeHandler implements MqttMe
     }
 
     ///////////////////////////////////////////////////////////////////////////
-    // HandleEvents
+    // HandleActions
     //
     // v3.x allows cameras to call back into the server Thing. This way we can
     // remove some asynchronous calls and make them synchronous. TODO: mechanism
     // for future calls that need to be asynchronous. Thus, this function will
     // soon be replaced by a better API calling method (see APICall above)
 
-    public ResultStruct handleEvent(String topic, String payload) {
-
-        String[] bits = topic.split("/");
-
-        // These are for server 'thing' messages, not those originated directly by the Frigate server
-        // itself.
-        //
-        // part 1 (index 0): 'frigateSVR'
-        // part 2 (index 1): cam ID (originator)
-        // part 3 (index 2): event ID
-        // part 4 (index 3): message specific (if present)
-
-        // if (this.svrState.status.equals("online")) {
-
+    public ResultStruct handleActions(APIBase action) {
+    	
+    	// Rewritten in 3.x
+    	
         MqttBrokerConnection conn = (@NonNull MqttBrokerConnection) MQTTConnection;
 
-        if (bits.length >= 3) {
+        // If this call came in from the camera, the ThingAction call will
+        // have the camera set. If it is a server ThingAction, it will npt.
+        // However, the only way this function can be called is either from
+        // the camera ThingAction processor, or the server ThingAction 
+        // processor - so we can be sure we can't get called out of turn.
 
-            String cam = bits[1];
-            String event = bits[2];
-            String topicPrefix = this.pfxSvrToCam + "/" + cam + "/" + this.svrState.serverThingID;
-
-            // we need to be sure the camera is one of ours.
-
-            if (this.GetCameraList().contains(cam)) {
-                ResultStruct rc = new ResultStruct();
-                if (this.cm.containsKey(event)) {
-                    logger.debug("processing camera message {}", event);
-                    APIBase api = this.cm.get(event);
-                    if (api != null) { // should never happen
-                        rc = api.Process(httpHelper, conn, topicPrefix, bits, payload);
-                    }
-
-                    return rc;
-                } else {
-                    // this can be posted back to the cam as an error, we don't have a
-                    // handler.
-
-                    // TODO: event result is posted back as if it has come from the Frigate
-                    // server - this way we can use the same channel map.
-
-                    rc.rc = false;
-                    rc.message = String.format("event {} ignored - no handler", event);
-                    logger.debug("{}", rc.message);
-                    // String errFormat = String.format("{\"success\":false,\"message\":\"%s\"}", rc.message);
-                    // String camResultTopic = topicPrefix + "/" + event;
-                    // conn.publish(camResultTopic, errFormat.getBytes(), 1, false);
-
-                    return rc;
-                }
-            } else {
-                // this is just logged as error
-                logger.error("cam {} is not in our list", cam);
-            }
-        }
-        // else this is not a cam message, silently ignore
-        // } else {
-        // logger.warn("event ignored, server offline");
-        // }
-        return new ResultStruct();
+        logger.debug("processing ThingAction");
+        return action.Process(new APIHelper(httpHelper), conn);
     }
 
     ///////////////////////////////////////////////////////////////////

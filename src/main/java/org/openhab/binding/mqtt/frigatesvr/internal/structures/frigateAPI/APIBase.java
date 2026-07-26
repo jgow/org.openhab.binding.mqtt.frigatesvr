@@ -20,12 +20,14 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.binding.mqtt.frigatesvr.internal.helpers.ResultStruct;
 import org.openhab.binding.mqtt.frigatesvr.internal.helpers.frigateSVRHTTPHelper;
 import org.openhab.core.io.transport.mqtt.MqttBrokerConnection;
+import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 
 /**
  * The {@link mqtt.frigateSVRConfiguration} class contains mappings to the
@@ -37,23 +39,22 @@ import com.google.gson.JsonParser;
 @NonNullByDefault
 public abstract class APIBase {
 
-    protected String eventID = "";
     protected String param = "";
     protected String payload = "";
     protected String cam = "";
 
     private final Logger logger = LoggerFactory.getLogger(APIBase.class);
 
-    // Constructor stays empty for now.
+    // Constructors
 
-    public APIBase(String eventID) {
-        this.eventID = eventID;
+    public APIBase(String payload) {
+    	this.payload=payload;
     }
-
-    public APIBase(String[] bits, String eventID) {
-        this.eventID = eventID;
+        
+    public void SetCamera(String camera) {
+    	this.cam=camera;
     }
-
+    
     public void SetPayload(String payload) {
         this.payload = payload;
     }
@@ -62,14 +63,11 @@ public abstract class APIBase {
         return this.payload;
     }
 
-    public abstract ResultStruct ParseFromBits(String[] bits, String payload);
-
-    public abstract ResultStruct Process(frigateSVRHTTPHelper httpHelper, MqttBrokerConnection connection,
-            String topicPrefix, String[] bits, String payload);
+    public abstract ResultStruct Process(APIHelper apiHelper, 
+    		                             MqttBrokerConnection connection);
 
     public abstract ResultStruct Validate();
 
-    protected abstract String BuildTopicSuffix();
 
     public ResultStruct ParseJSONQueryString(String json) {
         ResultStruct rc = new ResultStruct();
@@ -95,24 +93,6 @@ public abstract class APIBase {
             rc.message = "bad JSON query structure";
         }
         return rc;
-    }
-
-    public ResultStruct ResQueueMessageToServer(MqttBrokerConnection connection, String topicPrefix) {
-        String topic = topicPrefix + "/" + BuildTopicSuffix();
-        connection.publish(topic, (payload != null) ? payload.getBytes() : new String("").getBytes(), 1, false);
-        return new ResultStruct(true, "message queued");
-    }
-
-    protected void PublishResult(MqttBrokerConnection conn, String topicPrefix, ResultStruct rc) {
-        // If successful, rc.raw will contain the data passed back from Frigate.
-        // If failed. rc.message will contain the reason why. We must massage this such
-        // that the message either contains a valid response if the result is ok, or
-        // an error string if the result is not ok.
-        String camTopicPrefix = topicPrefix + "/" + MQTT_CAMACTIONRESULT;
-
-        String errFormat = String.format("{\"success\":%s,\"message\":\"%s\"}", (rc.rc) ? "true" : "false",
-                (rc.rc) ? new String(rc.raw) : rc.message);
-        conn.publish(camTopicPrefix, errFormat.getBytes(), 1, false);
     }
 
     protected void PublishResultWithImage(MqttBrokerConnection conn, String topicPrefix, ResultStruct rc) {
@@ -141,4 +121,21 @@ public abstract class APIBase {
         logger.debug("server - publishing result block to {}", camTopicPrefix);
         conn.publish(camTopicPrefix, errFormat.getBytes(), 1, false);
     }
+    
+    ///////////////////////////////////////////////////////////////////////////
+    /// CheckValidJSON
+    /// 
+    /// Check if a string contains valid JSON
+    
+    protected boolean CheckValidJSON(String json) {
+    	boolean rc=false;
+    	try {
+            JsonParser.parseString(json);
+            rc = true;
+        } catch (JsonSyntaxException e) {
+        	logger.error("invalid JSON: {}", json);
+        }
+    	return rc;
+    }
+    
 }

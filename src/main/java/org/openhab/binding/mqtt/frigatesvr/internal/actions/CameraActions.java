@@ -68,6 +68,10 @@ public class CameraActions implements ThingActions {
     // OH architecture does not seem to provide a means for Things to speak
     // to each other directly (indeed seems to be discouraged). Due to this
     // omission, the result is that we process the action asynchronously.
+    // Update: as of v3.x the camera 'things' are children of the server
+    // bridge - thus it is possible to call into the server to access the 
+    // API, but not for the server to call into the camera (unless we maintain
+    // a registry of bridge children.
     //
     // Static member function is provided for older OH variants.
 

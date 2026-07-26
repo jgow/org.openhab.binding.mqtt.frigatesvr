@@ -35,39 +35,17 @@ public class APIGetThumbnail extends APIBase {
 
     private final Logger logger = LoggerFactory.getLogger(APIGetThumbnail.class);
 
-    public APIGetThumbnail() {
-        super(MQTT_GETTHUMBNAIL_SUFFIX);
-    }
-
     public APIGetThumbnail(String label) {
-        super(MQTT_GETTHUMBNAIL_SUFFIX);
+        super("");
         this.label = label;
     }
 
     @Override
-    public ResultStruct ParseFromBits(String[] bits, @Nullable String payload) {
-        ResultStruct rc = new ResultStruct();
-        if (bits.length == 4) {
-            this.cam = bits[1];
-            this.label = bits[3];
-            this.payload = ""; // payload is unused, only use label
-            rc = this.Validate(); // in case the message was sent in from elsewhere
-        } else {
-            rc.message = "invalid topic string";
-        }
-        return rc;
-    }
+    public ResultStruct Process(APIHelper httpHelper, MqttBrokerConnection connection) {
 
-    @Override
-    public ResultStruct Process(frigateSVRHTTPHelper httpHelper, MqttBrokerConnection connection, String topicPrefix,
-            String[] bits, String payload) {
-
-        ResultStruct rc = ParseFromBits(bits, payload);
-        if (rc.rc) {
-            String call = "/api/" + cam + "/" + label + "/thumbnail.jpg";
-            logger.info("posting: GET '{}'", call);
-            rc = httpHelper.runGet(call);
-        }
+        String call = "/api/" + cam + "/" + label + "/thumbnail.jpg";
+        logger.info("posting: GET '{}'", call);
+        // TODO ResultStruct rc = httpHelper.runGet(call);
         PublishResultWithImage(connection, topicPrefix, rc);
         return rc;
     }
@@ -84,10 +62,5 @@ public class APIGetThumbnail extends APIBase {
             rc.message = "invalid event label";
         }
         return rc;
-    }
-
-    @Override
-    protected String BuildTopicSuffix() {
-        return eventID + "/" + label;
     }
 }

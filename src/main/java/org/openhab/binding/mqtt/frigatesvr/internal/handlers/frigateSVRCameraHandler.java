@@ -76,8 +76,8 @@ public class frigateSVRCameraHandler extends BaseThingHandler implements MqttMes
 
     private final Logger logger = LoggerFactory.getLogger(frigateSVRCameraHandler.class);
     private frigateSVRCameraConfiguration config = new frigateSVRCameraConfiguration();
-    private frigateSVRServerState svrState = new frigateSVRServerState();
-    private String pfxCamToSvr = ""; // TODO: still used for ThingActions but not needed
+    //private frigateSVRServerState svrState = new frigateSVRServerState();
+    //private String pfxCamToSvr = ""; // TODO: still used for ThingActions but not needed
     private String pfxFrigateToCam = "";
     private String pfxFrigateInstance = "";
 
@@ -415,8 +415,9 @@ public class frigateSVRCameraHandler extends BaseThingHandler implements MqttMes
         // the camera ID:
         //
         // frigateSVR/<serverThingID>/<cameraThingID>/
+        // 3.x - TODO remove.
 
-        this.pfxCamToSvr = "frigateSVR/" + config.cameraName;
+        // this.pfxCamToSvr = "frigateSVR/" + config.cameraName;
 
         updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING);
 
@@ -531,27 +532,46 @@ public class frigateSVRCameraHandler extends BaseThingHandler implements MqttMes
     ///////////////////////////////////////////////////////////////////
     // SendActionEvent
     //
-    // Send an action event to the server; this will be an action that
-    // needs to be picked up by the server's HTTP API, but one that is
-    // also specific to this camera.
+    // Process an action event.
+    //
+    // This changes in v3.x. 
+    // Firstly many of the calls no longer need to be asynchronous.
+    // Secondly, the processing is carried out in the ThingAction API
+    // which then calls camera (MQTT) or server APIs (HTTP) as necessary
+    // 
+    // Server ThingActions are only processed by the server handler,
+    // we may not exist if only a server handler is present in the system
 
     public ResultStruct SendActionEvent(APIBase action) {
-        Bridge bridge = getBridge();
-        if (bridge != null) {
-            BridgeHandler bh = bridge.getHandler();
-            if (bh != null) {
-                frigateSVRServerHandler serverBridgeHandler = (frigateSVRServerHandler) bh;
-                ResultStruct rs = action.Validate();
-                if (rs.rc) {
-                    rs = serverBridgeHandler.handleEvent(pfxCamToSvr, action.getPayload());
-                }
-                return rs;
-            } else {
-                return new ResultStruct(false, "wrong bridge handler type");
+ 
+        Bridge serverThing = getBridge();
+        ResultStruct rc = new ResultStruct();
+        
+        do {
+            if (serverThing == null) {
+            	rc.message = "Could not find bridge handler";
+            	break;
             }
-        } else {
-            return new ResultStruct(false, "Could not find bridge handler");
-        }
+
+            BridgeHandler serverBridgeHandler = serverThing.getHandler();
+
+            if (serverBridgeHandler == null) {
+            	rc.message = "wrong bridge handler type";
+            	break;
+            }
+
+        	action.SetCamera(config.cameraName);
+            frigateSVRServerHandler serverHandler = (frigateSVRServerHandler) serverBridgeHandler;
+            ResultStruct rs = action.Validate();
+            if (!rs.rc) {
+            	break;
+            }
+
+            rs = serverHandler.handleActions(action);
+        	
+        } while(false);
+        return rc;
+
     }
 
     ///////////////////////////////////////////////////////////////////

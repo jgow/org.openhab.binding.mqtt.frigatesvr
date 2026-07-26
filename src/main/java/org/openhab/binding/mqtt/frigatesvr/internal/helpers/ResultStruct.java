@@ -28,23 +28,27 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 public class ResultStruct {
     public boolean rc;
     public String message;
+    public String type;
     public byte[] raw;
 
     public ResultStruct() {
         this.rc = false;
         this.message = "result uninitialized";
+        this.type="";
         this.raw = new byte[0];
     }
 
     public ResultStruct(boolean rc, String desc) {
         this.rc = rc;
         this.message = desc;
+        this.type="";
         this.raw = new byte[0];
     }
 
     public ResultStruct(boolean rc, String desc, byte[] raw) {
         this.rc = rc;
         this.message = desc;
+        this.type="";
         this.raw = raw;
     }
 

@@ -12,12 +12,8 @@
  */
 package org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI;
 
-import static org.openhab.binding.mqtt.frigatesvr.internal.frigateSVRBindingConstants.MQTT_GETRECORDINGSUMMARY_SUFFIX;
-
 import org.eclipse.jdt.annotation.NonNullByDefault;
-import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.mqtt.frigatesvr.internal.helpers.ResultStruct;
-import org.openhab.binding.mqtt.frigatesvr.internal.helpers.frigateSVRHTTPHelper;
 import org.openhab.core.io.transport.mqtt.MqttBrokerConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,35 +30,12 @@ public class APIGetRecordingSummary extends APIBase {
     private final Logger logger = LoggerFactory.getLogger(APIGetRecordingSummary.class);
 
     public APIGetRecordingSummary() {
-        super(MQTT_GETRECORDINGSUMMARY_SUFFIX);
+    	super(""); // no payload
     }
 
     @Override
-    public ResultStruct ParseFromBits(String[] bits, @Nullable String payload) {
-        ResultStruct rc = new ResultStruct();
-        if (bits.length == 3) {
-            this.cam = bits[1];
-            // nothing here to validate.
-            rc.rc = true;
-        } else {
-            rc.message = "internal communication error";
-        }
-        return rc;
-    }
-
-    @Override
-    public ResultStruct Process(frigateSVRHTTPHelper httpHelper, MqttBrokerConnection connection, String topicPrefix,
-            String[] bits, String payload) {
-
-        ResultStruct rc = ParseFromBits(bits, payload);
-
-        if (rc.rc) {
-            String apiCall = "/api/" + cam + "/recordings/summary";
-            logger.info("posting: GET '{}'", apiCall);
-            rc = httpHelper.runGet(apiCall);
-        }
-        PublishResult(connection, topicPrefix, rc);
-        return rc;
+    public ResultStruct Process(APIHelper apiHelper, MqttBrokerConnection connection) {
+    	return apiHelper.GetRecordingSummary(cam, payload);
     }
 
     @Override
@@ -71,8 +44,4 @@ public class APIGetRecordingSummary extends APIBase {
         return new ResultStruct(true, "ok");
     }
 
-    @Override
-    protected String BuildTopicSuffix() {
-        return eventID;
-    }
 }

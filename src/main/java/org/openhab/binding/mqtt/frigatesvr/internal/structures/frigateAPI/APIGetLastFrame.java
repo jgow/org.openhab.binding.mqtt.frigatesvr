@@ -36,59 +36,20 @@ public class APIGetLastFrame extends APIBase {
 
     private final Logger logger = LoggerFactory.getLogger(APIGetLastFrame.class);
 
-    public APIGetLastFrame() {
-        super(MQTT_GETLASTFRAME_SUFFIX);
-    }
 
     public APIGetLastFrame(@Nullable String payload) {
-        super(MQTT_GETLASTFRAME_SUFFIX);
-        if (payload != null) {
-            this.payload = payload;
-        }
+        super(payload);
     }
 
     @Override
-    public ResultStruct ParseFromBits(String[] bits, String payload) {
-        ResultStruct rc = new ResultStruct();
-        if (bits.length == 3) {
-            if (bits[2].equals(MQTT_GETLASTFRAME_SUFFIX)) {
-                this.cam = bits[1];
+    public ResultStruct Process(APIHelper httpHelper, MqttBrokerConnection connection) {
 
-                // The payload will contain a JSON block with the query
-                // arguments. We need to grab this and later parse it into the
-                // query string
-
-                this.payload = payload;
-
-                // Why do we check the label again, since we already did it in the
-                // cam handler? Well, some muppet may have poked us with this message
-                // manually....
-
-                rc = this.Validate();
-
-            } else {
-                rc.message = "API handler/topic mismatch";
-            }
-        } else {
-            rc.message = "internal communication error";
-        }
-        return rc;
-    }
-
-    @Override
-    public ResultStruct Process(frigateSVRHTTPHelper httpHelper, MqttBrokerConnection connection, String topicPrefix,
-            String[] bits, String payload) {
-
-        ResultStruct rc = ParseFromBits(bits, payload);
-
-        if (rc.rc) {
-            logger.debug("server: processing camera last frame request for {}", cam);
-            rc = ParseJSONQueryString(payload);
-            if (rc.rc) {
-                String call = "/api/" + cam + "/latest.jpg" + rc.message;
-                rc = httpHelper.runGet(call);
-            }
-        }
+    	logger.debug("server: processing camera last frame request for {}", cam);
+    	rc = ParseJSONQueryString(payload);
+    	if (rc.rc) {
+    		String call = "/api/" + cam + "/latest.jpg" + rc.message;
+    		// rc = httpHelper.runGet(call);
+    	}
         PublishResultWithImage(connection, topicPrefix, rc);
         return rc;
     }
@@ -111,8 +72,4 @@ public class APIGetLastFrame extends APIBase {
         return rc;
     }
 
-    @Override
-    protected String BuildTopicSuffix() {
-        return eventID;
-    }
 }
