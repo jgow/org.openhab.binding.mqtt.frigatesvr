@@ -89,12 +89,9 @@ public class frigateSVRServerHandler extends BaseBridgeHandler implements MqttMe
     protected @Nullable MqttBrokerConnection MQTTConnection = null;
     protected frigateSVRNetworkHelper networkHelper;
 
-    //private Map<String, APIBase> cm = Map.ofEntries(Map.entry(MQTT_EVTTRIGGER_SUFFIX, new APITriggerEvent()),
-    //        Map.entry(MQTT_GETLASTFRAME_SUFFIX, new APIGetLastFrame()),
-    //        Map.entry(MQTT_GETRECORDINGSUMMARY_SUFFIX, new APIGetRecordingSummary()),
-    //        Map.entry(MQTT_ONLINE_SUFFIX, new APICamOnline(this.svrState)),
-    //        Map.entry(MQTT_GETTHUMBNAIL_SUFFIX, new APIGetThumbnail()));
-
+    ///////////////////////////////////////////////////////////////////////////
+    /// Constructor.
+    
     public frigateSVRServerHandler(Bridge thing, frigateSVRServices services) {
         super(thing);
 
@@ -123,6 +120,11 @@ public class frigateSVRServerHandler extends BaseBridgeHandler implements MqttMe
         this.httpServlet = new frigateSVRServlet(services.httpService);
     }
 
+    ///////////////////////////////////////////////////////////////////////////
+    // Initialize
+    //
+    // 
+    
     @Override
     public void initialize() {
 
@@ -159,18 +161,23 @@ public class frigateSVRServerHandler extends BaseBridgeHandler implements MqttMe
 
         this.svrState.pfxSvrMsg = "frigate"; // messages from Frigate server
 
-        // mark us offline.
+        // mark us offline. Note that this gets updated once the deferred 
+        // initialization task has run, and the keepalives are operational.
 
         updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING);
 
         Bridge bridge = getBridge();
-        ThingStatusInfo bridgeStatus = bridge != null ? bridge.getStatusInfo()
+        ThingStatusInfo bridgeStatus = (bridge != null) ? bridge.getStatusInfo()
                 : new ThingStatusInfo(ThingStatus.OFFLINE, ThingStatusDetail.NONE, null);
         this.bridgeStatusChanged(bridgeStatus);
     }
 
+    ///////////////////////////////////////////////////////////////////
+    // dispose
     //
-    // Cleanup.
+    // If we get deleted, we must ensure that all streaming servers
+    // are shut down cleanly - we can not leave any ffmpeg processes
+    // running, or the API forwarder/stream forwarder servlet running
 
     @Override
     public void dispose() {
