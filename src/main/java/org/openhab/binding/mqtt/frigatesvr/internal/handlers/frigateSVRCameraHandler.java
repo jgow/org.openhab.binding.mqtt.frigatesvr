@@ -76,8 +76,7 @@ public class frigateSVRCameraHandler extends BaseThingHandler implements MqttMes
 
     private final Logger logger = LoggerFactory.getLogger(frigateSVRCameraHandler.class);
     private frigateSVRCameraConfiguration config = new frigateSVRCameraConfiguration();
-    //private frigateSVRServerState svrState = new frigateSVRServerState();
-    //private String pfxCamToSvr = ""; // TODO: still used for ThingActions but not needed
+    private frigateSVRServerState svrState = new frigateSVRServerState();
     private String pfxFrigateToCam = "";
     private String pfxFrigateInstance = "";
 
@@ -108,8 +107,8 @@ public class frigateSVRCameraHandler extends BaseThingHandler implements MqttMes
             Map.entry(MQTT_MOTIONCONTOUR_GET, CHANNEL_STATE_MOTIONCONTOUR),
             Map.entry(MQTT_MOTION, CHANNEL_STATE_MOTIONDETECTED));
 
-    private Map<String, String> MQTTServerMessageGettersToChannels = Map
-            .ofEntries(Map.entry(MQTT_CAMACTIONRESULT, CHANNEL_CAM_ACTION_RESULT));
+    // private Map<String, String> MQTTServerMessageGettersToChannels = Map
+    // .ofEntries(Map.entry(MQTT_CAMACTIONRESULT, CHANNEL_CAM_ACTION_RESULT));
 
     private Map<String, String> JSONEventGettersToPrev = Map.ofEntries(Map.entry("frame_time", CHANNEL_PREV_FRAME_TIME),
             Map.entry("snapshot_time", CHANNEL_PREV_SNAPSHOT_TIME), Map.entry("label", CHANNEL_PREV_LABEL),
@@ -160,7 +159,7 @@ public class frigateSVRCameraHandler extends BaseThingHandler implements MqttMes
                 // channel.
                 logger.debug("channel {} does not exist; nulling", ch.getKey());
                 updateState((ch.getValue()),
-                        ((@NonNull frigateSVRChannelState) this.Channels.get(ch.getValue())).toState(null));
+                        ((@NonNull frigateSVRChannelState) this.Channels.get(ch.getValue())).toNullState());
             }
         }
     };
@@ -389,6 +388,21 @@ public class frigateSVRCameraHandler extends BaseThingHandler implements MqttMes
     }
 
     ///////////////////////////////////////////////////////////////////////////
+    /// UpdateChannel
+    ///
+    /// Update the state channel from a selected ID - primarily implemented
+    /// to support ThingActions.
+
+    public void UpdateChannel(String ChannelID, ResultStruct rc) {
+
+        if (this.Channels.containsKey(ChannelID)) {
+            updateState(ChannelID, ((@NonNull frigateSVRChannelState) this.Channels.get(ChannelID)).toState(rc));
+        } else {
+            logger.error("channel {} not in channel map, ignoring", ChannelID);
+        }
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
     /// Initialize
     ///
 
@@ -534,44 +548,43 @@ public class frigateSVRCameraHandler extends BaseThingHandler implements MqttMes
     //
     // Process an action event.
     //
-    // This changes in v3.x. 
+    // This changes in v3.x.
     // Firstly many of the calls no longer need to be asynchronous.
     // Secondly, the processing is carried out in the ThingAction API
     // which then calls camera (MQTT) or server APIs (HTTP) as necessary
-    // 
+    //
     // Server ThingActions are only processed by the server handler,
     // we may not exist if only a server handler is present in the system
 
     public ResultStruct SendActionEvent(APIBase action) {
- 
+
         Bridge serverThing = getBridge();
         ResultStruct rc = new ResultStruct();
-        
+
         do {
             if (serverThing == null) {
-            	rc.message = "Could not find bridge handler";
-            	break;
+                rc.message = "Could not find bridge handler";
+                break;
             }
 
             BridgeHandler serverBridgeHandler = serverThing.getHandler();
 
             if (serverBridgeHandler == null) {
-            	rc.message = "wrong bridge handler type";
-            	break;
+                rc.message = "wrong bridge handler type";
+                break;
             }
 
-        	action.SetCamera(config.cameraName);
+            action.SetCamera(config.cameraName);
             frigateSVRServerHandler serverHandler = (frigateSVRServerHandler) serverBridgeHandler;
-            ResultStruct rs = action.Validate();
-            if (!rs.rc) {
-            	break;
+            rc = action.Validate();
+            if (!rc.rc) {
+                break;
             }
 
-            rs = serverHandler.handleActions(action);
-        	
-        } while(false);
-        return rc;
+            rc = serverHandler.handleActions(action);
 
+        } while (false);
+        return rc;
     }
 
     ///////////////////////////////////////////////////////////////////
@@ -778,7 +791,7 @@ public class frigateSVRCameraHandler extends BaseThingHandler implements MqttMes
 
                         for (var ch : JSONStateGetters.entrySet()) {
                             updateState((ch.getValue()),
-                                    ((@NonNull frigateSVRChannelState) this.Channels.get(ch.getValue())).toState(null));
+                                    ((@NonNull frigateSVRChannelState) this.Channels.get(ch.getValue())).toNullState());
                         }
                     }
                 }
@@ -895,14 +908,14 @@ public class frigateSVRCameraHandler extends BaseThingHandler implements MqttMes
 
                             case "totcount":
                                 objcount = new String("{ object : \"" + bits[1] + "\", count : " + state + "}");
-                                updateState(CHANNEL_OBJ_COUNT,
+                                this.updateState(CHANNEL_OBJ_COUNT,
                                         ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_OBJ_COUNT))
                                                 .toState(objcount));
                                 break;
 
                             case "active":
                                 objcount = new String("{ object : \"" + bits[1] + "\", count : " + state + "}");
-                                updateState(CHANNEL_OBJ_COUNT_ACTIVE,
+                                this.updateState(CHANNEL_OBJ_COUNT_ACTIVE,
                                         ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_OBJ_COUNT_ACTIVE))
                                                 .toState(objcount));
                                 break;

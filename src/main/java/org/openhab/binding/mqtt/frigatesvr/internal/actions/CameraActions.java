@@ -12,6 +12,8 @@
  */
 package org.openhab.binding.mqtt.frigatesvr.internal.actions;
 
+import static org.openhab.binding.mqtt.frigatesvr.internal.frigateSVRBindingConstants.*;
+
 import java.util.Map;
 
 import org.eclipse.jdt.annotation.NonNull;
@@ -69,7 +71,7 @@ public class CameraActions implements ThingActions {
     // to each other directly (indeed seems to be discouraged). Due to this
     // omission, the result is that we process the action asynchronously.
     // Update: as of v3.x the camera 'things' are children of the server
-    // bridge - thus it is possible to call into the server to access the 
+    // bridge - thus it is possible to call into the server to access the
     // API, but not for the server to call into the camera (unless we maintain
     // a registry of bridge children.
     //
@@ -85,7 +87,8 @@ public class CameraActions implements ThingActions {
         if (this.handler != null) {
             logger.debug("Action triggered: label {}", eventLabel);
             if (eventLabel != null) {
-                rc = this.handler.SendActionEvent(new APITriggerEvent((@NonNull String) eventLabel, eventParams));
+                APITriggerEvent api = new APITriggerEvent((@NonNull String) eventLabel, eventParams);
+                rc = this.handler.SendActionEvent(api);
             } else {
                 rc.message = "error: event ID label is null";
             }
@@ -119,12 +122,17 @@ public class CameraActions implements ThingActions {
     @RuleAction(label = "GetLastFrame", description = "Get the last processed frame")
     @ActionOutput(name = "rc", label = "@text/action.GetLastFrame.rc.label", description = "@text/action.GetLastFrame.rc.description", type = "java.util.List<String>")
     @ActionOutput(name = "message", label = "@text/action.GetLastFrame.desc.label", description = "@text/action.GetLastFrame.desc.description", type = "java.util.List<String>")
-    public Map<String, Object> GetLastFrame(
-            @ActionInput(name = "eventParams", label = "@text/action.GetLastFrame.eventParams.label", description = "@text/action.GetLastFrame.eventParams.description") @Nullable String eventParams) {
+    public Map<String, Object> GetLastFrame() {
         ResultStruct rc = new ResultStruct();
         if (this.handler != null) {
-            logger.debug("Action triggered: label GetLastFrame: {}", eventParams);
-            rc = this.handler.SendActionEvent(new APIGetLastFrame(eventParams));
+            logger.debug("Action triggered: label GetLastFrame");
+            rc = this.handler.SendActionEvent(new APIGetLastFrame());
+            if (rc.rc) {
+                // we need to update the image state in this handler.
+                this.handler.UpdateChannel(CHANNEL_LAST_FRAME, rc);
+            } else {
+                logger.error("API not successful: {}", rc.message);
+            }
         } else {
             rc.message = "action not processed; no handler";
         }
@@ -133,7 +141,7 @@ public class CameraActions implements ThingActions {
 
     public static Map<String, Object> GetLastFrame(@Nullable ThingActions actions, @Nullable String params) {
         if (actions instanceof CameraActions) {
-            return ((CameraActions) actions).GetLastFrame(params);
+            return ((CameraActions) actions).GetLastFrame();
         } else {
             throw new IllegalArgumentException("Instance is not a CameraActions class.");
         }
@@ -142,17 +150,15 @@ public class CameraActions implements ThingActions {
     ///////////////////////////////////////////////////////////////////////////
     // GetRecordingSummary
     //
-    // Get the summary of recordings as a JSON block
+    // Get the summary of recordings for a camera as a JSON block
     //
-    // OH architecture does not seem to provide a means for Things to speak
-    // to each other directly (indeed seems to be discouraged). Due to this
-    // omission, the result is that we process the action asynchronously.
     //
     // Static member function is provided for older OH variants.
 
     @RuleAction(label = "GetRecordingSummary", description = "Get the summary of recordings for this camera")
-    @ActionOutput(name = "rc", label = "@text/action.GetRecordingSummary.rc.label", description = "@text/action.GetRecordingSummary.rc.description", type = "java.util.List<String>")
-    @ActionOutput(name = "message", label = "@text/action.GetRecordingSummary.desc.label", description = "@text/action.GetRecordingSummary.desc.description", type = "java.util.List<String>")
+    @ActionOutput(name = "rc", label = "@text/action.GetRecordingSummary.rc.label", description = "@text/action.GetRecordingSummary.rc.description", type = "String")
+    @ActionOutput(name = "message", label = "@text/action.GetRecordingSummary.desc.label", description = "@text/action.GetRecordingSummary.desc.description", type = "String")
+    @ActionOutput(name = "result", label = "Result", description = "Result", type = "String")
     public Map<String, Object> GetRecordingSummary() {
         ResultStruct rc = new ResultStruct();
         if (this.handler != null) {
@@ -178,9 +184,7 @@ public class CameraActions implements ThingActions {
     // Retrieve the thumbnail for this camera from the event label. Use 'any'
     // as the label to get the latest
     //
-    // OH architecture does not seem to provide a means for Things to speak
-    // to each other directly (indeed seems to be discouraged). Due to this
-    // omission, the result is that we process the action asynchronously.
+    // v3.x removes asynchronous operation of this API
     //
     // Static member function is provided for older OH variants.
 
@@ -194,6 +198,10 @@ public class CameraActions implements ThingActions {
             logger.debug("Action triggered: label {}", eventLabel);
             if (eventLabel != null) {
                 rc = this.handler.SendActionEvent(new APIGetThumbnail(eventLabel));
+                if (rc.rc) {
+                    // we need to update the image state in this handler.
+                    this.handler.UpdateChannel(CHANNEL_LAST_FRAME, rc);
+                }
             } else {
                 rc.message = "error: event ID label is null";
             }

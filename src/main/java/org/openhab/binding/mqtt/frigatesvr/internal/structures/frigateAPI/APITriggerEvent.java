@@ -33,7 +33,7 @@ public class APITriggerEvent extends APIBase {
     private final Logger logger = LoggerFactory.getLogger(APITriggerEvent.class);
 
     public APITriggerEvent(String label, @Nullable String eventParams) {
-    	super(eventParams);
+        super(eventParams);
         this.label = label;
     }
 
@@ -47,21 +47,20 @@ public class APITriggerEvent extends APIBase {
     public ResultStruct Validate() {
         ResultStruct rc = new ResultStruct();
         if (!label.isBlank() && !label.isEmpty() && label.matches("^[A-Za-z0-9]+$")) {
-        	
+
             // our parameters are ok, check the JSON provided as payload is also valid. A null or blank
             // payload is ok. We don't use it, just check it is valid JSON before we fire it off. We let
             // Frigate do the content checking.
-        	
-        	rc.rc=CheckValidJSON(payload);
-        	if(!rc.rc) {
-        		logger.error("invalid payload {}", payload);
-        		rc.message = "invalid arguments";
-        	}
+
+            rc.rc = CheckValidJSON(payload);
+            if (!rc.rc) {
+                logger.error("invalid payload {}", payload);
+                rc.message = "invalid arguments";
+            }
         } else {
-        	logger.error("invalid event label {}", label);
+            logger.error("invalid event label {}", label);
             rc.message = "invalid event label";
         }
         return rc;
     }
-
 }

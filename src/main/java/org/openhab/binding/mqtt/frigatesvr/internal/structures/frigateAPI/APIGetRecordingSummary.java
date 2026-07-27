@@ -30,12 +30,12 @@ public class APIGetRecordingSummary extends APIBase {
     private final Logger logger = LoggerFactory.getLogger(APIGetRecordingSummary.class);
 
     public APIGetRecordingSummary() {
-    	super(""); // no payload
+        super(""); // no payload
     }
 
     @Override
     public ResultStruct Process(APIHelper apiHelper, MqttBrokerConnection connection) {
-    	return apiHelper.GetRecordingSummary(cam, payload);
+        return apiHelper.GetRecordingSummary(cam, payload);
     }
 
     @Override
@@ -43,5 +43,4 @@ public class APIGetRecordingSummary extends APIBase {
         // nothing to validate on the input side.
         return new ResultStruct(true, "ok");
     }
-
 }

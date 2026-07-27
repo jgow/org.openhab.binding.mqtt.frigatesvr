@@ -91,7 +91,7 @@ public class frigateSVRServerHandler extends BaseBridgeHandler implements MqttMe
 
     ///////////////////////////////////////////////////////////////////////////
     /// Constructor.
-    
+
     public frigateSVRServerHandler(Bridge thing, frigateSVRServices services) {
         super(thing);
 
@@ -123,8 +123,8 @@ public class frigateSVRServerHandler extends BaseBridgeHandler implements MqttMe
     ///////////////////////////////////////////////////////////////////////////
     // Initialize
     //
-    // 
-    
+    //
+
     @Override
     public void initialize() {
 
@@ -161,7 +161,7 @@ public class frigateSVRServerHandler extends BaseBridgeHandler implements MqttMe
 
         this.svrState.pfxSvrMsg = "frigate"; // messages from Frigate server
 
-        // mark us offline. Note that this gets updated once the deferred 
+        // mark us offline. Note that this gets updated once the deferred
         // initialization task has run, and the keepalives are operational.
 
         updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING);
@@ -566,15 +566,15 @@ public class frigateSVRServerHandler extends BaseBridgeHandler implements MqttMe
     // soon be replaced by a better API calling method (see APICall above)
 
     public ResultStruct handleActions(APIBase action) {
-    	
-    	// Rewritten in 3.x
-    	
+
+        // Rewritten in 3.x
+
         MqttBrokerConnection conn = (@NonNull MqttBrokerConnection) MQTTConnection;
 
         // If this call came in from the camera, the ThingAction call will
         // have the camera set. If it is a server ThingAction, it will npt.
         // However, the only way this function can be called is either from
-        // the camera ThingAction processor, or the server ThingAction 
+        // the camera ThingAction processor, or the server ThingAction
         // processor - so we can be sure we can't get called out of turn.
 
         logger.debug("processing ThingAction");

@@ -16,7 +16,6 @@ package org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI;
 import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.binding.mqtt.frigatesvr.internal.helpers.ResultStruct;
@@ -25,8 +24,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 
 /**
@@ -71,61 +68,81 @@ public class APIHelper {
         }
         return rc;
     }
-    
+
     //////////////////////////////////////////////////////////////////
     /// TriggerEvent
-    /// 
+    ///
     /// Calls the triggerEvent API to create a new event.
-    /// 
-    /// 
-    
-    public ResultStruct TriggerEvent(String camera, String label, String payload) {
-    	
-    	ResultStruct rc = new ResultStruct();
-    	
-        if (!label.isBlank() && !label.isEmpty() &&
-        	label.matches("^[A-Za-z0-9]+$") && !camera.isBlank() && !camera.isEmpty()) {
+    ///
+    ///
 
-        	String call = "/api/events/" + camera + "/" + label + "/create";
-        	logger.info("calling: POST '{}'", call);
-        	rc = httpHelper.runPost(call, payload);
+    public ResultStruct TriggerEvent(String camera, String label, String payload) {
+
+        ResultStruct rc = new ResultStruct();
+
+        if (!label.isBlank() && !label.isEmpty() && label.matches("^[A-Za-z0-9]+$") && !camera.isBlank()
+                && !camera.isEmpty()) {
+
+            String call = "/api/events/" + camera + "/" + label + "/create";
+            logger.info("calling: POST '{}' payload {}", call, payload);
+            rc = httpHelper.runPost(call, payload, "application/json");
         } else {
-        	rc.message="invalid arguments: camera: {} label: {}";
+            rc.message = "invalid arguments: camera: {} label: {}";
         }
         return rc;
     }
-    
+
     /////////////////////////////////////////////////////////////////
     /// GetRecordingSummary
-    /// 
+    ///
     /// Calls the GetRecordingSummary API
-    /// 
+    ///
     /// If the camera string is empty, call the API to return the
     /// 'all recordings summary'. If there is a camera specified,
-    /// then call the camera-specific one. There is an option of a 
+    /// then call the camera-specific one. There is an option of a
     /// JSON payload containing a timezone, or an alternative
     /// is to specify a camera in the payload.
     ///
-    
-    public ResultStruct GetRecordingSummary(String camera, String payload) {
-    	// check if payload has the 'cameras' key or if 'camera' is empty. 
-    	// it does, use a different API. We don't validate the payload here
-    	String apiCall="/api/";
-    	if(camera.isEmpty() || camera.isBlank()) {
-    		//JsonObject pl=JsonParser.parseString(payload).getAsJsonObject();
-    		//Set<String> keys = pl.keySet();
-    		//if(keys.contains("cameras") || !camera.isEmpty() || !camera.isBlank()) {
-    		//	all=true;    		
-    		//}
-        	apiCall += camera;
-    	} 
-        apiCall += "/recordings/summary";
-    	rc = httpHelper.runGet(call);
 
-    	
-    	
-    	
-    	
+    public ResultStruct GetRecordingSummary(String camera, String payload) {
+        // check if payload has the 'cameras' key or if 'camera' is empty.
+        // it does, use a different API. We don't validate the payload here
+        String apiCall = "/api";
+        if (!camera.isEmpty() && !camera.isBlank()) {
+            // JsonObject pl=JsonParser.parseString(payload).getAsJsonObject();
+            // Set<String> keys = pl.keySet();
+            // if(keys.contains("cameras") || !camera.isEmpty() || !camera.isBlank()) {
+            // all=true;
+            // }
+            apiCall += "/" + camera;
+        }
+        apiCall += "/recordings/summary";
+        return httpHelper.runGet(apiCall);
     }
-    
+
+    /////////////////////////////////////////////////////////////////
+    /// GetLastFrame
+    ///
+    /// Calls the GetRecordingSummary API
+    ///
+    /// Gets the latest frame for a given camera
+    ///
+
+    public ResultStruct GetLastFrame(String camera) {
+        String apiCall = "/api/" + camera + "/latest.jpg";
+        return httpHelper.runGet(apiCall);
+    }
+
+    /////////////////////////////////////////////////////////////////
+    /// GetEventThumbnail
+    ///
+    /// Calls the GetRecordingSummary API
+    ///
+    /// Gets the latest frame for a given camera
+    ///
+
+    public ResultStruct GetEventThumbnail(String event) {
+        String apiCall = "/api/" + event + "/latest.jpg";
+        return httpHelper.runGet(apiCall);
+    }
 }

@@ -18,6 +18,7 @@ import java.time.ZonedDateTime;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.openhab.binding.mqtt.frigatesvr.internal.helpers.ResultStruct;
 import org.openhab.core.library.types.DateTimeType;
 import org.openhab.core.library.types.DecimalType;
 import org.openhab.core.library.types.OnOffType;
@@ -155,6 +156,38 @@ public class frigateSVRChannelState {
         this.ConvertToMQTT = toMQTT;
         this.commandable = commandable;
         this.state = UnDefType.NULL;
+    }
+
+    public State toState(ResultStruct res) {
+        // Here we use the MIME type as much as possible to determine the
+        // conversion. Mostly this will be application/json (string), but
+        // could also be a JPEG in certain circumstances
+
+        if (res.rc) {
+            switch (res.type) {
+                case "application/json":
+                    this.state = this.toState(res.raw.toString());
+                    break;
+                default:
+                case "application/jpeg":
+                    this.state = this.toStateFromRaw(res.raw, res.type);
+                    break;
+            }
+        } else {
+            logger.error("unable to update state: error ({})", res.message);
+        }
+
+        return this.state;
+    }
+
+    /////////////////////////////////////////////////////////////////////////
+    // toNullState
+    //
+    // Nulls out the state descriptor
+
+    public State toNullState() {
+        this.state = UnDefType.NULL;
+        return this.state;
     }
 
     public State toState(@Nullable String s) {

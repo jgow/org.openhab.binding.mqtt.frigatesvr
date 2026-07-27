@@ -12,12 +12,8 @@
  */
 package org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI;
 
-import static org.openhab.binding.mqtt.frigatesvr.internal.frigateSVRBindingConstants.MQTT_GETTHUMBNAIL_SUFFIX;
-
 import org.eclipse.jdt.annotation.NonNullByDefault;
-import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.mqtt.frigatesvr.internal.helpers.ResultStruct;
-import org.openhab.binding.mqtt.frigatesvr.internal.helpers.frigateSVRHTTPHelper;
 import org.openhab.core.io.transport.mqtt.MqttBrokerConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,13 +37,8 @@ public class APIGetThumbnail extends APIBase {
     }
 
     @Override
-    public ResultStruct Process(APIHelper httpHelper, MqttBrokerConnection connection) {
-
-        String call = "/api/" + cam + "/" + label + "/thumbnail.jpg";
-        logger.info("posting: GET '{}'", call);
-        // TODO ResultStruct rc = httpHelper.runGet(call);
-        PublishResultWithImage(connection, topicPrefix, rc);
-        return rc;
+    public ResultStruct Process(APIHelper apiHelper, MqttBrokerConnection connection) {
+        return apiHelper.GetEventThumbnail(label);
     }
 
     @Override
@@ -59,6 +50,7 @@ public class APIGetThumbnail extends APIBase {
             rc.rc = true;
             rc.message = "arguments valid";
         } else {
+            logger.error("invalid event label : {}", label);
             rc.message = "invalid event label";
         }
         return rc;

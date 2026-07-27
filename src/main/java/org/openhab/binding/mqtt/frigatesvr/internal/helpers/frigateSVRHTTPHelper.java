@@ -366,17 +366,20 @@ public class frigateSVRHTTPHelper {
     //
     // Synchronous POST call to the Frigate API.import java.net.URL;
 
-    public ResultStruct runPost(String call, @Nullable String payload) {
+    public ResultStruct runPost(String call, @Nullable String payload, @Nullable String bodyType) {
         ResultStruct r = new ResultStruct();
         if (this.CheckAuthState()) {
             try {
                 Request request = ((@NonNull HttpClient) this.client).POST(buildURL(call));
+                request.method(HttpMethod.POST);
+                request.header(HttpHeader.ACCEPT, "application/json");
                 request.timeout(timeout, TimeUnit.MILLISECONDS);
                 if (this.authNeeded) {
                     request.header(HttpHeader.AUTHORIZATION, "Bearer " + this.authtok);
                 }
                 if (payload != null) {
-                    request.content(new StringContentProvider(payload));
+                    String bt = (bodyType == null) ? "text/plain" : bodyType;
+                    request.content(new StringContentProvider(payload), bt);
                 }
                 for (int idx = 0; idx < 2; idx++) {
                     try {
@@ -388,6 +391,7 @@ public class frigateSVRHTTPHelper {
                             r.raw = jsonrq.getBytes();
                             r.message = new String("ok");
                             r.type = response.getHeaders().get(HttpHeader.CONTENT_TYPE);
+                            break;
                         } else {
                             if ((response.getStatus() == HttpStatus.UNAUTHORIZED_401)) {
                                 if (this.authNeeded) {
@@ -410,6 +414,7 @@ public class frigateSVRHTTPHelper {
                     } catch (TimeoutException e) {
                         r.message = String.format("TimeoutException: Call to Frigate Server timed out after %d msec",
                                 timeout);
+                        logger.error("timeout in POST: message: {}", e.getMessage());
                         break;
                     } catch (ExecutionException e) {
                         r.message = String.format("ExecutionException: %s", e.getMessage());

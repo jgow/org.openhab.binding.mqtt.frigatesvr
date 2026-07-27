@@ -34,21 +34,21 @@ public class ResultStruct {
     public ResultStruct() {
         this.rc = false;
         this.message = "result uninitialized";
-        this.type="";
+        this.type = "";
         this.raw = new byte[0];
     }
 
     public ResultStruct(boolean rc, String desc) {
         this.rc = rc;
         this.message = desc;
-        this.type="";
+        this.type = "";
         this.raw = new byte[0];
     }
 
     public ResultStruct(boolean rc, String desc, byte[] raw) {
         this.rc = rc;
         this.message = desc;
-        this.type="";
+        this.type = "";
         this.raw = raw;
     }
 
@@ -56,6 +56,11 @@ public class ResultStruct {
         Map<String, Object> rc = new HashMap<>();
         rc.put("rc", this.rc);
         rc.put("message", this.message);
+        if (this.type.equals("application/json")) {
+            rc.put("result", new String(this.raw));
+        } else {
+            rc.put("result", "");
+        }
         return rc;
     }
 }
