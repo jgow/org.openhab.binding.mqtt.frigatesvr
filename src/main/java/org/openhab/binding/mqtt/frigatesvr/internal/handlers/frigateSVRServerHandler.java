@@ -68,7 +68,8 @@ import com.google.gson.Gson;
  */
 
 @NonNullByDefault
-public class frigateSVRServerHandler extends BaseBridgeHandler implements MqttMessageSubscriber {
+public class frigateSVRServerHandler extends BaseBridgeHandler
+        implements MqttMessageSubscriber, frigateSVRActionProcessor {
 
     private final Logger logger = LoggerFactory.getLogger(frigateSVRServerHandler.class);
 
@@ -189,6 +190,15 @@ public class frigateSVRServerHandler extends BaseBridgeHandler implements MqttMe
         logger.debug("server-thing: stopping streaming server (disposal)");
         this.httpServlet.StopServer();
         super.dispose();
+    }
+
+    ///////////////////////////////////////////////////////////////////
+    /// getAPIHelper
+    ///
+    /// Returns the API helper(for cameras)
+
+    APIHelper getAPIHelper() {
+        return this.apiHelper;
     }
 
     ///////////////////////////////////////////////////////////////////
@@ -537,24 +547,46 @@ public class frigateSVRServerHandler extends BaseBridgeHandler implements MqttMe
         return trackedObjs;
     }
 
-    ///////////////////////////////////////////////////////////////////////////
-    // APICall
+    ///////////////////////////////////////////////////////////////////
+    // SendActionEvent
     //
-    // This is a function called by cameras to access the API, normally
-    // as a result of ThingActions but also to retrieve key information.
+    // Process an action event.
+    //
+    // This changes in v3.x.
+    // Firstly many of the calls no longer need to be asynchronous.
+    // Secondly, the processing is carried out in the ThingAction API
+    // which then calls camera (MQTT) or server APIs (HTTP) as necessary
+    //
+    // Server ThingActions are only processed by the server handler,
+    // we may not exist if only a server handler is present in the system
 
-    public ResultStruct APICall(String camera, String command, String payload) {
+    public ResultStruct SendActionEvent(APIBase action) {
+
         ResultStruct rc = new ResultStruct();
 
-        switch (command) {
-
-            default:
-                rc.message = "unknown API call";
-                rc.rc = false;
+        do {
+            rc = action.Validate();
+            if (!rc.rc) {
                 break;
-        }
-
+            }
+            rc = action.Process(this.getAPIHelper(), this);
+        } while (false);
         return rc;
+    }
+
+    ////////////////////////////////////////////////
+    // SendMQTTCommand
+    //
+    // Send an MQTT string to the Frigate server.
+
+    public void SendMQTTCommand(String suffix, String command) {
+        MqttBrokerConnection conn = this.MQTTConnection;
+        logger.debug("Process command: mqttConnection != null?: {}", conn != null);
+        if (conn != null) {
+            String topic = this.svrState.pfxSvrMsg + "/" + suffix;
+            logger.debug("Sending command to topic: {} command: {}", topic, command.getBytes());
+            conn.publish(topic, command.getBytes(), 1, false);
+        }
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -568,9 +600,6 @@ public class frigateSVRServerHandler extends BaseBridgeHandler implements MqttMe
     public ResultStruct handleActions(APIBase action) {
 
         // Rewritten in 3.x
-
-        MqttBrokerConnection conn = (@NonNull MqttBrokerConnection) MQTTConnection;
-
         // If this call came in from the camera, the ThingAction call will
         // have the camera set. If it is a server ThingAction, it will npt.
         // However, the only way this function can be called is either from
@@ -578,7 +607,7 @@ public class frigateSVRServerHandler extends BaseBridgeHandler implements MqttMe
         // processor - so we can be sure we can't get called out of turn.
 
         logger.debug("processing ThingAction");
-        return action.Process(new APIHelper(httpHelper), conn);
+        return action.Process(this.apiHelper, this);
     }
 
     ///////////////////////////////////////////////////////////////////

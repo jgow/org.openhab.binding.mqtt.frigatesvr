@@ -35,6 +35,7 @@ import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.DASHStream;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.HLSStream;
 import org.openhab.binding.mqtt.frigatesvr.internal.servlet.streams.MJPEGStream;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIBase;
+import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.CameraPTZCaps;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRCameraConfiguration;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRChannelState;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRFrigateConfig.frigateSVRFrigateConfigBlock;
@@ -72,7 +73,8 @@ import com.google.gson.JsonParser;
  * @author J Gow - Initial contribution
  */
 @NonNullByDefault
-public class frigateSVRCameraHandler extends BaseThingHandler implements MqttMessageSubscriber {
+public class frigateSVRCameraHandler extends BaseThingHandler
+        implements MqttMessageSubscriber, frigateSVRActionProcessor {
 
     private final Logger logger = LoggerFactory.getLogger(frigateSVRCameraHandler.class);
     private frigateSVRCameraConfiguration config = new frigateSVRCameraConfiguration();
@@ -85,6 +87,10 @@ public class frigateSVRCameraHandler extends BaseThingHandler implements MqttMes
     private frigateSVRHTTPHelper httpHelper = new frigateSVRHTTPHelper();
     private Map<String, frigateSVRChannelState> Channels = new HashMap<String, frigateSVRChannelState>();
     private frigateSVRServlet httpServlet;
+
+    // PTZ caps for the camera
+
+    private CameraPTZCaps PTZCaps = new CameraPTZCaps();
 
     // list of tracked objects; updated from server when Thing is onlined
 
@@ -493,6 +499,15 @@ public class frigateSVRCameraHandler extends BaseThingHandler implements MqttMes
     }
 
     ///////////////////////////////////////////////////////////////////
+    // GetPTZCaps
+    //
+    // Return the PTZ caps for the camera
+
+    public CameraPTZCaps GetPTZCaps() {
+        return this.PTZCaps;
+    }
+
+    ///////////////////////////////////////////////////////////////////
     // GetHostAndPort
     //
     // Return the host and port of the attached Frigate server
@@ -536,7 +551,7 @@ public class frigateSVRCameraHandler extends BaseThingHandler implements MqttMes
                         String payload = ((@NonNull frigateSVRChannelState) this.Channels.get(channelUID.getId()))
                                 .toMQTT();
                         logger.debug("Setting channel {} to {}", channelUID.getId(), payload);
-                        ProcessCommand(s.MQTTTopicSuffix, payload);
+                        SendMQTTCommand(s.MQTTTopicSuffix, payload);
                     }
                 }
             }
@@ -575,13 +590,14 @@ public class frigateSVRCameraHandler extends BaseThingHandler implements MqttMes
             }
 
             action.SetCamera(config.cameraName);
-            frigateSVRServerHandler serverHandler = (frigateSVRServerHandler) serverBridgeHandler;
             rc = action.Validate();
             if (!rc.rc) {
                 break;
             }
 
-            rc = serverHandler.handleActions(action);
+            frigateSVRServerHandler serverHandler = (frigateSVRServerHandler) serverBridgeHandler;
+
+            rc = action.Process(serverHandler.getAPIHelper(), this);
 
         } while (false);
         return rc;
@@ -629,6 +645,7 @@ public class frigateSVRCameraHandler extends BaseThingHandler implements MqttMes
 
                 this.svrState = fb.GetServerState();
                 this.trackedObjects = fb.GetTrackedObjectList();
+                this.PTZCaps = fb.getAPIHelper().GetCameraPTZCaps(this.config.cameraName);
 
                 // subscribe to MQTT, start the camera stream, and flag us online
 
@@ -683,11 +700,11 @@ public class frigateSVRCameraHandler extends BaseThingHandler implements MqttMes
     }
 
     ////////////////////////////////////////////////
-    // ProcessCommand
+    // SendMQTTCommand
     //
     // Send an MQTT string to the Frigate server.
 
-    private void ProcessCommand(String suffix, String command) {
+    public void SendMQTTCommand(String suffix, String command) {
         MqttBrokerConnection conn = this.MQTTConnection;
         logger.debug("Process command: mqttConnection != null?: {}", conn != null);
         if (conn != null) {

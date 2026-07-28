@@ -12,14 +12,12 @@
  */
 package org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI;
 
-import static org.openhab.binding.mqtt.frigatesvr.internal.frigateSVRBindingConstants.*;
-
 import java.util.Iterator;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.openhab.binding.mqtt.frigatesvr.internal.handlers.frigateSVRActionProcessor;
 import org.openhab.binding.mqtt.frigatesvr.internal.helpers.ResultStruct;
-import org.openhab.core.io.transport.mqtt.MqttBrokerConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,7 +64,7 @@ public abstract class APIBase {
         return this.payload;
     }
 
-    public abstract ResultStruct Process(APIHelper apiHelper, MqttBrokerConnection connection);
+    public abstract ResultStruct Process(APIHelper apiHelper, frigateSVRActionProcessor connection);
 
     public abstract ResultStruct Validate();
 
@@ -95,33 +93,6 @@ public abstract class APIBase {
         }
         return rc;
     }
-
-    // protected void PublishResultWithImage(MqttBrokerConnection conn, String topicPrefix, ResultStruct rc) {
-
-    // A bit different. Here the raw data from the Frigate API contains an image,
-    // which we must post to a different endpoint. This will only be necessary if the
-    // result is successful. If successful, the message just contains the ok string
-    // from the HTTP call.
-
-    // if (rc.rc) {
-    // if (rc.raw.length > 0) {
-    // // the return is an image - we post this to the camera's image channel
-    // String imagePrefix = topicPrefix + "/" + MQTT_CAMIMAGERESULT;
-    // logger.debug("publishing image to {}", imagePrefix);
-    // conn.publish(imagePrefix, rc.raw, 1, false);
-    // }
-    // } else {
-    // logger.error("{}", rc.message);
-    // }
-
-    // In this case, rc.raw will contain an image, we only need to post the
-    // message to the result block
-
-    // String camTopicPrefix = topicPrefix + "/" + MQTT_CAMACTIONRESULT;
-    // String errFormat = String.format("{\"success\":%s,\"message\":\"%s\"}", (rc.rc) ? "true" : "false", rc.message);
-    // logger.debug("server - publishing result block to {}", camTopicPrefix);
-    // conn.publish(camTopicPrefix, errFormat.getBytes(), 1, false);
-    // }
 
     ///////////////////////////////////////////////////////////////////////////
     /// CheckValidJSON

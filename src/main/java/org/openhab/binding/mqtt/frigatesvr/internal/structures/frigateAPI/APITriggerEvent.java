@@ -14,8 +14,8 @@ package org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.openhab.binding.mqtt.frigatesvr.internal.handlers.frigateSVRActionProcessor;
 import org.openhab.binding.mqtt.frigatesvr.internal.helpers.ResultStruct;
-import org.openhab.core.io.transport.mqtt.MqttBrokerConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +38,7 @@ public class APITriggerEvent extends APIBase {
     }
 
     @Override
-    public ResultStruct Process(APIHelper apiHelper, MqttBrokerConnection connection) {
+    public ResultStruct Process(APIHelper apiHelper, frigateSVRActionProcessor ap) {
         return apiHelper.TriggerEvent(cam, label, payload);
     }
 

@@ -24,6 +24,7 @@ import org.openhab.binding.mqtt.frigatesvr.internal.helpers.ResultStruct;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIGetLastFrame;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIGetRecordingSummary;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIGetThumbnail;
+import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APIPtz;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.APITriggerEvent;
 import org.openhab.core.automation.annotation.ActionInput;
 import org.openhab.core.automation.annotation.ActionOutput;
@@ -218,4 +219,39 @@ public class CameraActions implements ThingActions {
             throw new IllegalArgumentException("Instance is not a CameraActions class.");
         }
     }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // PTZ
+    //
+    // Send PTZ information to the camera
+    // One argument
+    //
+    // Static member function is provided for older OH variants.
+
+    @RuleAction(label = "PTZ", description = "Control PTZ camera")
+    @ActionOutput(name = "rc", label = "@text/action.PTZ.rc.label", description = "@text/action.PTZ.rc.description", type = "java.util.List<String>")
+    @ActionOutput(name = "message", label = "@text/action.PTZ.desc.label", description = "@text/action.PTZ.desc.description", type = "java.util.List<String>")
+    public Map<String, Object> PTZ(
+            @ActionInput(name = "direction", label = "@text/action.ptz.dir.label", description = "@text/action.ptz.dir.description") @Nullable String param) {
+        ResultStruct rc = new ResultStruct();
+        if (this.handler != null) {
+            logger.debug("PTZ action triggered: label {}", param);
+            if (param != null) {
+                rc = this.handler.SendActionEvent(new APIPtz(param, this.handler.GetPTZCaps()));
+            } else {
+                rc.message = "error: PTZ direction is null";
+            }
+        } else {
+            rc.message = "action not processed; no handler";
+        }
+        return rc.toMap();
+    }
+
+    // public static Map<String, Object> PTZ(@Nullable ThingActions actions, @Nullable String eventLabel) {
+    // if (actions instanceof CameraActions) {
+    // return ((CameraActions) actions).GetThumbnail(eventLabel);
+    // } else {
+    // throw new IllegalArgumentException("Instance is not a CameraActions class.");
+    // }
+    // }
 }

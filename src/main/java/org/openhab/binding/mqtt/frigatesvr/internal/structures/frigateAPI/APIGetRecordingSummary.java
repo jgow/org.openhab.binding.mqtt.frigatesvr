@@ -13,8 +13,8 @@
 package org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.openhab.binding.mqtt.frigatesvr.internal.handlers.frigateSVRActionProcessor;
 import org.openhab.binding.mqtt.frigatesvr.internal.helpers.ResultStruct;
-import org.openhab.core.io.transport.mqtt.MqttBrokerConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +34,7 @@ public class APIGetRecordingSummary extends APIBase {
     }
 
     @Override
-    public ResultStruct Process(APIHelper apiHelper, MqttBrokerConnection connection) {
+    public ResultStruct Process(APIHelper apiHelper, frigateSVRActionProcessor ap) {
         return apiHelper.GetRecordingSummary(cam, payload);
     }
 

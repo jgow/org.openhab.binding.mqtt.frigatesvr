@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.mqtt.frigatesvr.internal.helpers.ResultStruct;
 import org.openhab.binding.mqtt.frigatesvr.internal.helpers.frigateSVRHTTPHelper;
 import org.slf4j.Logger;
@@ -144,5 +145,43 @@ public class APIHelper {
     public ResultStruct GetEventThumbnail(String event) {
         String apiCall = "/api/" + event + "/latest.jpg";
         return httpHelper.runGet(apiCall);
+    }
+
+    /////////////////////////////////////////////////////////////////
+    /// GetCameraPTZCaps
+    ///
+    /// Get the PTZ capabilities for a given camera
+    ///
+
+    public CameraPTZCaps GetCameraPTZCaps(String camera) {
+
+        CameraPTZCaps c = new CameraPTZCaps();
+
+        ResultStruct r = httpHelper.runGet("/api/" + camera + "/ptz/info");
+        if (r.rc) {
+            try {
+                Gson gson = new Gson();
+                CameraPTZCaps cl = gson.fromJson(new String(r.raw), CameraPTZCaps.class);
+                if (cl == null) {
+                    c = new CameraPTZCaps();
+                    r.rc = true;
+                    r.message = "camera does not support PTZ";
+                } else {
+                    c = cl;
+                }
+            } catch (Exception e) {
+                r.rc = false;
+                @Nullable
+                String a = e.getMessage();
+                if (a != null) {
+                    r.message = a;
+                } else {
+                    r.message = "";
+                }
+            }
+        } else {
+            logger.error("getCameraPTZCaps: failed to retrieve info (rc={})", r.message);
+        }
+        return c;
     }
 }
