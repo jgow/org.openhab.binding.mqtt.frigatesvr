@@ -68,6 +68,9 @@ public class frigateSVRBindingConstants {
 
     public static final String CHANNEL_LAST_SNAPSHOT_OBJECT = "fgLastSnapshotObject";
     public static final String CHANNEL_LAST_SNAPSHOT = "fgLastSnapshot";
+    public static final String CHANNEL_ACTION_LAST_FRAME = "fgActionLastFrame";
+    public static final String CHANNEL_ACTION_EVENT_THUMBNAIL = "fgActionEventThumbnail";
+
     public static final String CHANNEL_CAM_ACTION_RESULT = "fgCamActionResult";
     public static final String CHANNEL_LAST_FRAME = "fgLastProcessedFrame";
 

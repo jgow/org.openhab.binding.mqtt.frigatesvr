@@ -19,17 +19,22 @@ import java.util.Map;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 
 /**
- * The {@link ResultStruct} class is a result return for API calls
+ * The {@link ResultStruct} class is a result return for API and ThingAction
+ * calls
  *
  * @author J Gow - Initial contribution
  */
 
 @NonNullByDefault
 public class ResultStruct {
-    public boolean rc;
-    public String message;
-    public String type;
-    public byte[] raw;
+
+    public boolean rc; // return code
+    public String message; // return message
+    public String type; // MIME type
+    public byte[] raw; // raw data
+
+    ////////////////////////////////////////////////////////////////////
+    /// Constructor - default is an error conditon
 
     public ResultStruct() {
         this.rc = false;
@@ -51,6 +56,12 @@ public class ResultStruct {
         this.type = "";
         this.raw = raw;
     }
+
+    /////////////////////////////////////////////////////////////////////////
+    // toMap
+    //
+    // Used by ThingActions. Currently only the return code and message
+    // are used, with the raw data being returned by an item update.
 
     public Map<String, Object> toMap() {
         Map<String, Object> rc = new HashMap<>();

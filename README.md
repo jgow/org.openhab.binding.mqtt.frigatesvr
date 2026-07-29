@@ -1,10 +1,5 @@
 # OpenHAB Frigate NVR Binding
 
-$${\color{red}WARNING - This \space is \space a \space development \space branch. \space It \space is \space unstable. \space It \space may \space not \space build,}$$
-$${\color{red}and \space even \space if \space it \space does \space it \space should \space not \space be \space used \space in \space production \space environments}$$
-$${\color{red}Please \space use \space the \space 'main' \space branch for \space current \space versions.}$$
-$${\color{red}However, \space PRs \space welcome.}$$
-
 This is a comprehensive binding for the Frigate NVR system <https://docs.frigate.video/>. It allows access to all configured
 cameras, and realtime event information from the cameras can be used in rules. It tracks Frigate server status and can alert
 if the Frigate server goes offline.
@@ -25,7 +20,7 @@ The binding supports:
 
 ## Versions:
 
-See CHANGELOG.md
+See CHANGELOG.md. Note BREAKING CHANGES in v3.x from previous versions. These may require you to re-create your Things, but once this is complete and the new channels linked, the binding should work as before, with enhancements!
 
 ## Philosophy
 
@@ -188,6 +183,7 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 | fgUI               | String | R/O         | URL to the Frigate UI for this server (useful for openHAB UI widgets)                                 |
 | fgAPIForwarderURL  | String | R/O         | URL to the API forwarder - allowing UI widgets to access the Frigate API from a local server instance |
 | fgBirdseyeURL      | String | R/O         | URL to the openHAB stream for the Frigate 'birdseye' view (if enabled)                                |
+| fgTrackedObjects   | String | R/O         | JSON array of object types tracked by Frigate                                                         |
 
 #### Notes
 
@@ -215,8 +211,6 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 | fgStreamURL           | String   | R/O         | URL to local camera streams for UIs (if enabled)              |
 | fgLastSnapshotObject  | String   | R/O         | Type of object detected in last snapshot                      |
 | fgLastSnapshot        | Image    | R/O         | Snapshot of last detected object                              |
-| fgCamActionResult     | String   | R/O         | JSON string containing result of Frigate API call through CameraAction |
-| fgLastProcessedFrame  | Image    | R/O         | If the return from a Camera ThingAction is an image, it will appear here |
 | fgEventJSON           | String   | R/O         | Full JSON string containing the event                         |
 | fgEventType           | String   | R/O         | Current event type ('new', 'update' or 'end')                 |
 | fgEventClipURL        | String   | R/O         | Full URL to the clip of the current event                     |
@@ -262,6 +256,8 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 | fgCurMotionlessCount  | Number   | R/O         | Current event: Number of motionless frames                    |
 | fgCurPositionChanges  | Number   | R/O         | Current event: Number of position changes                     |
 | fgCurMaxSeverity      | String   | R/O         | Current event: ('alert' or 'detection')                       |
+| fgActionLastFrame     | Image    | R/O         | Return from Camera ThingAction GetLastFrame                   |
+| fgActionThumbnail     | Image    | R/O         | Return from Camera ThingAction GetThumbnail                   |
 
 #### Notes
 
@@ -328,6 +324,8 @@ actions:
         items.getItem("PersonCount").postUpdate(this.map.size);
     type: script.ScriptAction
 ```
+
+This methodology will still work in v3.x, however it is much simpler now to watch fgObjCount for changes and use these to control your items!
 
 ## Displaying Frigate camera video streams in OpenHAB UI Example
 

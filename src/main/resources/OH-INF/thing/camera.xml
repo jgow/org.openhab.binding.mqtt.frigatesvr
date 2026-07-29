@@ -30,7 +30,6 @@
 			<channel id="fgStreamURL" typeId="fgStreamURL"/>
 			<channel id="fgLastSnapshotObject" typeId="fgLastSnapshotObject"/>
 			<channel id="fgLastSnapshot" typeId="fgLastSnapshot"/>
-			<channel id="fgCamActionResult" typeId="fgCamActionResult"/>
 			<channel id="fgEventJSON" typeId="fgEventJSON"/>
 			<channel id="fgEventType" typeId="fgEventType"/>
 			<channel id="fgEventID" typeId="fgEventID"/>
@@ -77,7 +76,8 @@
 			<channel id="fgCurMotionlessCount" typeId="fgCurMotionlessCount"/>
 			<channel id="fgCurPositionChanges" typeId="fgCurPositionChanges"/>
 			<channel id="fgCurMaxSeverity" typeId="fgCurMaxSeverity"/>
-			<channel id="fgLastProcessedFrame" typeId="fgLastProcessedFrame"/>
+			<channel id="fgActionLastFrame" typeId="fgActionLastFrame"/>
+			<channel id="fgActionEventThumbnail" typeId="fgActionEventThumbnail"/>
 			<channel id="fgObjCount" typeId="fgObjCount"/>
 			<channel id="fgObjCountActive" typeId="fgObjCountActive"/>
 		</channels>
@@ -184,11 +184,6 @@
 		<item-type>String</item-type>
 		<label>@text/channel.eventClipURL</label>
 		<description>@text/channel.eventClipURL.description</description>
-	</channel-type>
-	<channel-type id="fgCamActionResult">
-		<item-type>String</item-type>
-		<label>@text/channel.camActionResult</label>
-		<description>@text/channel.camActionResult.description</description>
 	</channel-type>
 	<channel-type id="fgObjCount">
 		<item-type>String</item-type>
@@ -416,9 +411,14 @@
 		<label>@text/channel.currentMaxSeverity</label>
 		<description>@text/channel.currentMaxSeverity.description</description>
 	</channel-type>
-	<channel-type id="fgLastProcessedFrame">
+	<channel-type id="fgActionLastFrame">
 		<item-type>Image</item-type>
-		<label>@text/channel.lastProcessedFrame</label>
-		<description>@text/channel.lastProcessedFrame.description</description>
+		<label>@text/channel.ActionLastFrame</label>
+		<description>@text/channel.ActionLastFrame.description</description>
+	</channel-type>
+	<channel-type id="fgActionEventThumbnail">
+		<item-type>Image</item-type>
+		<label>@text/channel.ActionEventThumbnail</label>
+		<description>@text/channel.ActionEventThumbnail.description</description>
 	</channel-type>
 </thing:thing-descriptions>

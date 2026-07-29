@@ -29,7 +29,21 @@
 - Version 2.2
   - Channel updates
   - Documentation updates.
-
-- V3.x development branch (UNSTABLE)
-  - In work.
+- Version 3.0
+  - BREAKING CHANGES: This version introduces a completely new architecture for camera Things and server Things that is much 'cleaner' and should improve performance. New channels are available, and new ThingActions have been added.
+    - Upgrading to 3.x versions will almost certainly require you to re-create your Things.
+    - New architecture for inter-Thing communication - the server Thing now acts as a bridge, sitting on top of MQTT. Cameras are children of the server Bridge. Basic operation should be unchanged.
+    - New channels
+      - Server Thing
+        - fgTrackedObjects: list of tracked objects
+      - Camera Thing
+        - fgActionLastFrame: channel carrying result of ThingAction GetLastFrame
+        - fgActionEventThumbnail: channel carrying result of ThingAction GetThumbnail
+        - fgObjCount: Returns a count of total objects being tracked, by type. This makes using the camera as a sensor to turn on security lights much more straightforward.
+        - fgObjCountActive: Returns a count of active objects, by type. This can aid integration into a security system
+    - New Camera ThingActions
+      - PTZ: allows camera PTZ to be controlled via a ThingAction
+    - ThingAction cleanups
+      - ThingActions are no longer asynchronous.
+      - GetLastFrame and TriggerEvent have been clarified
   

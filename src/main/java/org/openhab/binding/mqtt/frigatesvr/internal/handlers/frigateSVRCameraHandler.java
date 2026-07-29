@@ -364,17 +364,20 @@ public class frigateSVRCameraHandler extends BaseThingHandler
                 Map.entry(CHANNEL_STREAM_URL,
                         new frigateSVRChannelState("", frigateSVRChannelState::fromStringMQTT,
                                 frigateSVRChannelState::toStringMQTT, false)),
-                Map.entry(CHANNEL_CAM_ACTION_RESULT,
-                        new frigateSVRChannelState("", frigateSVRChannelState::fromStringMQTT,
-                                frigateSVRChannelState::toStringMQTT, false)),
                 Map.entry(CHANNEL_LAST_FRAME,
                         new frigateSVRChannelState("", frigateSVRChannelState::fromNoConversion,
                                 frigateSVRChannelState::toNoConversion, false)),
                 Map.entry(CHANNEL_OBJ_COUNT,
                         new frigateSVRChannelState("", frigateSVRChannelState::fromStringMQTT,
                                 frigateSVRChannelState::toStringMQTT, false)),
-                Map.entry(CHANNEL_OBJ_COUNT_ACTIVE, new frigateSVRChannelState("",
-                        frigateSVRChannelState::fromStringMQTT, frigateSVRChannelState::toStringMQTT, false)));
+                Map.entry(CHANNEL_OBJ_COUNT_ACTIVE,
+                        new frigateSVRChannelState("", frigateSVRChannelState::fromStringMQTT,
+                                frigateSVRChannelState::toStringMQTT, false)),
+                Map.entry(CHANNEL_ACTION_LAST_FRAME,
+                        new frigateSVRChannelState("", frigateSVRChannelState::fromNoConversion,
+                                frigateSVRChannelState::toNoConversion, false)),
+                Map.entry(CHANNEL_ACTION_EVENT_THUMBNAIL, new frigateSVRChannelState("",
+                        frigateSVRChannelState::fromNoConversion, frigateSVRChannelState::toNoConversion, false)));
 
         // Required for frigate re-streams
 

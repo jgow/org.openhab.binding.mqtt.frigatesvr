@@ -76,7 +76,6 @@ public class CameraActions implements ThingActions {
     // API, but not for the server to call into the camera (unless we maintain
     // a registry of bridge children.
     //
-    // Static member function is provided for older OH variants.
 
     @RuleAction(label = "TriggerEvent", description = "@text/action.TriggerEvent.description")
     @ActionOutput(name = "rc", label = "@text/action.TriggerEvent.rc.label", description = "@text/action.TriggerEvent.rc.description", type = "java.util.List<String>")
@@ -97,15 +96,6 @@ public class CameraActions implements ThingActions {
             rc.message = "action not processed; no handler";
         }
         return rc.toMap();
-    }
-
-    public static Map<String, Object> TriggerEvent(@Nullable ThingActions actions, @Nullable String eventLabel,
-            @Nullable String eventParams) {
-        if (actions instanceof CameraActions) {
-            return ((CameraActions) actions).TriggerEvent(eventLabel, eventParams);
-        } else {
-            throw new IllegalArgumentException("Instance is not a CameraActions class.");
-        }
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -130,7 +120,7 @@ public class CameraActions implements ThingActions {
             rc = this.handler.SendActionEvent(new APIGetLastFrame());
             if (rc.rc) {
                 // we need to update the image state in this handler.
-                this.handler.UpdateChannel(CHANNEL_LAST_FRAME, rc);
+                this.handler.UpdateChannel(CHANNEL_ACTION_LAST_FRAME, rc);
             } else {
                 logger.error("API not successful: {}", rc.message);
             }
@@ -138,14 +128,6 @@ public class CameraActions implements ThingActions {
             rc.message = "action not processed; no handler";
         }
         return rc.toMap();
-    }
-
-    public static Map<String, Object> GetLastFrame(@Nullable ThingActions actions, @Nullable String params) {
-        if (actions instanceof CameraActions) {
-            return ((CameraActions) actions).GetLastFrame();
-        } else {
-            throw new IllegalArgumentException("Instance is not a CameraActions class.");
-        }
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -171,14 +153,6 @@ public class CameraActions implements ThingActions {
         return rc.toMap();
     }
 
-    public static Map<String, Object> GetRecordingSummary(@Nullable ThingActions actions, @Nullable String params) {
-        if (actions instanceof CameraActions) {
-            return ((CameraActions) actions).GetRecordingSummary();
-        } else {
-            throw new IllegalArgumentException("Instance is not a CameraActions class.");
-        }
-    }
-
     ///////////////////////////////////////////////////////////////////////////
     // GetThumbnail
     //
@@ -201,7 +175,7 @@ public class CameraActions implements ThingActions {
                 rc = this.handler.SendActionEvent(new APIGetThumbnail(eventLabel));
                 if (rc.rc) {
                     // we need to update the image state in this handler.
-                    this.handler.UpdateChannel(CHANNEL_LAST_FRAME, rc);
+                    this.handler.UpdateChannel(CHANNEL_ACTION_EVENT_THUMBNAIL, rc);
                 }
             } else {
                 rc.message = "error: event ID label is null";
@@ -210,14 +184,6 @@ public class CameraActions implements ThingActions {
             rc.message = "action not processed; no handler";
         }
         return rc.toMap();
-    }
-
-    public static Map<String, Object> GetThumbnail(@Nullable ThingActions actions, @Nullable String eventLabel) {
-        if (actions instanceof CameraActions) {
-            return ((CameraActions) actions).GetThumbnail(eventLabel);
-        } else {
-            throw new IllegalArgumentException("Instance is not a CameraActions class.");
-        }
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -229,10 +195,10 @@ public class CameraActions implements ThingActions {
     // Static member function is provided for older OH variants.
 
     @RuleAction(label = "PTZ", description = "Control PTZ camera")
-    @ActionOutput(name = "rc", label = "@text/action.PTZ.rc.label", description = "@text/action.PTZ.rc.description", type = "java.util.List<String>")
-    @ActionOutput(name = "message", label = "@text/action.PTZ.desc.label", description = "@text/action.PTZ.desc.description", type = "java.util.List<String>")
+    @ActionOutput(name = "rc", label = "@text/action.PTZ.rc.label", description = "@text/action.PTZ.rc.description", type = "String")
+    @ActionOutput(name = "message", label = "@text/action.PTZ.desc.label", description = "@text/action.PTZ.desc.description", type = "String")
     public Map<String, Object> PTZ(
-            @ActionInput(name = "direction", label = "@text/action.ptz.dir.label", description = "@text/action.ptz.dir.description") @Nullable String param) {
+            @ActionInput(name = "direction", label = "@text/action.ptz.operation.label", description = "@text/action.ptz.operation.description") @Nullable String param) {
         ResultStruct rc = new ResultStruct();
         if (this.handler != null) {
             logger.debug("PTZ action triggered: label {}", param);
@@ -242,16 +208,8 @@ public class CameraActions implements ThingActions {
                 rc.message = "error: PTZ direction is null";
             }
         } else {
-            rc.message = "action not processed; no handler";
+            rc.message = "PTZ action not processed; no handler";
         }
         return rc.toMap();
     }
-
-    // public static Map<String, Object> PTZ(@Nullable ThingActions actions, @Nullable String eventLabel) {
-    // if (actions instanceof CameraActions) {
-    // return ((CameraActions) actions).GetThumbnail(eventLabel);
-    // } else {
-    // throw new IllegalArgumentException("Instance is not a CameraActions class.");
-    // }
-    // }
 }

@@ -41,13 +41,9 @@ public class APIPtz extends APIBase {
 
     @Override
     public ResultStruct Process(APIHelper apiHelper, frigateSVRActionProcessor ap) {
-        ResultStruct rc = new ResultStruct();
-        // This is an MQTT action
-        // connection.publish(cam, null, 0, false)
+        // This is an MQTT action - no return value.
         ap.SendMQTTCommand("ptz", this.payload);
-        rc.rc = true;
-        rc.message = "ok";
-        return rc;
+        return new ResultStruct(true, "ok");
     }
 
     @Override
