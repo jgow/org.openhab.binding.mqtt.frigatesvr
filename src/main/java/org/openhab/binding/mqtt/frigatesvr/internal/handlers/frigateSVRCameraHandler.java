@@ -476,19 +476,25 @@ public class frigateSVRCameraHandler extends BaseThingHandler
     @Override
     public void bridgeStatusChanged(ThingStatusInfo bridgeStatusInfo) {
 
-        if (bridgeStatusInfo.getStatus() == ThingStatus.OFFLINE) {
-            MQTTConnection = null;
-            this.BridgeGoingOffline();
-            return;
-        }
-        if (bridgeStatusInfo.getStatus() != ThingStatus.ONLINE) {
-            MQTTConnection = null;
-            this.BridgeGoingOffline();
-            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
-            return;
-        }
+        Bridge bridge = getBridge();
+        BridgeHandler bridgeHandler = bridge.getHandler();
 
-        BridgeGoingOnline();
+        if (bridgeHandler instanceof frigateSVRServerHandler) {
+
+            if (bridgeStatusInfo.getStatus() == ThingStatus.OFFLINE) {
+                MQTTConnection = null;
+                this.BridgeGoingOffline();
+                return;
+            }
+            if (bridgeStatusInfo.getStatus() != ThingStatus.ONLINE) {
+                MQTTConnection = null;
+                this.BridgeGoingOffline();
+                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
+                return;
+            } else {
+                BridgeGoingOnline();
+            }
+        }
     }
 
     ///////////////////////////////////////////////////////////////////
@@ -624,7 +630,7 @@ public class frigateSVRCameraHandler extends BaseThingHandler
 
     private void BridgeGoingOnline() {
 
-        logger.debug("camera {}: bridge going online", config.cameraName);
+        logger.info("camera {}: bridge going online", config.cameraName);
 
         Bridge bridge = getBridge();
 
@@ -914,8 +920,9 @@ public class frigateSVRCameraHandler extends BaseThingHandler
                 // for total counts is a complete mystery....and would simplify the code
 
                 if (bits.length >= 2) { // bits[0] is the prefix
-                    if (this.trackedObjects.contains(bits[1]) || bits[1].equals("all")) {
 
+                    if (this.trackedObjects.contains(bits[1]) || bits[1].equals("all")) {
+                        logger.info("camera: {}: have tracked object: {}", config.cameraName, bits[1]);
                         String MsgType = "totcount";
 
                         if (bits.length == 3) {

@@ -301,10 +301,10 @@ public class frigateSVRServerHandler extends BaseBridgeHandler
                 // update tracked objects.
 
                 try {
-                    trackedObjs = apiHelper.getTrackedObjects();
+                    this.trackedObjs = apiHelper.getTrackedObjects();
                     // drop this in our server channel for info
                     Gson gson = new Gson();
-                    String jsonArray = gson.toJson(trackedObjs);
+                    String jsonArray = gson.toJson(this.trackedObjs);
                     logger.info("Tracked objects: {}", jsonArray);
                     updateState(CHANNEL_TRACKEDOBJECTS,
                             ((@NonNull frigateSVRChannelState) (this.Channels.get(CHANNEL_TRACKEDOBJECTS)))
@@ -316,7 +316,7 @@ public class frigateSVRServerHandler extends BaseBridgeHandler
 
                 // cocked, locked and ready to rock..
 
-                logger.debug("onlining server thing");
+                logger.info("onlining Frigate server thing");
 
                 updateStatus(ThingStatus.ONLINE);
 
@@ -639,7 +639,8 @@ public class frigateSVRServerHandler extends BaseBridgeHandler
                 // it as a special case.
 
                 logger.debug("received 'online' message from Frigate server");
-                updateStatus(ThingStatus.ONLINE);
+                // we do not online the device here. Frigate sends this thing before
+                // the HTTP services are ready.
 
             }
             if (serverState.equals("offline")) {
