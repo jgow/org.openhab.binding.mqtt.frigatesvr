@@ -927,14 +927,14 @@ public class frigateSVRCameraHandler extends BaseThingHandler
                         switch (MsgType) {
 
                             case "totcount":
-                                objcount = new String("{ object : \"" + bits[1] + "\", count : " + state + "}");
+                                objcount = new String("{ \"object\" : \"" + bits[1] + "\", \"count\" : " + state + "}");
                                 this.updateState(CHANNEL_OBJ_COUNT,
                                         ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_OBJ_COUNT))
                                                 .toState(objcount));
                                 break;
 
                             case "active":
-                                objcount = new String("{ object : \"" + bits[1] + "\", count : " + state + "}");
+                                objcount = new String("{ \"object\" : \"" + bits[1] + "\", \"count\" : " + state + "}");
                                 this.updateState(CHANNEL_OBJ_COUNT_ACTIVE,
                                         ((@NonNull frigateSVRChannelState) this.Channels.get(CHANNEL_OBJ_COUNT_ACTIVE))
                                                 .toState(objcount));
