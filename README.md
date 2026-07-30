@@ -1,8 +1,10 @@
 # OpenHAB Frigate NVR Binding
 
 $${\color{red}NOTE - This \space is \space a \space legacy \space branch.}$$
-$${\color{red}This \space branch \space will \space not \space be \space developed \space further, \space though \space there \space may \space be \space infrequent \space bugfixes \space to \space support \space older \space OH \space versions. \space No \space new \space features \space will \space be \space added.}$$
-$${\color{red}Please \space use \space the \space 'main' \space branch for \space current \space versions, \space 3.x \space and \space above.}$$
+$${\color{red}This \space branch \space will \space not \space be \space developed \space further. }$$
+$${\color{red}There \space may \space be \space infrequent \space bugfixes \space to \space support \space older \space OH \space versions. \space No \space new \space features \space will \space be \space added.}$$
+$${\color{red}Please \space use \space the \space active \space branch, \space 'main' }$$
+$${\color{red}branch for \space current \space versions, \space 3.x \space and \space above.}$$
 
 This is a comprehensive binding for the [Frigate NVR system](https://docs.frigate.video/). It allows access to all configured
 cameras, and realtime event information from the cameras can be used in rules. It tracks Frigate server status and can alert
