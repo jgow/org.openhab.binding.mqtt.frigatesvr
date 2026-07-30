@@ -463,9 +463,8 @@ public class frigateSVRServerHandler extends BaseBridgeHandler
 
             logger.debug("enabling API forwarder");
 
-            APIBase = this.networkHelper.GetHostBaseURL() + serverBase + "/frigatesvr";
-            handlers.add(new FrigateAPIForwarder("frigatesvr", this.httpHelper));
-
+            APIBase = this.networkHelper.GetHostBaseURL() + serverBase + "/forwarder";
+            handlers.add(new FrigateAPIForwarder("forwarder", this.httpHelper));
         }
 
         if ((config.enableStream == true) && (this.frigateConfig.block.birdseye.enableRestream == true)) {

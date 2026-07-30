@@ -99,7 +99,7 @@ public class FrigateAPIForwarder extends HTTPHandler {
 
         try {
 
-            Request request = this.helper.GetFrigateRequest(GetAPIPathString(pathInfo, req));
+            Request request = this.helper.CreateFrigateRequest(GetAPIPathString(pathInfo, req));
             request.method(HttpMethod.POST);
 
             // copy the request headers over
@@ -123,7 +123,9 @@ public class FrigateAPIForwarder extends HTTPHandler {
             // send it
 
             request.content(new StringContentProvider(bs.toString()));
-            ContentResponse response = request.method(HttpMethod.POST).send();
+
+            ContentResponse response = this.helper.SendFrigateRequest(request);
+            // ContentResponse response = request.method(HttpMethod.POST).send();
 
             // do we need to keep the returned headers? Probably
 
@@ -141,8 +143,8 @@ public class FrigateAPIForwarder extends HTTPHandler {
             logger.info("response: {} {}", response.getStatus(), response.getReason());
 
         } catch (Exception e) {
-            resp.setStatus(500);
-            resp.sendError(500, "Operation not supported");
+            resp.setStatus(502);
+            resp.sendError(502, "Bad gateway");
             logger.warn("forwarder failed: {}", e.getMessage());
         }
     }
@@ -160,8 +162,8 @@ public class FrigateAPIForwarder extends HTTPHandler {
 
         try {
 
-            Request request = this.helper.GetFrigateRequest(GetAPIPathString(pathInfo, req));
-            request.method(HttpMethod.POST);
+            Request request = this.helper.CreateFrigateRequest(GetAPIPathString(pathInfo, req));
+            request.method(HttpMethod.GET);
 
             // copy the request headers over
 
@@ -180,7 +182,8 @@ public class FrigateAPIForwarder extends HTTPHandler {
 
             // send it
 
-            ContentResponse response = request.method(HttpMethod.GET).send();
+            ContentResponse response = this.helper.SendFrigateRequest(request);
+            // ContentResponse response = request.method(HttpMethod.GET).send();
 
             // do we need to keep the returned headers? Probably
 
@@ -217,8 +220,8 @@ public class FrigateAPIForwarder extends HTTPHandler {
 
         try {
 
-            Request request = this.helper.GetFrigateRequest(GetAPIPathString(pathInfo, req));
-            request.method(HttpMethod.POST);
+            Request request = this.helper.CreateFrigateRequest(GetAPIPathString(pathInfo, req));
+            request.method(HttpMethod.DELETE);
 
             // copy the request headers over
 
@@ -243,7 +246,8 @@ public class FrigateAPIForwarder extends HTTPHandler {
             // send it
 
             request.content(new StringContentProvider(bs.toString()));
-            ContentResponse response = request.method(HttpMethod.DELETE).send();
+            // ContentResponse response = request.method(HttpMethod.DELETE).send();
+            ContentResponse response = this.helper.SendFrigateRequest(request);
 
             // do we need to keep the returned headers? Probably
 
@@ -251,7 +255,7 @@ public class FrigateAPIForwarder extends HTTPHandler {
                 resp.setHeader(field.getName(), field.getValue());
             }
 
-            // POST can send us something back.
+            // DELETE can send us something back.
 
             RawType raw = new RawType(response.getContent(), response.getHeaders().get(HttpHeader.CONTENT_TYPE));
             ByteArrayInputStream is = new ByteArrayInputStream(raw.getBytes());
@@ -266,6 +270,11 @@ public class FrigateAPIForwarder extends HTTPHandler {
             logger.warn("forwarder failed: {}", e.getMessage());
         }
     }
+
+    /////////////////////////////////////////////////////////////////////////
+    // GetAPIPathString
+    //
+    // Attach query string to URL if not present in request
 
     private String GetAPIPathString(String pathInfo, HttpServletRequest req) {
         String urlString = pathInfo.substring(this.prefix.length());
