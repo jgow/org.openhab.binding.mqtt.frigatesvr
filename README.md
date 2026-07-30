@@ -1,9 +1,8 @@
 # OpenHAB Frigate SVR Binding
 
 $${\color{red}NOTE - This \space is \space a \space legacy \space branch.}$$
-$${\color{red}This \space branch \space will \space not \space be \space developed \space further. }$$
-$${\color{red}and \space will \space not \space be \space updated. \space It \space was \space provided}$$
-$${\color{red}to \space support \space specific \space older \space versions \space of \space OpenHAB \space which}$$
+$${\color{red}This \space branch \space will \space not \space be \space developed \space further \space and \space will \space not \space be \space updated. }$$
+$${\color{red}\space It \space was \space provided \space to \space support \space specific \space older \space versions \space of \space OpenHAB \space which}$$
 $${\color{red}have \space been \space superseded.}$$
 $${\color{red}Please \space use \space the \space active \space branch, \space 'main' }$$
 $${\color{red}for \space current \space versions, \space 3.x \space and \space above.}$$
