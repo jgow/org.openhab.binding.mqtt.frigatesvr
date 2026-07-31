@@ -90,6 +90,9 @@ public class frigateSVRServerHandler extends BaseBridgeHandler
     protected @Nullable MqttBrokerConnection MQTTConnection = null;
     protected frigateSVRNetworkHelper networkHelper;
 
+    private Map<String, String> MQTTGettersToChannels = Map
+            .ofEntries(Map.entry(MQTT_TRACKEDOBJUPDATE, CHANNEL_OBJ_TRACKED_OBJ_DESC));
+
     ///////////////////////////////////////////////////////////////////////////
     /// Constructor.
 
@@ -114,7 +117,10 @@ public class frigateSVRServerHandler extends BaseBridgeHandler
                 Map.entry(CHANNEL_BIRDSEYE_URL,
                         new frigateSVRChannelState(CHANNEL_BIRDSEYE_URL, frigateSVRChannelState::fromStringMQTT,
                                 frigateSVRChannelState::toStringMQTT, false)),
-                Map.entry(CHANNEL_TRACKEDOBJECTS, new frigateSVRChannelState(CHANNEL_TRACKEDOBJECTS,
+                Map.entry(CHANNEL_TRACKEDOBJECTS,
+                        new frigateSVRChannelState(CHANNEL_TRACKEDOBJECTS, frigateSVRChannelState::fromStringMQTT,
+                                frigateSVRChannelState::toStringMQTT, false)),
+                Map.entry(CHANNEL_OBJ_TRACKED_OBJ_DESC, new frigateSVRChannelState(CHANNEL_OBJ_TRACKED_OBJ_DESC,
                         frigateSVRChannelState::fromStringMQTT, frigateSVRChannelState::toStringMQTT, false)));
 
         this.networkHelper = new frigateSVRNetworkHelper(services);
@@ -133,13 +139,8 @@ public class frigateSVRServerHandler extends BaseBridgeHandler
 
         // Foreground initiation of the basics of HTTPClient. We need the stuff from the configuration.
 
-        String baseurl = config.serverURL;
-        if (!config.serverClientID.equals("")) {
-            baseurl += "/" + config.serverClientID;
-        }
-
-        this.httpHelper.configure(baseurl, config.HTTPTimeout, config.requireAuth, config.username, config.password,
-                config.allowSelfSigned);
+        this.httpHelper.configure(config.serverURL, config.HTTPTimeout, config.requireAuth, config.username,
+                config.password, config.allowSelfSigned);
 
         // build our server state block. Cameras may need some of this info.
 
@@ -150,17 +151,6 @@ public class frigateSVRServerHandler extends BaseBridgeHandler
         this.svrState.whitelist = config.streamWhitelist;
         this.svrState.ffmpegPath = config.ffmpegLocation;
         this.svrState.serverThingID = this.getThing().getUID().getAsString();
-
-        // MQTT PREFIXES
-        // -------------
-        //
-        // Prefix for messages originating from the frigate server itself
-        // This needs to be updated from Frigate server config for multiple
-        // Frigate server configurations
-        //
-        // topic_prefix/
-
-        this.svrState.pfxSvrMsg = "frigate"; // messages from Frigate server
 
         // mark us offline. Note that this gets updated once the deferred
         // initialization task has run, and the keepalives are operational.
@@ -186,7 +176,7 @@ public class frigateSVRServerHandler extends BaseBridgeHandler
             ((@NonNull ScheduledFuture<?>) servercheck).cancel(true);
             servercheck = null;
         }
-        UnsubscribeMQTTTopics(this.svrState.pfxSvrMsg);
+        UnsubscribeMQTTTopics(this.svrState.topicPrefix);
         logger.debug("server-thing: stopping streaming server (disposal)");
         this.httpServlet.StopServer();
         super.dispose();
@@ -208,6 +198,15 @@ public class frigateSVRServerHandler extends BaseBridgeHandler
 
     public frigateSVRFrigateConfiguration getFrigateConfig() {
         return this.frigateConfig;
+    }
+
+    ///////////////////////////////////////////////////////////////////
+    // GetServerConfig
+    //
+    // Return the server Thing configuration (for use by cameras)
+
+    public frigateSVRServerConfiguration GetServerConfig() {
+        return this.config;
     }
 
     ///////////////////////////////////////////////////////////////////
@@ -281,19 +280,72 @@ public class frigateSVRServerHandler extends BaseBridgeHandler
 
                 logger.debug("have configuration block");
 
+                // topic_prefix/
+                //
+                // the topic_prefix is pulled from the configuration later, when
+                // we have access to Frigate's HTTP API while we are onlining the
+                // server Thing
+                // We must retain this prefix as it may change in a multi-instance
+                // configuration
+
+                String old_topicPrefix = this.svrState.topicPrefix;
+                this.svrState.topicPrefix = frigateConfig.block.mqtt.topicPrefix;
+                if (this.svrState.topicPrefix.isBlank() || this.svrState.topicPrefix.isEmpty()) {
+                    this.svrState.topicPrefix = "frigate"; // the default
+                }
+
+                // client_id
+                //
+                // We won't be able to access the HTTP API with multiple instances unless we know this
+                // a-priori, so we pull it from our config and rely on the user
+                // to set it correctly
+                // In restart, the clientID from the frigate config may have changed.
+                // We use the clientID as the prefix for internal URLs.
+                // So we must update our URL prefix based on the config
+
+                this.svrState.clientID = frigateConfig.block.mqtt.clientID;
+
+                // URLChannelPrefix
+                //
+                // This is the prefix prepended to URLs in channels and will change depending
+                // on whether the forwarder is enabled, and if the configuration useRelativeURLs
+                // is set to true.
+                //
+                // If the forwarder is enabled, the URL, whether relative or absolute, will
+                // appear to point to the openHAB instance. If the forwarder is disabled, the
+                // URL, whether relative or absolute, will point to the Frigate instance.
+                // Forwarder, relative: prefix=<clientID>/forwarder
+                // Forwarder, qualified: prefix=<OH host>/<clientID>/forwarder
+                // No forwarder, relative: prefix=/
+                // No forwarder, qualified: prefix=<Frigate host>/
+
+                String urlpfx = "/";
+
+                if (config.enableAPIForwarder == true) {
+                    urlpfx += frigateConfig.block.mqtt.clientID;
+                    if (!config.useRelativeURLs) {
+                        urlpfx = this.networkHelper.GetHostBaseURL() + urlpfx;
+                    }
+                } else {
+                    if (!config.useRelativeURLs) {
+                        urlpfx = config.serverURL + urlpfx;
+                    }
+                }
+                this.svrState.URLChannelPrefix = urlpfx;
+
                 // Ok, here we have comms. Now since we are transitioning from
                 // OFFLINE to ONLINE, it is entirely possible the MQTT topic prefix
                 // has changed, so ensure we update this.
 
                 // Now, yank the topic prefix out of the config. If for some reason
-                // Frigate doesn't feed it to us, assume it is 'frigate'.
+                // Frigate doesn't feed it to us, assume it is 'frigate'. The topic
+                // prefix may not be the same as a client_id for a given instance of
+                // Frigate
 
-                if (!frigateConfig.block.mqtt.topicPrefix.equals(this.svrState.pfxSvrMsg)) {
-
-                    UnsubscribeMQTTTopics(this.svrState.pfxSvrMsg);
-                    this.svrState.pfxSvrMsg = frigateConfig.block.mqtt.topicPrefix;
+                if (!old_topicPrefix.equals(this.svrState.topicPrefix)) {
+                    UnsubscribeMQTTTopics(old_topicPrefix);
                 }
-                SubscribeMQTTTopics(this.svrState.pfxSvrMsg);
+                SubscribeMQTTTopics(this.svrState.topicPrefix);
 
                 // this.svrState.status = "online";
                 this.svrState.Cameras = this.frigateConfig.block.GetCameraList();
@@ -455,15 +507,14 @@ public class frigateSVRServerHandler extends BaseBridgeHandler
     private void StartStream() {
 
         ArrayList<HTTPHandler> handlers = new ArrayList<HTTPHandler>();
-        String serverBase = new String("/") + this.svrState.pfxSvrMsg;
-        String APIBase = new String("");
-        String viewURL = new String("");
+        String serverBase = "/" + this.svrState.clientID;
+        String viewURL = "";
+        String apiForwarderURL = "";
 
         if (config.enableAPIForwarder == true) {
 
+            apiForwarderURL = this.svrState.URLChannelPrefix + "/forwarder";
             logger.debug("enabling API forwarder");
-
-            APIBase = this.networkHelper.GetHostBaseURL() + serverBase + "/forwarder";
             handlers.add(new FrigateAPIForwarder("forwarder", this.httpHelper));
         }
 
@@ -472,8 +523,7 @@ public class frigateSVRServerHandler extends BaseBridgeHandler
             logger.debug("enabling birdseye streaming server");
 
             String birdseyeFrigateStreamPath = this.svrState.rtspbase + "/birdseye";
-            viewURL = this.networkHelper.GetHostBaseURL() + serverBase + "/birdseye";
-
+            viewURL = this.svrState.URLChannelPrefix + "/birdseye";
             handlers.add(new MJPEGStream("birdseye", this.svrState.ffmpegPath, birdseyeFrigateStreamPath, serverBase,
                     config));
             handlers.add(new HLSStream("birdseye", this.svrState.ffmpegPath, birdseyeFrigateStreamPath, config));
@@ -489,7 +539,8 @@ public class frigateSVRServerHandler extends BaseBridgeHandler
             updateState(CHANNEL_BIRDSEYE_URL,
                     ((@NonNull frigateSVRChannelState) (this.Channels.get(CHANNEL_BIRDSEYE_URL))).toState(viewURL));
             updateState(CHANNEL_APIFORWARDER_URL,
-                    ((@NonNull frigateSVRChannelState) (this.Channels.get(CHANNEL_APIFORWARDER_URL))).toState(APIBase));
+                    ((@NonNull frigateSVRChannelState) (this.Channels.get(CHANNEL_APIFORWARDER_URL)))
+                            .toState(apiForwarderURL));
         } else {
             updateState(CHANNEL_BIRDSEYE_URL,
                     ((@NonNull frigateSVRChannelState) (this.Channels.get(CHANNEL_BIRDSEYE_URL))).toState(""));
@@ -582,7 +633,7 @@ public class frigateSVRServerHandler extends BaseBridgeHandler
         MqttBrokerConnection conn = this.MQTTConnection;
         logger.debug("Process command: mqttConnection != null?: {}", conn != null);
         if (conn != null) {
-            String topic = this.svrState.pfxSvrMsg + "/" + suffix;
+            String topic = this.svrState.topicPrefix + "/" + suffix;
             logger.debug("Sending command to topic: {} command: {}", topic, command.getBytes());
             conn.publish(topic, command.getBytes(), 1, false);
         }
@@ -617,48 +668,78 @@ public class frigateSVRServerHandler extends BaseBridgeHandler
     @Override
     public void processMessage(String topic, byte[] payload) {
 
-        // We remain handling the availability topic, even when the Frigate server appears
-        // offline. When it comes back, if the topic prefix hasn't changed, it will post an
-        // 'online' message.
+        String[] bits = topic.split("/");
 
-        if (topic.equals(this.svrState.pfxSvrMsg + "/" + MQTT_AVAILABILITY_SUFFIX)) {
-
-            String serverState = new String(payload, StandardCharsets.UTF_8);
-
-            if (serverState.equals("online")) {
-
-                // This message gets posted once Frigate is online. Sometimes it
-                // may get posted when the thing is still online. However, it is useless
-                // as an indicator that the server has just come online, as it seems
-                // to be posted _before_ the HTTP API is available. So we don't use
-                // it as a tell-tale for availability.
-                //
-                // Note: this is never triggered simply on a new connection, only
-                // when the server itself restarts. This is why we need to handle
-                // it as a special case.
-
-                logger.debug("received 'online' message from Frigate server");
-                // we do not online the device here. Frigate sends this thing before
-                // the HTTP services are ready.
-
+        do {
+            if (bits.length < 2) {
+                break; // ignore anything without details
             }
-            if (serverState.equals("offline")) {
 
-                // According to the docs, this should be posted when Frigate stops.
-                // However, we can't rely on it as I couldn't get Frigate to actually
-                // post this. So we handle it anyway just in case. If the thing is
-                // offline, leave it alone. Otherwise just set it offline.
-                // We keep all our MQTT state so we can pick up the 'online' message and
-                // the pinger is kept running
-                // However, as I could not get Frigate to actually send this, there
-                // is a possibility it may post this while the HTTP API is alive. Thus,
-                // the keepalive may restore the online status, only to switch back
-                // to offline once the server's keepalive stops responding
-
-                logger.debug("received offline message from Frigate svr");
-                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, "@text/error.serveroffline");
+            if (!bits[0].equals(this.svrState.topicPrefix)) {
+                break; // it ain't for us.
             }
-        }
+
+            // We may or may not have a payload
+
+            String sPayload = new String(payload, StandardCharsets.UTF_8);
+
+            // Here, we must at least have bits[1].
+
+            // We remain handling the availability topic, even when the Frigate server appears
+            // offline. When it comes back, if the topic prefix hasn't changed, it will post an
+            // 'online' message.
+
+            if (bits[1].equals(MQTT_AVAILABILITY_SUFFIX)) {
+
+                if (sPayload.equals("online")) {
+
+                    // This message gets posted once Frigate is online. Sometimes it
+                    // may get posted when the thing is still online. However, it is useless
+                    // as an indicator that the server has just come online, as it seems
+                    // to be posted _before_ the HTTP API is available. So we don't use
+                    // it as a tell-tale for availability.
+                    //
+                    // Note: this is never triggered simply on a new connection, only
+                    // when the server itself restarts. This is why we need to handle
+                    // it as a special case.
+
+                    logger.debug("received 'online' message from Frigate server");
+                    // we do not online the device here. Frigate sends this thing before
+                    // the HTTP services are ready.
+
+                }
+                if (sPayload.equals("offline")) {
+
+                    // According to the docs, this should be posted when Frigate stops.
+                    // However, we can't rely on it as I couldn't get Frigate to actually
+                    // post this. So we handle it anyway just in case. If the thing is
+                    // offline, leave it alone. Otherwise just set it offline.
+                    // We keep all our MQTT state so we can pick up the 'online' message and
+                    // the pinger is kept running
+                    // However, as I could not get Frigate to actually send this, there
+                    // is a possibility it may post this while the HTTP API is alive. Thus,
+                    // the keepalive may restore the online status, only to switch back
+                    // to offline once the server's keepalive stops responding
+
+                    logger.debug("received offline message from Frigate svr");
+                    updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
+                            "@text/error.serveroffline");
+                }
+                break;
+            }
+
+            // Now check for any server messages in our map.
+
+            if (this.MQTTGettersToChannels.containsKey(bits[1])) {
+                String channel = this.MQTTGettersToChannels.get(bits[1]);
+                if (channel != null) {
+                    updateState(channel,
+                            ((@NonNull frigateSVRChannelState) this.Channels.get(channel)).toState(sPayload));
+                }
+                break;
+            }
+
+        } while (false);
     }
 
     //////////////////////////////////////////////////////////////////

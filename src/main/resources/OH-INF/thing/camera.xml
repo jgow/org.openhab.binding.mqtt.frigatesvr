@@ -34,6 +34,8 @@
 			<channel id="fgEventType" typeId="fgEventType"/>
 			<channel id="fgEventID" typeId="fgEventID"/>
 			<channel id="fgEventClipURL" typeId="fgEventClipURL"/>
+			<channel id="fgObjCount" typeId="fgObjCount"/>
+			<channel id="fgObjCountActive" typeId="fgObjCountActive"/>
 			<channel id="fgPrevFrameTime" typeId="fgPrevFrameTime"/>
 			<channel id="fgPrevSnapshotTime" typeId="fgPrevSnapshotTime"/>
 			<channel id="fgPrevLabel" typeId="fgPrevLabel"/>
@@ -55,6 +57,7 @@
 			<channel id="fgPrevMotionlessCount" typeId="fgPrevMotionlessCount"/>
 			<channel id="fgPrevPositionChanges" typeId="fgPrevPositionChanges"/>
 			<channel id="fgPrevMaxSeverity" typeId="fgPrevMaxSeverity"/>
+			<channel id="fgPrevLicencePlate" typeId="fgPrevLicencePlate"/>
 			<channel id="fgCurFrameTime" typeId="fgCurFrameTime"/>
 			<channel id="fgCurSnapshotTime" typeId="fgCurSnapshotTime"/>
 			<channel id="fgCurLabel" typeId="fgCurLabel"/>
@@ -76,10 +79,9 @@
 			<channel id="fgCurMotionlessCount" typeId="fgCurMotionlessCount"/>
 			<channel id="fgCurPositionChanges" typeId="fgCurPositionChanges"/>
 			<channel id="fgCurMaxSeverity" typeId="fgCurMaxSeverity"/>
+			<channel id="fgCurLicencePlate" typeId="fgPrevLicencePlate"/>
 			<channel id="fgActionLastFrame" typeId="fgActionLastFrame"/>
 			<channel id="fgActionEventThumbnail" typeId="fgActionEventThumbnail"/>
-			<channel id="fgObjCount" typeId="fgObjCount"/>
-			<channel id="fgObjCountActive" typeId="fgObjCountActive"/>
 		</channels>
 		<config-description-ref uri="thing-type:mqtt:Camera"/>
 	</thing-type>
@@ -303,6 +305,11 @@
 		<label>@text/channel.previousMaxSeverity</label>
 		<description>@text/channel.previousMaxSeverity.description</description>
 	</channel-type>
+	<channel-type id="fgPrevLicencePlate">
+		<item-type>String</item-type>
+		<label>@text/channel.previousLicencePlate</label>
+		<description>@text/channel.previousLicencePlate.description</description>
+	</channel-type>
 
 	<!-- Event: channels relating to the current state -->
 
@@ -411,6 +418,14 @@
 		<label>@text/channel.currentMaxSeverity</label>
 		<description>@text/channel.currentMaxSeverity.description</description>
 	</channel-type>
+	<channel-type id="fgCurLicencePlate">
+		<item-type>String</item-type>
+		<label>@text/channel.currentLicencePlate</label>
+		<description>@text/channel.currentLicencePlate.description</description>
+	</channel-type>
+
+	<!-- ThingActions -->
+
 	<channel-type id="fgActionLastFrame">
 		<item-type>Image</item-type>
 		<label>@text/channel.ActionLastFrame</label>

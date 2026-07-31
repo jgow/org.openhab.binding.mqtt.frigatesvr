@@ -20,6 +20,7 @@
 			<channel id="fgAPIForwarderURL" typeId="fgAPIForwarderURL"/>
 			<channel id="fgBirdseyeURL" typeId="fgBirdseyeURL"/>
 			<channel id="fgTrackedObjects" typeId="fgTrackedObjects"/>
+			<channel id="fgTrackedObjDescription" typeId="fgTrackedObjDescription"/>
 		</channels>
 		<config-description-ref uri="thing-type:mqtt:Server"/>
 	</bridge-type>
@@ -49,5 +50,11 @@
 		<label>@text/channel.TrackedObjects</label>
 		<description>@text/channel.TrackedObjects.description</description>
 	</channel-type>
+	<channel-type id="fgTrackedObjDescription">
+		<item-type>String</item-type>
+		<label>@text/channel.TrackedObjDescription</label>
+		<description>@text/channel.TrackedObjDescription.description</description>
+	</channel-type>
+
 
 </thing:thing-descriptions>

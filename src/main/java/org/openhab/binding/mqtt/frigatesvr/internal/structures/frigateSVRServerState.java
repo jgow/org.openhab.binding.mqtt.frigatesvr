@@ -16,9 +16,6 @@ import java.util.ArrayList;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 
-import com.google.gson.GsonBuilder;
-import com.google.gson.annotations.SerializedName;
-
 /**
  * The {@link mqtt.frigateSVRServerState} is a structure passed between a running server thing and
  * the supported cameras, providing status and configuration information
@@ -28,24 +25,14 @@ import com.google.gson.annotations.SerializedName;
 @NonNullByDefault
 public class frigateSVRServerState {
 
-    @SerializedName("status")
     public String status = "offline"; // event id
-    @SerializedName("url")
     public String url = ""; // camera name
-    @SerializedName("rtspbase")
     public String rtspbase = "";
-    @SerializedName("pfxSvrMsg")
-    public String pfxSvrMsg = "";
-    @SerializedName("Cameras")
+    public String clientID = "";
+    public String topicPrefix = "";
     public ArrayList<String> Cameras = new ArrayList<String>();
-    @SerializedName("whitelist")
     public String whitelist = "DISABLE";
-    @SerializedName("ffmpegPath")
     public String ffmpegPath = "/usr/bin/ffmpeg";
-    @SerializedName("serverThingID")
     public String serverThingID = "";
-
-    public String GetJsonString() {
-        return new GsonBuilder().create().toJson(this);
-    }
+    public String URLChannelPrefix = "";
 }

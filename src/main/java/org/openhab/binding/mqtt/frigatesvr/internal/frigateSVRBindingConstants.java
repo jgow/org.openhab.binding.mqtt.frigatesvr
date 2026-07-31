@@ -65,6 +65,7 @@ public class frigateSVRBindingConstants {
 
     public static final String CHANNEL_OBJ_COUNT = "fgObjCount";
     public static final String CHANNEL_OBJ_COUNT_ACTIVE = "fgObjCountActive";
+    public static final String CHANNEL_OBJ_TRACKED_OBJ_DESC = "fgTrackedObjDescription";
 
     public static final String CHANNEL_LAST_SNAPSHOT_OBJECT = "fgLastSnapshotObject";
     public static final String CHANNEL_LAST_SNAPSHOT = "fgLastSnapshot";
@@ -95,6 +96,7 @@ public class frigateSVRBindingConstants {
     public static final String CHANNEL_PREV_MOTIONLESSCOUNT = "fgPrevMotionlessCount";
     public static final String CHANNEL_PREV_POSITIONCHANGES = "fgPrevPositionChanges";
     public static final String CHANNEL_PREV_MAXSEVERITY = "fgPrevMaxSeverity";
+    public static final String CHANNEL_PREV_LICENCEPLATE = "fgPrevLicencePlate";
 
     public static final String CHANNEL_CUR_FRAME_TIME = "fgCurFrameTime";
     public static final String CHANNEL_CUR_SNAPSHOT_TIME = "fgCurSnapshotTime";
@@ -117,6 +119,7 @@ public class frigateSVRBindingConstants {
     public static final String CHANNEL_CUR_MOTIONLESSCOUNT = "fgCurMotionlessCount";
     public static final String CHANNEL_CUR_POSITIONCHANGES = "fgCurPositionChanges";
     public static final String CHANNEL_CUR_MAXSEVERITY = "fgCurMaxSeverity";
+    public static final String CHANNEL_CUR_LICENCEPLATE = "fgCurLicencePlate";
 
     // MQTT topic suffixes
     public static final String MQTT_EVENTS_SUFFIX = "events";
@@ -145,6 +148,7 @@ public class frigateSVRBindingConstants {
     public static final String MQTT_MOTION = "motion";
     public static final String MQTT_CAMACTIONRESULT = "CameraActionResult";
     public static final String MQTT_CAMIMAGERESULT = "lastFrame";
+    public static final String MQTT_TRACKEDOBJUPDATE = "tracked_object_update";
 
     // config properties
     public static final String CONF_ID_UNIQUE = "uniqueID";

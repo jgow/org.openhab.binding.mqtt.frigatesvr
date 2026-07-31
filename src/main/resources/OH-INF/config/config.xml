@@ -93,6 +93,8 @@
 		</parameter>
 	</config-description>
 
+	<!-- Server Thing configuration -->
+
 	<config-description uri="thing-type:mqtt:Server">
 		<parameter name="serverURL" type="text" required="true">
 			<context>network-address</context>
@@ -140,6 +142,12 @@
 			<label>@text/param.server.HTTPTimeout.label</label>
 			<description>@text/param.server.HTTPTimeout.description</description>
 			<default>100</default>
+		</parameter>
+		<parameter name="useRelativeURLs" type="boolean" required="true">
+			<context>name</context>
+			<label>@text/param.server.useRelativeURLs.label</label>
+			<description>@text/param.server.useRelativeURLs.description</description>
+			<default>true</default>
 		</parameter>
 		<parameter name="enableAPIForwarder" type="boolean" required="true">
 			<context>name</context>

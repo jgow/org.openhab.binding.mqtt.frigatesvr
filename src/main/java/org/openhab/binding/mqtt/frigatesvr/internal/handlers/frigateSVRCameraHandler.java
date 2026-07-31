@@ -39,6 +39,7 @@ import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateAPI.Camera
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRCameraConfiguration;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRChannelState;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRFrigateConfig.frigateSVRFrigateConfigBlock;
+import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRServerConfiguration;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRServerState;
 import org.openhab.binding.mqtt.frigatesvr.internal.structures.frigateSVRServices;
 import org.openhab.core.io.transport.mqtt.MqttBrokerConnection;
@@ -80,7 +81,6 @@ public class frigateSVRCameraHandler extends BaseThingHandler
     private frigateSVRCameraConfiguration config = new frigateSVRCameraConfiguration();
     private frigateSVRServerState svrState = new frigateSVRServerState();
     private String pfxFrigateToCam = "";
-    private String pfxFrigateInstance = "";
 
     private frigateSVRNetworkHelper networkHelper;
     private @Nullable MqttBrokerConnection MQTTConnection = null;
@@ -95,6 +95,10 @@ public class frigateSVRCameraHandler extends BaseThingHandler
     // list of tracked objects; updated from server when Thing is onlined
 
     private List<String> trackedObjects = Collections.emptyList();
+
+    // use relative URLs
+
+    private boolean useRelativeURLs = true;
 
     // makes for easy change if Frigate ever extend the API
     //
@@ -128,7 +132,8 @@ public class frigateSVRCameraHandler extends BaseThingHandler
             Map.entry("has_clip", CHANNEL_PREV_HAS_CLIP), Map.entry("stationary", CHANNEL_PREV_STATIONARY),
             Map.entry("motionless_count", CHANNEL_PREV_MOTIONLESSCOUNT),
             Map.entry("position_changes", CHANNEL_PREV_POSITIONCHANGES),
-            Map.entry("max_severity", CHANNEL_PREV_MAXSEVERITY));
+            Map.entry("max_severity", CHANNEL_PREV_MAXSEVERITY),
+            Map.entry("recognized_license_plate", CHANNEL_PREV_LICENCEPLATE));
 
     private Map<String, String> JSONEventGettersToCur = Map.ofEntries(Map.entry("frame_time", CHANNEL_CUR_FRAME_TIME),
             Map.entry("snapshot_time", CHANNEL_CUR_SNAPSHOT_TIME), Map.entry("label", CHANNEL_CUR_LABEL),
@@ -141,7 +146,8 @@ public class frigateSVRCameraHandler extends BaseThingHandler
             Map.entry("has_snapshot", CHANNEL_CUR_HAS_SNAPSHOT), Map.entry("has_clip", CHANNEL_CUR_HAS_CLIP),
             Map.entry("stationary", CHANNEL_CUR_STATIONARY), Map.entry("motionless_count", CHANNEL_CUR_MOTIONLESSCOUNT),
             Map.entry("position_changes", CHANNEL_CUR_POSITIONCHANGES),
-            Map.entry("max_severity", CHANNEL_CUR_MAXSEVERITY));
+            Map.entry("max_severity", CHANNEL_CUR_MAXSEVERITY),
+            Map.entry("recognized_license_plate", CHANNEL_CUR_LICENCEPLATE));
 
     private Map<String, String> JSONStateGetters = Map.ofEntries(Map.entry("camera_fps", CHANNEL_CAM_CAMFPS),
             Map.entry("process_fps", CHANNEL_CAM_PROCESSFPS), Map.entry("skipped_fps", CHANNEL_CAM_SKIPPEDFPS),
@@ -422,26 +428,6 @@ public class frigateSVRCameraHandler extends BaseThingHandler
 
         logger.debug("camera {} INITIALIZATION handler called ", config.cameraName);
 
-        // MQTT PREFIXES
-        // -------------
-
-        // Prefix for messages originating from the frigate server itself
-        // This needs to be updated from Frigate server config for multiple
-        // Frigate server configurations
-        //
-        // this is obtained from the server state message when the server
-        // becomes available: this.svrState.pfxSvrMsg = "frigate";
-
-        this.pfxFrigateInstance = "frigate";
-
-        // Prefix for messages originating from cameras and destined for us. We append
-        // the camera ID:
-        //
-        // frigateSVR/<serverThingID>/<cameraThingID>/
-        // 3.x - TODO remove.
-
-        // this.pfxCamToSvr = "frigateSVR/" + config.cameraName;
-
         updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING);
 
         Bridge bridge = getBridge();
@@ -642,9 +628,11 @@ public class frigateSVRCameraHandler extends BaseThingHandler
 
                 frigateSVRServerHandler fb = (frigateSVRServerHandler) bridgeHandler;
                 frigateSVRFrigateConfigBlock configBlock = fb.getFrigateConfig().block;
+                frigateSVRServerConfiguration svrCfg = fb.GetServerConfig();
 
+                this.useRelativeURLs = svrCfg.useRelativeURLs;
                 this.pfxFrigateToCam = configBlock.mqtt.topicPrefix + "/" + config.cameraName;
-                this.pfxFrigateInstance = configBlock.mqtt.topicPrefix;
+                // this.pfxFrigateInstance = configBlock.mqtt.topicPrefix;
                 logger.debug("Set camera topic to {}", this.pfxFrigateToCam);
 
                 this.MQTTConnection = fb.getMQTTConnection();
@@ -686,8 +674,8 @@ public class frigateSVRCameraHandler extends BaseThingHandler
                 ffmpegSource += this.config.ffmpegCameraNameOverride;
             }
 
-            String serverBase = new String("/frigateSVR/") + this.getThing().getUID().getId();
-            String viewURL = this.networkHelper.GetHostBaseURL() + serverBase + "/camera";
+            String serverBase = "/" + this.svrState.clientID + "/" + this.getThing().getUID().getId();
+            String viewURL = this.svrState.URLChannelPrefix + "/" + this.getThing().getUID().getId() + "/camera";
 
             ArrayList<HTTPHandler> handlers = new ArrayList<HTTPHandler>();
             handlers.add(new MJPEGStream("camera", this.svrState.ffmpegPath, ffmpegSource, serverBase, config));
@@ -717,7 +705,7 @@ public class frigateSVRCameraHandler extends BaseThingHandler
         MqttBrokerConnection conn = this.MQTTConnection;
         logger.debug("Process command: mqttConnection != null?: {}", conn != null);
         if (conn != null) {
-            String topic = this.pfxFrigateInstance + "/" + config.cameraName + "/" + suffix;
+            String topic = this.svrState.topicPrefix + "/" + config.cameraName + "/" + suffix;
             logger.debug("Sending command to topic: {} command: {}", topic, command.getBytes());
             conn.publish(topic, command.getBytes(), 1, false);
         }
@@ -733,8 +721,8 @@ public class frigateSVRCameraHandler extends BaseThingHandler
     private void SubscribeMQTTTopics() {
         MqttBrokerConnection conn = this.MQTTConnection;
         if (conn != null) {
-            conn.subscribe(this.pfxFrigateInstance + "/" + MQTT_EVENTS_SUFFIX, this);
-            conn.subscribe(this.pfxFrigateInstance + "/" + MQTT_STATS_SUFFIX, this);
+            conn.subscribe(this.svrState.topicPrefix + "/" + MQTT_EVENTS_SUFFIX, this);
+            conn.subscribe(this.svrState.topicPrefix + "/" + MQTT_STATS_SUFFIX, this);
             conn.subscribe(this.pfxFrigateToCam + "/#", this);
         }
     }
@@ -751,8 +739,8 @@ public class frigateSVRCameraHandler extends BaseThingHandler
         MqttBrokerConnection conn = this.MQTTConnection;
         if (conn != null) {
             conn.unsubscribe(this.pfxFrigateToCam + "/#", this);
-            conn.unsubscribe(this.pfxFrigateInstance + "/" + MQTT_STATS_SUFFIX, this);
-            conn.unsubscribe(this.pfxFrigateInstance + "/" + MQTT_EVENTS_SUFFIX, this);
+            conn.unsubscribe(this.svrState.topicPrefix + "/" + MQTT_STATS_SUFFIX, this);
+            conn.unsubscribe(this.svrState.topicPrefix + "/" + MQTT_EVENTS_SUFFIX, this);
         } else {
             logger.debug("unsubscribe: connection is null");
         }
@@ -793,7 +781,7 @@ public class frigateSVRCameraHandler extends BaseThingHandler
 
             // Messages direct from Frigate server
 
-            String action = topic.substring(this.pfxFrigateInstance.length() + 1);
+            String action = topic.substring(this.svrState.topicPrefix.length() + 1);
             String[] bits = action.split("/"); // bits[0] will be message-dependent
 
             logger.debug("cam {}: Received trimmed server message {} (pfxSvrMsg test)", config.cameraName, action);
