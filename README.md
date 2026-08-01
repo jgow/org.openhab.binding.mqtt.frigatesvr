@@ -177,13 +177,14 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 
 ### `frigateSVR Server` 'Thing' Channels
 
-| Channel            | Type   | Read/Write  | Description                                                                                           |
-|--------------------|--------|-------------|-------------------------------------------------------------------------------------------------------|
-| fgAPIVersion       | String | R/O         | Version of the Frigate API being used                                                                 |
-| fgUI               | String | R/O         | URL to the Frigate UI for this server (useful for openHAB UI widgets)                                 |
-| fgAPIForwarderURL  | String | R/O         | URL to the API forwarder - allowing UI widgets to access the Frigate API from a local server instance |
-| fgBirdseyeURL      | String | R/O         | URL to the openHAB stream for the Frigate 'birdseye' view (if enabled)                                |
-| fgTrackedObjects   | String | R/O         | JSON array of object types tracked by Frigate                                                         |
+| Channel                      | Type   | Read/Write  | Description                                                                                           |
+|------------------------------|--------|-------------|-------------------------------------------------------------------------------------------------------|
+| fgAPIVersion                 | String | R/O         | Version of the Frigate API being used                                                                 |
+| fgUI                         | String | R/O         | URL to the Frigate UI for this server (useful for openHAB UI widgets)                                 |
+| fgAPIForwarderURL            | String | R/O         | URL to the API forwarder - allowing UI widgets to access the Frigate API from a local server instance |
+| fgBirdseyeURL                | String | R/O         | URL to the openHAB stream for the Frigate 'birdseye' view (if enabled)                                |
+| fgTrackedObjects             | String | R/O         | JSON array of object types tracked by Frigate                                                         |
+| fgTrackedObjectDescription   | String | R/O         | Description of tracked objects as per Frigate API                                                     |
 
 #### Notes
 
