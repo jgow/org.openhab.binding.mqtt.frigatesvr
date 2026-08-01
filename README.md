@@ -105,9 +105,9 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 | username                       | text    | Username for account on Frigate server (used if requireAuth is true)  | ""                                     | no       | no       |
 | password                       | text    | Password for account on Frigate server (used if requireAuth is true)  | ""                                     | no       | no       |
 | allowSelfSigned                | boolean | Disable host verification for TLS connections to the Frigate server   | false                                  | yes      | no       |  
-| serverClientID                 | text    | 'clientID' parameter in Frigate config                                | N/A                                    | no       | no       |
 | serverKeepAlive                | integer | Interval the device is polled in sec.                                 | 5                                      | yes      | no       |
 | HTTPTimeout                    | integer | Timeout of HTTP requests to the Frigate API                           | 100                                    | yes      | no       |
+| useRelativeURLs                | boolean | URLs to forwarders and re-streamers will be relative, not absolute    | true                                   | yes      | no       |
 | enableAPIForwarder             | boolean | Enable the Frigate API forwarder                                      | true                                   | yes      | no       |
 | enableStream                   | boolean | Enable the internal stream server                                     | true                                   | yes      | no       |
 | streamWhitelist                | text    | List of IPs allowed to connect                                        | DISABLE                                | no       | yes      |
@@ -214,6 +214,8 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 | fgEventJSON           | String   | R/O         | Full JSON string containing the event                         |
 | fgEventType           | String   | R/O         | Current event type ('new', 'update' or 'end')                 |
 | fgEventClipURL        | String   | R/O         | Full URL to the clip of the current event                     |
+| fgObjCount            | String   | R/O         | JSON object containing current object count                   |
+| fgObjCountActive      | String   | R/O         | JSON object containing active object count                    |
 | fgPrevFrameTime       | DateTime | R/O         | Prior to event: Frame time prior to event                     |
 | fgPrevSnapshotTime    | DateTime | R/O         | Prior to event: Time of snapshot                              |
 | fgPrevLabel           | String   | R/O         | Prior to event: Detected entity                               |
@@ -235,6 +237,7 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 | fgPrevMotionlessCount | Number   | R/O         | Prior to event: Number of motionless frames                   |
 | fgPrevPositionChanges | Number   | R/O         | Prior to event: Number of position changes                    |
 | fgPrevMaxSeverity     | String   | R/O         | Prior to event: ('alert' or 'detection')                      |
+| fgPrevLicencePlate    | String   | R/O         | Prior to event: Recognized licence plate                      |
 | fgCurFrameTime        | DateTime | R/O         | Current event: Frame time prior to event                      |
 | fgCurSnapshotTime     | DateTime | R/O         | Current event: Time of snapshot                               |
 | fgCurLabel            | String   | R/O         | Current event: Detected entity                                |
@@ -256,6 +259,7 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 | fgCurMotionlessCount  | Number   | R/O         | Current event: Number of motionless frames                    |
 | fgCurPositionChanges  | Number   | R/O         | Current event: Number of position changes                     |
 | fgCurMaxSeverity      | String   | R/O         | Current event: ('alert' or 'detection')                       |
+| fgCurLicencePlate     | String   | R/O         | Current event: Recognized licence plate                       |
 | fgActionLastFrame     | Image    | R/O         | Return from Camera ThingAction GetLastFrame                   |
 | fgActionThumbnail     | Image    | R/O         | Return from Camera ThingAction GetThumbnail                   |
 
@@ -264,6 +268,7 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 - 'Current event' and 'Prior to event' channels are updated with `fgEventType`. This ensures consistency of information passed to event handlers - there should be no 'stale' information left in any of the 'Cur' or 'Prev' channels. Note also that some of these values may change to NULL if the value on the Frigate server side is NULL. Thus, rules that wish to interrogate multiple 'cur' or 'prev' channels should trigger on changes to 'fgEventType' as this channel is updated once all other event channels have been updated.
 - The event and control channels follow the Frigate documentation and there should be no surprises here.
 - `fgStreamURL`: if the configuration parameter `enableStream` is set true, if Frigate is configured to restream cameras and if the stream is on either `cameraName` or `ffmpegCameraNameOverride`, then `fgStreamURL` will provide a URL to a locally restreamed feed of the camera. Note that if you select a high resolution stream from Frigate, this could significantly increase CPU and network load as the local instance will have to transcode the stream. Consider using the detection substreams at lower frame rates - these are often sufficient and will result in much lower CPU loads. Multiple stream types are supported: append '.m3u8' for HLS, '.mpd' for DASH, or use the bare URL as it is to access MJPEG. The availability of each type depends if it is enabled.
+- 'fgObjCount' and 'fgObjCountActive' are the object count and current active object count in the form { "object":<count>, "count": count }
 
 ## ThingActions
 

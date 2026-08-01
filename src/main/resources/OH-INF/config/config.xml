@@ -125,12 +125,6 @@
 			<default>false</default>
 			<advanced>false</advanced>
 		</parameter>
-		<parameter name="serverClientID" type="text" required="false">
-			<context>client-id</context>
-			<label>@text/param.server.serverClientID.label</label>
-			<description>@text/param.server.serverClientID.description</description>
-			<default/>
-		</parameter>
 		<parameter name="serverKeepAlive" type="integer" required="false" min="5" max="60" unit="s">
 			<context>keep-alive</context>
 			<label>@text/param.server.serverKeepAlive.label</label>

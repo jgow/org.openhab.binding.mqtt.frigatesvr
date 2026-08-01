@@ -33,17 +33,27 @@
   - BREAKING CHANGES: This version introduces a completely new architecture for camera Things and server Things that is much 'cleaner' and should improve performance. New channels are available, and new ThingActions have been added.
     - Upgrading to 3.x versions will almost certainly require you to re-create your Things.
     - New architecture for inter-Thing communication - the server Thing now acts as a bridge, sitting on top of MQTT. Cameras are children of the server Bridge. Basic operation should be unchanged.
-    - New channels
-      - Server Thing
-        - fgTrackedObjects: list of tracked objects
-      - Camera Thing
-        - fgActionLastFrame: channel carrying result of ThingAction GetLastFrame
-        - fgActionEventThumbnail: channel carrying result of ThingAction GetThumbnail
-        - fgObjCount: Returns a count of total objects being tracked, by type. This makes using the camera as a sensor to turn on security lights much more straightforward.
-        - fgObjCountActive: Returns a count of active objects, by type. This can aid integration into a security system
-    - New Camera ThingActions
-      - PTZ: allows camera PTZ to be controlled via a ThingAction
-    - ThingAction cleanups
-      - ThingActions are no longer asynchronous.
-      - GetLastFrame and TriggerEvent have been clarified
-  
+    - ThingAction cleanups: ThingActions by default are no longer asynchronous.
+    - Server Thing
+      - Parameters:
+        - Removed:
+          - serverClientID (now obtained from Frigate config)
+        - Added:
+          - useRelativeURLs - this allows the URL channels to provide URLs relative to the OH base (i.e. the forwarder), rather than attempting to generate the FQDN. This makes them easier to use in the OH app.
+      - Channels:
+        - Added:
+          - fgTrackedObjects: list of tracked objects
+          - fgTrackedObjDescription: when an object is tracked, Frigate will update this with the description of the tracked objec, as a JSON object as per the Frigate documentation.
+    - Camera Thing
+      - Channels:
+        - Added:
+          - fgActionLastFrame: channel carrying result of ThingAction GetLastFrame
+          - fgActionEventThumbnail: channel carrying result of ThingAction GetThumbnail
+          - fgObjCount: Returns a count of total objects being tracked, by type. This makes using the camera as a sensor to turn on security lights much more straightforward.
+          - fgObjCountActive: Returns a count of active objects, by type. This can aid integration into a security system
+      - ThingActions
+        - Added:
+          - PTZ: allows camera PTZ to be controlled via a ThingAction
+        - Cleanups:
+          - ThingActions are no longer asynchronous.
+          - GetLastFrame and TriggerEvent have been clarified
