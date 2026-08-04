@@ -57,3 +57,6 @@
         - Cleanups:
           - ThingActions are no longer asynchronous.
           - GetLastFrame and TriggerEvent have been clarified
+- Version 3.01
+  - Bugfix release: v3.0 has a bug that prevents events being handled correctly in some circumstances. Otherwise functionally identical to v3.0
+  
