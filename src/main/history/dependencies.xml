@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<features xmlns="http://karaf.apache.org/xmlns/features/v1.6.0" name="org.openhab.binding.mqtt.frigatesvr-5.2.0">
+<features xmlns="http://karaf.apache.org/xmlns/features/v1.6.0" name="org.openhab.binding.mqtt.frigatesvr-5.2.1">
     <feature version="0.0.0">
         <feature>framework</feature>
         <feature>framework-logback</feature>
@@ -32,8 +32,8 @@
         <bundle>mvn:org.apache.sling/org.apache.sling.commons.johnzon/1.2.16</bundle>
         <bundle>mvn:org.apache.sling/org.apache.sling.commons.johnzon/1.2.16</bundle>
         <bundle>mvn:org.fusesource.jansi/jansi/2.4.3</bundle>
-        <bundle>mvn:org.openhab.addons.bundles/org.openhab.binding.mqtt.frigatesvr/5.2.0</bundle>
-        <bundle>mvn:org.openhab.addons.bundles/org.openhab.binding.mqtt/5.2.0</bundle>
+        <bundle>mvn:org.openhab.addons.bundles/org.openhab.binding.mqtt.frigatesvr/5.2.1</bundle>
+        <bundle>mvn:org.openhab.addons.bundles/org.openhab.binding.mqtt/5.2.1</bundle>
         <bundle>mvn:org.ops4j.pax.logging/pax-logging-api/2.3.3</bundle>
         <bundle>mvn:org.ops4j.pax.logging/pax-logging-api/2.3.3</bundle>
         <bundle>mvn:org.ops4j.pax.logging/pax-logging-log4j2/2.3.3</bundle>
