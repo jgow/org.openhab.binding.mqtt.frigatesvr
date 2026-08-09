@@ -63,14 +63,6 @@ First, an MQTT broker 'thing' must be created. Then, a server 'Thing' must be in
 
 After this, the cameras are up and running; items can be linked and rules written.
 
-## Creation of Things
-
-- In Things, click on the + sign and select ‘MQTT Binding’. From there, ensure you have an ‘MQTT Broker’ Thing created and online.
-- Then, from Things, click on ‘MQTT Binding’. An option to add ‘frigateSVR Server’ should appear. Click on this to create the Server Thing, add the URL to your Frigate server and select the MQTT Broker thing created in step 1 as the 'Parent Bridge". When saved, the frigate Server Thing should be online.
-- From Things, click on ‘MQTT Binding’. You should then see the ‘frigateSVR Camera’ option appear.You can either click on this to create a Camera Thing manually (selecting the frigateSVR Server Thing from step 2 as the Parent Bridge), or, if you select ‘Scan’, you should see the autodiscovered cameras supported by your Frigate server appear - these then can be added by clicking on each of them
-
-**NOTE** if you attempt to create the Things directly from the Frigate binding, you will get a message saying “No thing types can be added with this binding". You will find the Frigate SVR server and camera Things under the MQTT binding, as the frigateSVR Server Thing is a Bridge that is a child of an MQTT Broker, and frigateSVR Camera Things are children of a Server Thing.
-
 ## Requirements
 
 - a configured and running Frigate installation, either local or remote, with its HTTP API accessible from your OpenHAB instance.
@@ -89,6 +81,14 @@ The FrigateSVR binding supports two 'things':
 Once a frigateServer 'thing' is instantiated, then the frigateCamera 'things' can be instantiated. The easiest way to do this is via a discovery scan (see below). FrigateCamera 'things' can be instantiated manually as well if the ThingID of the relevant frigateServer 'thing' is known and can be entered into the frigateCamera configuration.
 
 _It is important to note that frigateCamera 'things' can not be instantiated alone without a server 'thing' - there must be a frigateServer 'thing' available to which the frigateCamera is bound (strictly speaking, a frigateCamera 'thing' can be instantiated, but it will remain offline until bound to a frigateServer 'thing' that supports this camera)._
+
+## Creation of Things
+
+- In Things, click on the + sign and select ‘MQTT Binding’. From there, ensure you have an ‘MQTT Broker’ Thing created and online.
+- Then, from Things, click on ‘MQTT Binding’. An option to add ‘frigateSVR Server’ should appear. Click on this to create the Server Thing, add the URL to your Frigate server and select the MQTT Broker thing created in step 1 as the 'Parent Bridge". When saved, the frigate Server Thing should be online.
+- From Things, click on ‘MQTT Binding’. You should then see the ‘frigateSVR Camera’ option appear.You can either click on this to create a Camera Thing manually (selecting the frigateSVR Server Thing from step 2 as the Parent Bridge), or, if you select ‘Scan’, you should see the autodiscovered cameras supported by your Frigate server appear - these then can be added by clicking on each of them
+
+**NOTE** if you attempt to create the Things directly from the Frigate binding, you will get a message saying “No thing types can be added with this binding". You will find the Frigate SVR server and camera Things under the MQTT binding, as the frigateSVR Server Thing is a Bridge that is a child of an MQTT Broker, and frigateSVR Camera Things are children of a Server Thing.
 
 ## Discovery
 
