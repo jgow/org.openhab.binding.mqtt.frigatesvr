@@ -44,6 +44,7 @@ public class frigateSVRBindingConstants {
     public static final String CHANNEL_BIRDSEYE_URL = "fgBirdseyeURL";
     public static final String CHANNEL_TRACKEDOBJECTS = "fgTrackedObjects";
 
+    public static final String CHANNEL_CAM_ENABLE = "fgCameraEnable";
     public static final String CHANNEL_CAM_CAMFPS = "fgCameraFPS";
     public static final String CHANNEL_CAM_PROCESSFPS = "fgCameraProcessFPS";
     public static final String CHANNEL_CAM_SKIPPEDFPS = "fgCameraSkippedFPS";
@@ -149,6 +150,8 @@ public class frigateSVRBindingConstants {
     public static final String MQTT_CAMACTIONRESULT = "CameraActionResult";
     public static final String MQTT_CAMIMAGERESULT = "lastFrame";
     public static final String MQTT_TRACKEDOBJUPDATE = "tracked_object_update";
+    public static final String MQTT_CAM_ENABLE_SET = "enabled/set";
+    public static final String MQTT_CAM_ENABLE_GET = "enabled/state";
 
     // config properties
     public static final String CONF_ID_UNIQUE = "uniqueID";

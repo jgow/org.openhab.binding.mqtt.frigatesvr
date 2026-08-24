@@ -108,7 +108,7 @@ public class frigateSVRCameraHandler extends BaseThingHandler
     // to find keys?
 
     private Map<String, String> MQTTGettersToChannels = Map.ofEntries(
-            Map.entry(MQTT_DETECTION_GET, CHANNEL_STATE_DETECTION),
+            Map.entry(MQTT_CAM_ENABLE_GET, CHANNEL_CAM_ENABLE), Map.entry(MQTT_DETECTION_GET, CHANNEL_STATE_DETECTION),
             Map.entry(MQTT_RECORDING_GET, CHANNEL_STATE_RECORDING),
             Map.entry(MQTT_SNAPSHOTS_GET, CHANNEL_STATE_SNAPSHOTS),
             Map.entry(MQTT_MOTIONDET_GET, CHANNEL_STATE_MOTIONDET),
@@ -187,6 +187,9 @@ public class frigateSVRCameraHandler extends BaseThingHandler
         // Camera channel map
 
         this.Channels = Map.ofEntries(
+                Map.entry(CHANNEL_CAM_ENABLE,
+                        new frigateSVRChannelState(MQTT_CAM_ENABLE_SET, frigateSVRChannelState::fromSwitchMQTT,
+                                frigateSVRChannelState::toSwitchMQTT, true)),
                 Map.entry(CHANNEL_CAM_CAMFPS,
                         new frigateSVRChannelState("camera_fps", frigateSVRChannelState::fromNumberMQTT,
                                 frigateSVRChannelState::toNumberMQTT, false)),

@@ -207,6 +207,7 @@ There are two 'Things' required to be instantiated, starting with a frigateSVRse
 
 | Channel               | Type     | Read/Write  | Description                                                   |
 |---------------------- |----------|-------------|---------------------------------------------------------------|
+| fgCameraEnable        | Switch   | R/W         | Enable Frigate processing of camera                           |
 | fgCameraFPS           | Number   | R/O         | Configured FPS for this camera                                |
 | fgCameraProcessFPS    | Number   | R/O         | Actual processing FPS for this camera                         |
 | fgCameraSkippedFPS    | Number   | R/O         | Skipped FPS for this camera                                   |

@@ -15,6 +15,7 @@
 		<description>@text/thing.description.camera</description>
 
 		<channels>
+			<channel id="fgCameraEnable" typeId="fgCameraEnable"/>
 			<channel id="fgCameraFPS" typeId="fgCameraFPS"/>
 			<channel id="fgCameraProcessFPS" typeId="fgCameraProcessFPS"/>
 			<channel id="fgCameraSkippedFPS" typeId="fgCameraSkippedFPS"/>
@@ -87,6 +88,13 @@
 	</thing-type>
 
 	<!-- Channels -->
+
+	<channel-type id="fgCameraEnable">
+		<item-type>Switch</item-type>
+		<label>@text/channel.cameraEnable</label>
+		<description>@text/channel.cameraEnable.description</description>
+	</channel-type>
+
 	<!-- Camera stats -->
 
 	<channel-type id="fgCameraFPS">
