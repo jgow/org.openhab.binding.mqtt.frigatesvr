@@ -22,6 +22,10 @@
 			<channel id="fgTrackedObjects" typeId="fgTrackedObjects"/>
 			<channel id="fgTrackedObjDescription" typeId="fgTrackedObjDescription"/>
 		</channels>
+		<properties>
+			<property name="thingTypeVersion">9</property>
+		</properties>
+		<representation-property>uid</representation-property>
 		<config-description-ref uri="thing-type:mqtt:Server"/>
 	</bridge-type>
 
