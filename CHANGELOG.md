@@ -59,4 +59,9 @@
           - GetLastFrame and TriggerEvent have been clarified
 - Version 3.01
   - Bugfix release: v3.0 has a bug that prevents events being handled correctly in some circumstances. Otherwise functionally identical to v3.0
-  
+- Version 3.02
+  - Added XML upgrade files to allow channel changes in existing Things.
+  - Camera Thing
+    - Channels
+      - Added:
+        - fgEnableCamera: enable camera (switch).
