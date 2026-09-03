@@ -95,7 +95,7 @@ public class FrigateAPIForwarder extends HTTPHandler {
     @SuppressWarnings("null")
     public void Poster(HttpServletRequest req, HttpServletResponse resp, String pathInfo) throws IOException {
 
-        logger.info("processing API forwarder request - POST");
+        logger.debug("processing API forwarder request - POST");
 
         try {
 
@@ -140,7 +140,7 @@ public class FrigateAPIForwarder extends HTTPHandler {
             is.transferTo(resp.getOutputStream());
 
             resp.setStatus(response.getStatus());
-            logger.info("response: {} {}", response.getStatus(), response.getReason());
+            logger.debug("response: {} {}", response.getStatus(), response.getReason());
 
         } catch (Exception e) {
             resp.setStatus(502);
@@ -158,7 +158,7 @@ public class FrigateAPIForwarder extends HTTPHandler {
     @SuppressWarnings("null")
     public void Getter(HttpServletRequest req, HttpServletResponse resp, String pathInfo) throws IOException {
 
-        logger.info("processing API forwarder request - GET");
+        logger.debug("processing API forwarder request - GET");
 
         try {
 
@@ -198,7 +198,7 @@ public class FrigateAPIForwarder extends HTTPHandler {
             is.transferTo(resp.getOutputStream());
 
             resp.setStatus(response.getStatus());
-            logger.info("response: {} {}", response.getStatus(), response.getReason());
+            logger.debug("response: {} {}", response.getStatus(), response.getReason());
 
         } catch (Exception e) {
             resp.setStatus(500);
