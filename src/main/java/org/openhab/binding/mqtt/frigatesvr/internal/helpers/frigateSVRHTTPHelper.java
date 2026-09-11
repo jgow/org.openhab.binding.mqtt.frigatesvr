@@ -258,16 +258,16 @@ public class frigateSVRHTTPHelper {
         // and renew it.
 
         if (this.authNeeded) {
-            logger.info("Auth required");
+            logger.debug("Auth required");
             if (!this.authTokValid || this.tokExp.before(new Date())) {
                 rc = this.getAuth();
             } else {
-                logger.info("authtok valid and not expired");
+                logger.debug("authtok valid and not expired");
                 rc = true; // valid and not expired
             }
 
         } else {
-            logger.info("auth not required");
+            logger.debug("auth not required");
             rc = true;
         }
         return rc;

@@ -919,7 +919,7 @@ public class frigateSVRCameraHandler extends BaseThingHandler
                 if (bits.length >= 2) { // bits[0] is the prefix
 
                     if (this.trackedObjects.contains(bits[1]) || bits[1].equals("all")) {
-                        logger.info("camera: {}: have tracked object: {}", config.cameraName, bits[1]);
+                        logger.debug("camera: {}: have tracked object: {}", config.cameraName, bits[1]);
                         String MsgType = "totcount";
 
                         if (bits.length == 3) {
